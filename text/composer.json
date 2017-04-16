@@ -1,0 +1,35 @@
+{
+    "name": "flywheel2/text",
+    "description": "The Flywheel2 text package.",
+    "license": "MIT",
+    "homepage": "http://wkbd.ickx.jp/fw/",
+    "support": {
+        "issues": "https://github.com/ProjectICKX/fw2/issues",
+        "source": "https://github.com/ProjectICKX/fw2"
+    },
+    "authors": [
+        {
+            "name": "Akira Wakaba",
+            "email": "wakabadou@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.3",
+        "ext-mbstring": "*",
+        "flywheel2/international": "0.0.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ickx\\fw2\\text\\": ""
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.0.1-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev"
+}

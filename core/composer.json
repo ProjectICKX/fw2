@@ -1,0 +1,41 @@
+{
+    "name": "flywheel2/core",
+    "description": "The Flywheel2 core package.",
+    "license": "MIT",
+    "homepage": "http://wkbd.ickx.jp/fw/",
+    "support": {
+        "issues": "https://github.com/ProjectICKX/fw2/issues",
+        "source": "https://github.com/ProjectICKX/fw2"
+    },
+    "authors": [
+        {
+            "name": "Akira Wakaba",
+            "email": "wakabadou@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.3",
+        "ext-mbstring": "*",
+        "flywheel2/basic": "0.0.*",
+        "flywheel2/compression": "0.0.*",
+        "flywheel2/crypt": "0.0.*",
+        "flywheel2/international": "0.0.*",
+        "flywheel2/io": "0.0.*",
+        "flywheel2/traits": "0.0.*",
+        "flywheel2/vartype": "0.0.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ickx\\fw2\\core\\": ""
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.0.1-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev"
+}

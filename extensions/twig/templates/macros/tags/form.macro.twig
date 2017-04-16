@@ -1,0 +1,353 @@
+{##  ______ _                 _               _ ___
+ #  |  ____| |               | |             | |__ \
+ #  | |__  | |_   ___      __| |__   ___  ___| |  ) |
+ #  |  __| | | | | \ \ /\ / /| '_ \ / _ \/ _ \ | / /
+ #  | |    | | |_| |\ V  V / | | | |  __/  __/ |/ /_
+ #  |_|    |_|\__, | \_/\_/  |_| |_|\___|\___|_|____|
+ #             __/ |
+ #            |___/
+ #
+ # Flywheel2: the inertia php framework
+ #
+ # @category	Flywheel2
+ # @package		extensions
+ # @author		wakaba <wakabadou@gmail.com>
+ # @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (http://www.ickx.jp/)
+ # @license		http://opensource.org/licenses/MIT The MIT License MIT
+ # @varsion		2.0.0
+ #
+ # form
+ #}
+
+{#==============================================
+ # FORMタグ
+ #============================================#}
+{##
+ # FORMタグを表示します。
+ #
+ # @param	array	attribute_list	アクション以外の属性 method省略時はpostが指定される
+ # @param	string	action			アクションURL
+ # @return	string	formタグ
+ #}
+{% macro open(attribute_list, action) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}{{ form_open(attribute_list.method|default('POST')) }}
+{% if file_upload('max_file_size') > 0 %}
+<form method="POST" action="{{ action|default(current_url()) }}" enctype="multipart/form-data"{{ tags.attr(attribute_list, ['action', 'method', 'enctype']) }}>
+<input type="hidden"  name="MAX_FILE_SIZE" value="{{ file_upload('max_file_size') }}" />
+{% else %}
+<form method="{{ attribute_list.method|default('POST') }}" action="{{ action|default(current_url()) }}"{{ tags.attr(attribute_list, ['action', 'method']) }}>
+{% endif %}
+{% filter del_lf|raw %}
+{% if form_data('__suid') %}
+{{ _self.hidden('__suid', form_data('__suid')) }}
+{% endif %}
+{% endfilter %}
+{% endmacro %}
+
+{##
+ # FORM終了タグを表示します。
+ #
+ # @return	string	form終了タグ
+ #}
+{% macro close() %}</form>{{ form_close() }}{% endmacro %}
+
+{#----------------------------------------------
+ # Upload
+ #--------------------------------------------#}
+{##
+ # inputタグfileタイプを表示します。
+ #
+ # @param	string	name			name属性
+ # @param	string	value			value属性
+ # @param	array	attribute_list	属性リスト
+ # @param	array	filter_list		フィルタリスト
+ # @param	bool	disable_error	エラーメッセージ表示の抑止
+ # @return	string	inputタグ text
+ #}
+{% macro file(name, attribute_list, filter_list, disable_error) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% import "macros/messages/message.macro.twig" as messages %}
+{% filter del_lf|raw %}
+{% if name is not null %}
+<input type="file"{{ tags.name(name) }}{{ tags.value(request_data(name, value), filter_list) }}{{ tags.attr(attribute_list, ['name', 'value', 'type']) }} />
+{% else %}
+<input type="file"{{ tags.value(request_data(name, value), filter_list) }}{{ tags.attr(attribute_list, ['name', 'value', 'type']) }} />
+{% endif %}
+{% endfilter %}
+{% if not disable_error %}{{ messages.error(name) }}{% endif %}
+{% endmacro %}
+
+{#----------------------------------------------
+ # password
+ #--------------------------------------------#}
+{##
+ # inputタグpasswordタイプを表示します。
+ #
+ # @param	string	name			name属性
+ # @param	array	attribute_list	属性リスト
+ # @param	array	filter_list		フィルタリスト
+ # @param	bool	disable_error	エラーメッセージ表示の抑止
+ # @return	string	inputタグ text
+ #}
+{% macro password(name, attribute_list, filter_list, disable_error) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% import "macros/messages/message.macro.twig" as messages %}
+{% filter del_lf|raw %}
+{% if name is not null %}
+<input type="password"{{ tags.name(name) }}{{ tags.attr(attribute_list, ['name', 'value', 'type']) }} />
+{% else %}
+<input type="password"{{ tags.attr(attribute_list, ['name', 'value', 'type']) }} />
+{% endif %}
+{% endfilter %}
+{% if not disable_error %}{{ messages.error(name) }}{% endif %}
+{% endmacro %}
+
+{#----------------------------------------------
+ # text
+ #--------------------------------------------#}
+{##
+ # inputタグtextタイプを表示します。
+ #
+ # @param	string	name			name属性
+ # @param	string	value			value属性
+ # @param	array	attribute_list	属性リスト
+ # @param	array	filter_list		フィルタリスト
+ # @param	bool	disable_error	エラーメッセージ表示の抑止
+ # @return	string	inputタグ text
+ #}
+{% macro text(name, value, attribute_list, filter_list, disable_error) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% import "macros/messages/message.macro.twig" as messages %}
+{% filter del_lf|raw %}
+{% if name is not null %}
+<input type="text"{{ tags.name(name) }}{{ tags.value(request_data(name, value), filter_list) }}{{ tags.attr(attribute_list, ['name', 'value', 'type']) }} />
+{% else %}
+<input type="text"{{ tags.value(request_data(name, value), filter_list) }}{{ tags.attr(attribute_list, ['name', 'value', 'type']) }} />
+{% endif %}
+{% endfilter %}
+{% if not disable_error %}{{ messages.error(name) }}{% endif %}
+{% endmacro %}
+
+{#==============================================
+## textarea
+##============================================#}
+{##
+ # textareaタグを表示します。
+ #
+ # @param	string	name			name属性
+ # @param	string	value			値
+ # @param	array	attribute_list	属性リスト
+ # @param	array	filter_list		フィルタリスト
+ # @param	bool	disable_error	エラーメッセージ表示の抑止
+ # @return	string	textareaタグ
+ #}
+{% macro textarea(name, value, attribute_list, filter_list, disable_error) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% import "macros/messages/message.macro.twig" as messages %}
+<textarea{{ tags.name(name) }}{{ tags.attr(attribute_list, ['name', 'value']) }}>{{ filter(request_data(name, value), filter_list) }}</textarea>{% if not disable_error %}{{ messages.error(name) }}{% endif %}
+{% endmacro %}
+
+{#----------------------------------------------
+ # hidden
+ #--------------------------------------------#}
+{##
+ # hiddenタグを表示します。
+ #
+ # @param	string	name			name属性
+ # @param	string	value			value属性
+ # @param	array	attribute_list	属性リスト
+ # @param	array	filter_list		フィルタリスト
+ # @return	string	inputタグ hidden
+ #}
+{% macro hidden(name, value, attribute_list, filter_list) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% filter del_lf|raw %}
+{% if name is not null %}
+<input type="hidden"{{ tags.name(name) }}{{ tags.value(request_data(name, value), filter_list) }}{{ tags.attr(attribute_list, ['name', 'value', 'type']) }} />
+{% else %}
+<input type="hidden"{{ tags.value(request_data(name, value), filter_list) }}{{ tags.attr(attribute_list, ['name', 'value', 'type']) }} />
+{% endif %}
+{% endfilter %}
+{% endmacro %}
+
+{#----------------------------------------------
+ # radio
+ #--------------------------------------------#}
+{##
+ # radioタグを表示します。
+ #
+ # @param	string	name			name属性
+ # @param	string	value			value属性
+ # @param	string	label			label属性 nullの場合はvalueから自動構築
+ # @param	string	id				id属性 nullの場合はnameとvalueから自動構築
+ # @param	array	attribute_list	属性リスト
+ # @param	array	filter_list		フィルタリスト
+ # @return	string	radioタグ
+ #}
+{% macro radio(name, value, checked_value, attribute_list, filter_list, disable_error) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% import "macros/messages/message.macro.twig" as messages %}
+{% filter del_lf|raw %}
+{% set id = attribute_list.id|default(name~'_'~value) %}
+{% if attribute_list.label is not null %}<label for="{{ id }}">{% endif %}
+<input type="radio" id="{{ id }}"{{ tags.name(name) }}{{ tags.value(request_data(name, value), filter_list) }}{{ tags.attr(attribute_list, ['id', 'name', 'value', 'type']) }}{% if request_data(name, checked_value) == value %} checked{% endif %} />
+{% if attribute_list.label is not null %}&nbsp;{{ attribute_list.label }}</label>{% endif %}
+{% endfilter %}
+{% if not disable_error %}{{ messages.error(name) }}{% endif %}
+{% endmacro %}
+
+{#----------------------------------------------
+ # checkbox
+ #--------------------------------------------#}
+{##
+ # checkboxタグを表示します。
+ #
+ # @param	string	name			name属性
+ # @param	string	value			value属性
+ # @param	bool	checked			デフォルトでチェック済みとするかどうか
+ # @param	array	attribute_list	属性リスト
+ # @param	array	filter_list		フィルタリスト
+ # @return	string	radioタグ
+ #}
+{% macro checkbox(name, value, checked, attribute_list, filter_list, disable_error) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% import "macros/messages/message.macro.twig" as messages %}
+{% filter del_lf|raw %}
+{% set id = attribute_list.id|default(name~'_'~value) %}
+{% if attribute_list.label is not null %}<label for="{{ id }}">{% endif %}
+<input type="checkbox" id="{{ id }}"{{ tags.name(name) }}{{ tags.value(request_data(name, value), filter_list) }}{{ tags.attr(attribute_list, ['id', 'name', 'value', 'type']) }}{% if request_data(name, checked) %} checked{% endif %} />
+{% if attribute_list.label is not null %}&nbsp;{{ attribute_list.label }}</label>{% endif %}
+{% endfilter %}
+{% if not disable_error %}{{ messages.error(name) }}{% endif %}
+{% endmacro %}
+
+{#----------------------------------------------
+ # select
+ #--------------------------------------------#}
+{##
+ # selectタグを表示します。
+ #
+ # @param	string	name			name属性
+ # @param	array	options			オプション要素用配列
+ # @param	string	selected_value	選択中のvalue属性値
+ # @param	string	id				id属性 nullの場合はnameとvalueから自動構築
+ # @param	array	attribute_list	属性リスト
+ # @param	array	filter_list		フィルタリスト
+ # @return	string	radioタグ
+ #}
+{% macro select (name, options, selected_value, id, attribute_list, filter_list, disable_error) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% import "macros/messages/message.macro.twig" as messages %}
+{% filter del_lf|raw %}
+<select{{ tags.attr({'id' : id}) }}{{ tags.name(name) }}{{ tags.attr(attribute_list, ['name']) }}>
+{% for option_value, label in options %}
+<option value="{{ option_value }}"{% if request_data(name, selected_value) == option_value %} selected{% endif %}>{{ label }}</option>
+{% endfor %}
+</select>
+{% endfilter %}
+{% if not disable_error %}{{ messages.error(name) }}{% endif %}
+{% endmacro %}
+
+{% macro select_date (name, option_list, attribute_list, filter_list) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% filter del_lf|raw %}
+{% set year_name = [name, 'year'] %}
+{% set month_name = [name, 'month'] %}
+{% set day_name = [name, 'day'] %}
+{% set hour_name = [name, 'hour'] %}
+{% set minute_name = [name, 'minute'] %}
+{% set second_name = [name, 'second'] %}
+{% set current = option_list.current|default(time()) %}
+{% set start = option_list.start|default(time()) %}
+{% set end = option_list.end|default(time()) %}
+{% set current_year = current|date('Y') %}
+{% set current_mont = current|date('n') %}
+{% set current_day = current|date('j') %}
+{% set current_hour = current|date('G') %}
+{% set current_minute = current|date('i') %}
+{% set current_second = current|date('s') %}
+{% if option_list.reverse %}
+{% set start_year = end|date('Y') %}
+{% set end_year = start|date('Y') %}
+{% else %}
+{% set start_year = start|date('Y') %}
+{% set end_year = end|date('Y') %}
+{% endif %}
+{% set date_separator = option_list.date_separator|default('/') %}
+{% set time_separator = option_list.time_separator|default(':') %}
+<select{{ tags.name(year_name) }}{{ tags.attr(attribute_list, ['name']) }}>
+{% for i in range(start_year, end_year) %}
+<option value="{{ i }}"{% if i == request_data(year_name, current_year) %} selected{% endif %}>{{ i }}</option>
+{% endfor %}
+</select>
+{{ date_separator }}
+<select{{ tags.name(month_name) }}{{ tags.attr(attribute_list, ['name']) }}>
+{% for i in 1..12 %}
+<option value="{{ i }}"{% if i == request_data(month_name, current_mont) %} selected{% endif %}>{{ i }}</option>
+{% endfor %}
+</select>
+{{ date_separator }}
+<select{{ tags.name(day_name) }}{{ tags.attr(attribute_list, ['name']) }}>
+{% for i in 1..31 %}
+<option value="{{ i }}"{% if i == request_data(day_name, current_day) %} selected{% endif %}>{{ i }}</option>
+{% endfor %}
+</select>
+&nbsp;
+<select{{ tags.name(hour_name) }}{{ tags.attr(attribute_list, ['name']) }}>
+{% for i in 1..24 %}
+<option value="{{ i }}"{% if i == request_data(hour_name, current_hour)+0 %} selected{% endif %}>{{ i }}</option>
+{% endfor %}
+</select>
+{{ time_separator }}
+<select{{ tags.name(minute_name) }}{{ tags.attr(attribute_list, ['name']) }}>
+{% for i in 1..60 %}
+<option value="{{ i }}"{% if i == request_data(minute_name, current_minute) %} selected{% endif %}>{{ i }}</option>
+{% endfor %}
+</select>
+{{ time_separator }}
+<select{{ tags.name(second_name) }}{{ tags.attr(attribute_list, ['name']) }}>
+{% for i in 1..60 %}
+<option value="{{ i }}"{% if i == request_data(second_name, current_second)+0 %} selected{% endif %}>{{ i }}</option>
+{% endfor %}
+</select>
+{% endfilter %}
+{% endmacro %}
+
+{#----------------------------------------------
+## submit
+##--------------------------------------------#}
+{##
+ # submitボタンを表示します。
+ #
+ # @param	string  name			name属性
+ # @param	string  value			値
+ # @param	array	attribute_list	属性リスト
+ # @param	array	filter_list		フィルタリスト
+ # @return	string	inputタグ submit
+ #}
+{% macro submit(name, value, attribute_list, filter_list) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% filter del_lf|raw %}
+<input type="submit"{{ tags.name(name) }}{{ tags.value(value, filter_list) }}{{ tags.attr(attribute_list, ['name', 'value', 'type']) }} />
+{% endfilter %}
+{% endmacro %}
+
+{#----------------------------------------------
+## button
+##--------------------------------------------#}
+{##
+ # ボタンを表示します。
+ #
+ # @param	string  type			type属性 (submit, reset, button)
+ # @param	string  name			name属性
+ # @param	string  label			ラベル
+ # @param	array	attribute_list	属性リスト
+ # @param	array	filter_list		フィルタリスト
+ # @return	string	inputタグ submit
+ #}
+{% macro button(type, name, label, attribute_list, filter_list) %}
+{% import "macros/utilitys/tag.macro.twig" as tags %}
+{% filter del_lf|raw %}
+<button type="{{ type }}"{{ tags.name(name) }}{{ tags.value(label, filter_list) }}{{ tags.attr(attribute_list, ['name', 'value', 'type']) }}>{{ label }}</button>
+{% endfilter %}
+{% endmacro %}

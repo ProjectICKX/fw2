@@ -1,0 +1,46 @@
+{
+    "name": "flywheel2/mvc",
+    "description": "The Flywheel2 mvc package.",
+    "license": "MIT",
+    "homepage": "http://wkbd.ickx.jp/fw/",
+    "support": {
+        "issues": "https://github.com/ProjectICKX/fw2/issues",
+        "source": "https://github.com/ProjectICKX/fw2"
+    },
+    "authors": [
+        {
+            "name": "Akira Wakaba",
+            "email": "wakabadou@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.3",
+        "flywheel2/basic": "0.0.*",
+        "flywheel2/container": "0.0.*",
+        "flywheel2/core": "0.0.*",
+        "flywheel2/crypt": "0.0.*",
+        "flywheel2/extensions": "0.0.*",
+        "flywheel2/features": "0.0.*",
+        "flywheel2/international": "0.0.*",
+        "flywheel2/io": "0.0.*",
+        "flywheel2/other": "0.0.*",
+        "flywheel2/router": "0.0.*",
+        "flywheel2/security": "0.0.*",
+        "flywheel2/traits": "0.0.*",
+        "flywheel2/vartype": "0.0.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ickx\\fw2\\mvc\\": ""
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.0.1-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev"
+}

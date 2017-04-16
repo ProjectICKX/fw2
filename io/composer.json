@@ -1,0 +1,38 @@
+{
+    "name": "flywheel2/io",
+    "description": "The Flywheel2 io package.",
+    "license": "MIT",
+    "homepage": "http://wkbd.ickx.jp/fw/",
+    "support": {
+        "issues": "https://github.com/ProjectICKX/fw2/issues",
+        "source": "https://github.com/ProjectICKX/fw2"
+    },
+    "authors": [
+        {
+            "name": "Akira Wakaba",
+            "email": "wakabadou@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.3",
+        "flywheel2/core": "0.0.*",
+        "flywheel2/international": "0.0.*",
+        "flywheel2/other": "0.0.*",
+        "flywheel2/security": "0.0.*",
+        "flywheel2/vartype": "0.0.*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ickx\\fw2\\io\\": ""
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.0.1-dev"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev"
+}

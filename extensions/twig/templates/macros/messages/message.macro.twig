@@ -1,0 +1,49 @@
+{##  ______ _                 _               _ ___
+ #  |  ____| |               | |             | |__ \
+ #  | |__  | |_   ___      __| |__   ___  ___| |  ) |
+ #  |  __| | | | | \ \ /\ / /| '_ \ / _ \/ _ \ | / /
+ #  | |    | | |_| |\ V  V / | | | |  __/  __/ |/ /_
+ #  |_|    |_|\__, | \_/\_/  |_| |_|\___|\___|_|____|
+ #             __/ |
+ #            |___/
+ #
+ # Flywheel2: the inertia php framework
+ #
+ # @category	Flywheel2
+ # @package		extensions
+ # @author		wakaba <wakabadou@gmail.com>
+ # @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (http://www.ickx.jp/)
+ # @license		http://opensource.org/licenses/MIT The MIT License MIT
+ # @varsion		2.0.0
+ #
+ # message
+ #}
+
+{##
+ # 全てのerrorメッセージを表示します。
+ #
+ # @param	string	name			name属性
+ # @return	string	エラーメッセージ
+ #}
+{% macro error_set() %}
+{% set errors_set = errors_set()|filter_disable_error_set %}{% if errors_set|empty == false %}
+<ul style="margin : 10px 10px; border: medium solid #f00;">
+{% for errors in errors_set %}{% for name, error in errors %}
+{% if not error.options.disable_box_message %}
+	<li style="color : #f00; margin : 5px;">{{ error.message }}</li>
+{% endif %}
+{% endfor %}{% endfor %}
+</ul>
+{% endif %}{% endmacro %}
+
+{##
+ # errorメッセージを表示します。
+ #
+ # @param	string	name			name属性
+ # @return	string	エラーメッセージ
+ #}
+{% macro error(name) %}{% if name is not null %}{% for error in errors(name) %}
+{% if not error.options.disable_form_message %}
+<div style="color : #f00;">{{ error.message }}</div>
+{% endif %}
+{% endfor %}{% endif %}{% endmacro %}

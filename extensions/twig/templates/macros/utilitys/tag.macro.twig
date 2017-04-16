@@ -1,0 +1,102 @@
+{##  ______ _                 _               _ ___
+ #  |  ____| |               | |             | |__ \
+ #  | |__  | |_   ___      __| |__   ___  ___| |  ) |
+ #  |  __| | | | | \ \ /\ / /| '_ \ / _ \/ _ \ | / /
+ #  | |    | | |_| |\ V  V / | | | |  __/  __/ |/ /_
+ #  |_|    |_|\__, | \_/\_/  |_| |_|\___|\___|_|____|
+ #             __/ |
+ #            |___/
+ #
+ # Flywheel2: the inertia php framework
+ #
+ # @category	Flywheel2
+ # @package		extensions
+ # @author		wakaba <wakabadou@gmail.com>
+ # @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (http://www.ickx.jp/)
+ # @license		http://opensource.org/licenses/MIT The MIT License MIT
+ # @varsion		2.0.0
+ #
+ # tag utility
+ #}
+
+{##
+ # 属性を構築します。
+ #
+ # @param	array	attribute_list				属性リスト
+ # @param	array	exclusion_attribute_list	無視する属性リスト
+ # @return	string	属性
+ #}
+{% macro attr(attribute_list, exclusion_attribute_list) %}{% filter replace({"\n" : ''})|raw %}
+{% for name, value in attribute_list %}
+{% if name not in exclusion_attribute_list and value != '' %}
+{% if name == 'class' and value is iterable %}
+{% set value = ' ' ~ value|join(' ') %}
+{% endif %}
+ {{ name }}="{{ value }}"
+{% endif %}
+{% endfor %}
+{% endfilter %}{% endmacro %}
+
+{##
+ # NAME属性を構築します。
+ #
+ # @param	string	name	構築するNAME属性。
+ # @return	string	属性
+ #}
+{% macro name(name) %}{{ _self.attr({'name' : _self.convert_form_name(name)}) }}{% endmacro %}
+
+{##
+ # NAMEをフォームNAME用に変換します。
+ #
+ # @param	string	name	構築するNAME属性。
+ # @return	string	属性
+ #}
+{% macro convert_form_name(name) %}
+{% filter del_lf|raw %}
+{% if name is null %}
+{% else %}
+{% set name = adjust_array(name) %}
+{% if is_post_form() %}{% set name = array_unshift(name, 'data') %}{% endif %}
+{%	for part in name[0:1] %}
+{{ part }}
+{%	endfor %}{% set before_loop_last = loop.last %}
+{%	for part in name[1:before_loop_last] %}
+{{ _self.bracket(part) }}
+{%	endfor %}
+{% endif %}
+{% endfilter %}
+{% endmacro %}
+
+{##
+ # NAME属性に付与するブラケットをセットします。
+ #
+ # @param	mixed	name	NAME属性
+ # @return	string	ブラケット
+ #}
+{% macro bracket(name) %}
+{% filter del_lf|raw %}
+{% if name|str_search('[') %}
+[]
+{% else %}
+[{{ name }}]
+{% endif %}
+{% endfilter %}
+{% endmacro %}
+
+{##
+ # VALUE属性を構築します。
+ #
+ # @param	mixed	name		name属性
+ # @return	string	属性
+ #}
+{% macro value(value, filter_list) %}{{ _self.attr({'value' : filter(value, filter_list)}) }}{% endmacro %}
+
+{##
+ # アンカーエレメントの簡易的な切り替え制御を行います。
+ #
+ # @param	mixed	name		name属性
+ # @return	string	属性
+ #}
+{% macro anchor(href, label, attribute_list, mode) %}
+{% if mode %}<a href="{{ href }}"{{ _self.attr(attribute_list, ['href']) }}></a>{% else %}{{ label }}{% endif %}
+{% endmacro %}
