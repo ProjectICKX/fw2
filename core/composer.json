@@ -21,6 +21,7 @@
         "flywheel2/crypt": "0.0.*",
         "flywheel2/international": "0.0.*",
         "flywheel2/io": "0.0.*",
+        "flywheel2/other": "0.0.*",
         "flywheel2/traits": "0.0.*",
         "flywheel2/vartype": "0.0.*"
     },
