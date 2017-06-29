@@ -23,7 +23,7 @@ namespace ickx\fw2\security\utility\traits;
 /**
  * エスケープ特性です。
  *
- * セキュリティに適したエスケープ処理の実体をもちます。
+ * セキュリティに適したサニタイズ処理の実体をもちます。
  *
  * @category	Flywheel2
  * @package		security
@@ -41,15 +41,15 @@ trait SanitizeTrait {
 	}
 
 	public static function 	SanitizeCrLf () {
-		return strtr($string, static::GetSanitizeCrLfCodeSet());
+		return strtr($string, static::GetWatchCrLfCodeSet());
 	}
 
 	public static function SanitizeControlCode ($string) {
-		return strtr($string, static::GetSanitizeControlCodeSet());
+		return strtr($string, static::GetWatchControlCodeSet());
 	}
 
 	public static function SanitizeUnicodeControlCode ($string) {
-		return strtr($string, static::GetSanitizeUnicodeControlCodeSet());
+		return strtr($string, static::GetWatchUnicodeControlCodeSet());
 	}
 
 	public static function SanitizeHtml ($html) {
@@ -58,8 +58,8 @@ trait SanitizeTrait {
 
 	public static function SanitizeSpecificTagsHtmlFragment ($html, $sanitize_tags = null, $sanitize_attributes = null, $restriction_schemas = null, $restriction_schema_target_list = null, $encoding = null) {
 		!empty($encoding) ?: $encoding = mb_internal_encoding();
-		!empty($sanitize_tags) ?: $sanitize_tags = static::GetDefaultSanitizeTags();
-		!empty($sanitize_attributes) ?: $sanitize_attributes = static::GetDefaultSanitizeAttributes();
+		!empty($sanitize_tags) ?: $sanitize_tags = static::GetDefaultWatchTags();
+		!empty($sanitize_attributes) ?: $sanitize_attributes = static::GetDefaultWatchAttributes();
 		!empty($restriction_schemas) ?: $restriction_schemas = static::GetRestrictionSchemas();
 		!empty($restriction_schema_target_list) ?: $restriction_schema_target_list = static::GetRestrictionSchemaTagets();
 

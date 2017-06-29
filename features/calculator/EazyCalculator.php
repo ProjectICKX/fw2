@@ -20,8 +20,6 @@
 
 namespace ickx\fw2\features\calculator;
 
-use ickx\fw2\vartype\arrays\Arrays;
-
 /**
  * 簡易な計算を行います。
  *
@@ -165,7 +163,7 @@ use ickx\fw2\vartype\arrays\Arrays;
 				continue;
 			}
 
-			$result[] = Arrays::AdjustValue($replace_value_list, $calc, $calc);
+			$result[] = $replace_value_list[$calc] ?? $calc;
 
 			if (!$is_cnt_mode && !$is_min_mode) {
 				// カウント、最小値以外の計算式は0へ変換
@@ -435,10 +433,10 @@ use ickx\fw2\vartype\arrays\Arrays;
 		}
 
 		//左辺値のフォーマット
-		$operand_left = is_array($operand_left) ? static::ExecuteCalcList($operand_left, $replace_value_list) : Arrays::AdjustValue($replace_value_list, $operand_left, '');
+		$operand_left = is_array($operand_left) ? static::ExecuteCalcList($operand_left, $replace_value_list) : $replace_value_list[$operand_left] ?? '';
 
 		//右辺値のフォーマット
-		$operand_right = is_array($operand_right) ? static::ExecuteCalcList($operand_right, $replace_value_list) : Arrays::AdjustValue($replace_value_list, $operand_right, $operand_right);
+		$operand_right = is_array($operand_right) ? static::ExecuteCalcList($operand_right, $replace_value_list) : $replace_value_list[$operand_right] ?? $operand_right;
 
 		if ($operand_left === false || $operand_right === false) {
 			return false;

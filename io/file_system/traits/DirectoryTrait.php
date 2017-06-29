@@ -21,9 +21,7 @@
 namespace ickx\fw2\io\file_system\traits;
 
 use ickx\fw2\core\exception\CoreException;
-use ickx\fw2\core\status\MultiStatus;
 use ickx\fw2\io\file_system\status\DirectoryStatus;
-use ickx\fw2\vartype\arrays\Arrays;
 
 /**
  * ディレクトリ特性。
@@ -57,10 +55,10 @@ trait DirectoryTrait {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$raise_exception	= Arrays::AdjustValue($options, 'raise_exception', true);
-		$name				= Arrays::AdjustValue($options, 'name', '');
-		$parents			= Arrays::AdjustValue($options, ['parents', 'p'], false);
-		$skip				= Arrays::AdjustValue($options, 'skip', false);
+		$raise_exception	= $options['raise_exception']	?? true;
+		$name				= $options['name']				?? '';
+		$parents			= $options['parents'] ?? $options['p']	?? false;
+		$skip				= $options['skip']				??  false;
 
 		//==============================================
 		//ディレクトリ検証
@@ -84,9 +82,9 @@ trait DirectoryTrait {
 		//==============================================
 		//ディレクトリ作成
 		//==============================================
-		$mode			= Arrays::AdjustValue($options, 'mode', static::DEFAULT_DIR_MODE);
-		$owner			= Arrays::AdjustValue($options, 'owner');
-		$group			= Arrays::AdjustValue($options, 'group');
+		$mode			= $options['mode'] ?? static::DEFAULT_DIR_MODE;
+		$owner			= $options['owner'] ?? null;
+		$group			= $options['group'] ?? null;
 
 		//ディレクトリの作成
 		if (!mkdir($dir_path, $mode, $parents)) {
@@ -127,8 +125,8 @@ trait DirectoryTrait {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$raise_exception	= Arrays::AdjustValue($options, 'raise_exception', true);
-		$name				= Arrays::AdjustValue($options, 'name', '');
+		$raise_exception	= $options['raise_exception'] ?? true;
+		$name				= $options['name'] ?? '';
 
 		//==============================================
 		//ディレクトリ検証
@@ -142,7 +140,7 @@ trait DirectoryTrait {
 		$tmp_optioins = $options;
 		$tmp_optioins['name']			= ($name) ? '親' : $name . 'の親';
 		$tmp_optioins['auto_create']	= false;
-		if (($status = static::IsEnableDirectory(dirname($dir_path), $tmp_optioins)) !== true && $parents === false) {
+		if (($status = static::IsEnableDirectory(dirname($dir_path), $tmp_optioins)) !== true) {
 			return $status;
 		}
 
@@ -189,17 +187,17 @@ trait DirectoryTrait {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$raise_exception	= Arrays::AdjustValue($options, 'raise_exception', true);
-		$name				= Arrays::AdjustValue($options, 'name', '');
-		$auto_create		= Arrays::AdjustValue($options, 'auto_create', false);
-		$parents			= Arrays::AdjustValue($options, ['parents', 'p'], false);
+		$raise_exception	= $options['raise_exception'] ?? true;
+		$name				= $options['name'] ?? '';
+		$auto_create		= $options['auto_create'] ?? false;
+		$parents			= $options['parents'] ?? $options['p'] ?? false;
 
 		//==============================================
 		//ディレクトリ検証
 		//==============================================
 		//ディレクトリ存在確認
 		if (!file_exists($dir_path)) {
-			if (!(($auto_create || $parents) ? $status = static::CreateDirectory($dir_path, $options) : false)) {
+			if (!(($auto_create || $parents) ? static::CreateDirectory($dir_path, $options) : false)) {
 				return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('%sディレクトリがありません。dir:%s', [$name, $dir_path]), $raise_exception);
 			}
 		}

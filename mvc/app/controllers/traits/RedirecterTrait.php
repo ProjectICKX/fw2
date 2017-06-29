@@ -48,4 +48,10 @@ trait RedirecterTrait {
 	public function isRedirect () {
 		return ($this->nextRule === static::NEXT_REDIRECT && $this->nextUrl !== null);
 	}
+
+	public function forceRedirect ($url) {
+		$this->setUrl($url);
+		$this->nextRule		= static::NEXT_REDIRECT;
+		$this->cancelEvents = true;
+	}
 }

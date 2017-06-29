@@ -60,10 +60,13 @@ trait PagerTrait {
  	public function setPager ($total_count, $current_page, $url, $limit = PagerUtility::DISP_PER_PAGE, $options = []) {
  		$current_page	= $current_page ?: 1;
  		$options		= [
-			'in_list_position'	=> Arrays::AdjustValue($options, 'in_list_position',	3),
-			'max_link_disp'		=> Arrays::AdjustValue($options, 'max_link_disp',		5),
+			'in_list_position'	=> $options['in_list_position']	?? 3,
+			'max_link_disp'		=> $options['max_link_disp'] ?? 5,
  		];
  		$this->pager = PagerUtility::CreatePagerData($total_count, $current_page, $limit, $options);
- 		$this->pager['url']	= $url;
+ 		$this->pager['enable']	= $total_count > $limit;
+ 		$this->pager['url']		= $url;
+
+ 		return $this->pager;
  	}
 }

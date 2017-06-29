@@ -30,6 +30,8 @@ namespace ickx\fw2\mvc\app\controllers\traits;
  * @varsion		2.0.0
  */
 trait ValidateTrait {
+	public $hasValidator	= false;
+
 	/**
 	 * 許可したリクエストパラメータ以外のリクエストパラメータを削除します。
 	 */
@@ -37,7 +39,7 @@ trait ValidateTrait {
 		if ($this->rule->allowed === null) {
 			if (isset($this->rule->allowed['parameter'])) {
 				foreach (array_keys($this->request->parameter->getArrayCopy()) as $parameter) {
-					if (!in_array($parameter, $this->rule->allowed['parameter'])) {
+					if (!in_array($parameter, $this->rule->allowed['parameter'], true)) {
 						Request::RemoveParameter($parameter);
 						unset($this->request->parameter->$parameter);
 					}
@@ -46,9 +48,17 @@ trait ValidateTrait {
 
 			if (isset($this->rule->allowed['data'])) {
 				foreach (array_keys($this->request->data->getArrayCopy()) as $data_name) {
-					if (!in_array($data_name, $this->rule->allowed['data'])) {
+					if (!in_array($data_name, $this->rule->allowed['data'], true)) {
 						Request::RemovePostData($data_name);
 						unset($this->request->data->$data_name);
+					}
+				}
+			}
+
+			if (isset($this->rule->allowed['route'])) {
+				foreach (array_keys($this->route->getArrayCopy()) as $data_name) {
+					if (!in_array($data_name, $this->rule->allowed['route'], true)) {
+						unset($this->route->$data_name);
 					}
 				}
 			}
@@ -61,23 +71,32 @@ trait ValidateTrait {
 	 * @return	array	検証結果 検証を全て通過している場合は空配列 エラーがある場合はエラー名をキーとしたエラーメッセージのリスト
 	 */
 	public function validate ($validate_rule = null, $data_set = [], $force_source = false) {
+		//結果の初期化
+		$result = [];
+
 		//現在のバリデーションルールを取得
-		$validate_rule = $validate_rule ?: ($this->rule->validate ?: []);
+		$validate_rule = $validate_rule ?? $this->rule->validate ?? null;
 		if (is_callable($validate_rule)) {
 			$validate_rule = $validate_rule();
 		}
+
+		//実行対象のバリデーションがあるか確認、なければ対象はなかったとして終了
+		if (is_null($validate_rule)) {
+			$this->hasValidator = false;
+			return [];
+		}
+		$this->hasValidator = true;
 
 		//外部入力値を取得
 		$request_access = LazyArrayObject::Create([
 			'parameter'	=> Request::GetParameters(),
 			'data'		=> Request::GetPostData(),
 			'post'		=> Request::GetPost(),
+			'upload'	=> Request::GetUploadFileData(),
 			'cookie'	=> Request::GetCookies(),
+			'route'		=> $this->route,
 			'direct'	=> $data_set,
 		]);
-
-		//結果の初期化
-		$result = [];
 
 		//検証の実行：入力一要素ごとに処理を行う
 		foreach (array_filter(($validate_rule instanceof \ArrayObject) ? $validate_rule->getArrayCopy() : $validate_rule) as $target => $rules) {
@@ -93,7 +112,7 @@ trait ValidateTrait {
 			}
 
 			//先行する検証の結果を参照するかどうか
-			$premise = Arrays::AdjustValue($rules, 'premise');
+			$premise = $rules['premise'] ?? null;
 			if ($premise) {
 				foreach (Arrays::AdjustArray($premise) as $error_name) {
 					//一つでもエラーとなっている先行検証結果がある場合、処理そのものをスキップ
@@ -104,7 +123,7 @@ trait ValidateTrait {
 			}
 
 			//データ取得対象ソースの指定
-			$source = $force_source ?: Arrays::AdjustValue($rules, 'source', Request::IsPostMethod() ? 'data' : 'parameter');
+			$source = $force_source ?: ($rules['rules']['source'] ?? $rules['source'] ?? (Request::IsPostMethod() ? 'data' : 'parameter'));
 			$data = $request_access->$source;
 
 			//先行確認値があった場合、突合チェック
@@ -120,15 +139,17 @@ trait ValidateTrait {
 			}
 
 			//指定があった場合、値の取得先を差し替え
-			$name = Arrays::AdjustValue($rules, 'name', $target);
+			$name = $rules['name'] ?? $target;
 
 			//検証実行：結果はどんどん末尾に追加していく
-			$ret = Arrays::AdjustValue(Validator::BulkCheck($data, [$name => $rules], $result), $name, []);
+			$ret = Validator::BulkCheck($data, [$name => $rules], $result) ?? [];
 			if (!empty($ret)) {
-				$result += $result + [$target => $ret];
+				foreach ($ret as $target => $error_message_list) {
+					$result += $result + [$target => $error_message_list];
+				}
 
 				//入力要素レベルのis_lastが存在した場合、ここで処理終了となる
-				if (Arrays::AdjustValue($rules, 'is_last')) {
+				if ($rules['is_last'] ?? null) {
 					break;
 				}
 			}

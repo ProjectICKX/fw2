@@ -116,7 +116,7 @@ trait SuidTransactionTrait {
 				//インスタンスメソッドを指定する場合
 				$save_function = [$this, $save_function];
 			}
-			$ret = call_user_func_array($save_function, array_merge([$data], (array) $args));
+			$ret = $save_function(...array_merge([$data], (array) $args));
 		} catch (\Exception $e) {
 			static::DeleteSuidSession();
 			static::Rollback();
@@ -127,5 +127,40 @@ trait SuidTransactionTrait {
 		static::Commit();
 
 		return $ret;
+	}
+
+	/**
+	 * トランザクション中に変化しない値を一括してセッションに登録します。
+	 *
+	 * @param	callable	$callback	トランザクション中に変化しない値を配列として返すコールバック関数
+	 */
+	public function SetConsistentData ($callback) {
+		foreach ($callback() as $id => $value) {
+			static::WriteSuidSession($id, $value);
+		}
+	}
+
+	/**
+	 * トランザクション中に変化しない値の検証に既存の検証を追加し、遅延実行用のコールバック関数として返します。
+	 *
+	 * @param	callable	$callback		トランザクション中に変化しない値を配列として返すコールバック関数
+	 * @param	array		$validate_rule	既存の検証
+	 * @return	callable	遅延実行用コールバック関数
+	 */
+	public function consistentDataValdiateRule ($callback, $validate_rule = []) {
+		return function () use ($callback, $validate_rule) {
+			$consistent_validate_rule = [];
+
+			foreach ($callback() as $id => $value) {
+				$consistent_validate_rule[$id] = [
+					'force_validate'	=> false,
+					'force_value'		=> false,
+					'value'	=> $value,
+					['===', static::ReadSuidSession($id), 'raise_exception', 'message' => 'トランザクション中固定値がマッチしません。target:{:title} input:{:value}, session:{:operand:0}'],
+				];
+			}
+
+			return $consistent_validate_rule + $validate_rule;
+		};
 	}
 }

@@ -91,8 +91,7 @@ trait ClassVariableTrait {
 	 * @param	bool	$const_flag	上書き禁止設定
 	 */
 	public static function SetClassVar ($name, $value, $const_flag = false) {
-		$name = (array) $name;
-		$name_key = implode('=>', $name);
+		$name_key = implode('=>', (array) $name);
 		if ($const_flag && isset(static::$_ClassVariableTrait_ConstList[$name_key])) {
 			throw CoreException::RaiseSystemError('%s is constant', [$name_key]);
 		}
@@ -101,6 +100,7 @@ trait ClassVariableTrait {
 		} else {
 			static::$_ClassVariableTrait_Data[$name] = $value;
 		}
+
 		static::$_ClassVariableTrait_ConstList[$name_key] = $const_flag;
 	}
 

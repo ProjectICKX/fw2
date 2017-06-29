@@ -43,6 +43,7 @@ class Request extends \ickx\fw2\core\net\http\Http {
 			'parameter'	=> static::GetParameters(),
 			'data'		=> static::GetPostData(),
 			'cookie'	=> static::GetCookies(),
+			'upload'	=> static::GetUploadFileData(),
 		]);
 	}
 
@@ -61,7 +62,7 @@ class Request extends \ickx\fw2\core\net\http\Http {
 	 * @return	string	現在の接続メソッド名
 	 */
 	public static function GetMethod () {
-		return PHP_SAPI === 'cli' ? 'GET' : $_SERVER['REQUEST_METHOD'];
+		return \PHP_SAPI === 'cli' ? 'GET' : $_SERVER['REQUEST_METHOD'];
 	}
 
 	/**
@@ -110,7 +111,16 @@ class Request extends \ickx\fw2\core\net\http\Http {
 	 * @return	string	現在の接続URL
 	 */
 	public static function GetUrl () {
-		return static::LasyClassVarAccessCallback('url', function () {return (preg_match(sprintf("@^%s(.+)$@u", str_replace('@', "\\@", dirname($_SERVER['SCRIPT_NAME']))), $_SERVER['REQUEST_URI'], $matches) === 1) ? '/' . explode('?', $matches[1], 2)[0] : '';});
+		return static::LasyClassVarAccessCallback('url', function () {return sprintf('%s://%s%s%s', strtolower(static::GetCurrnetProtocol()), static::GetDomainName(), static::GetPath(), !empty($query_parameter = static::GetParameters()->getRecursiveArrayCopy()) ? sprintf('?%s', http_build_query($query_parameter)) : '');});
+	}
+
+	/**
+	 * 現在の接続パスを返します。
+	 *
+	 * @return	string	現在の接続URL
+	 */
+	public static function GetPath () {
+		return static::LasyClassVarAccessCallback('path', function () {return (preg_match(sprintf("@^%s(.+)$@u", str_replace('@', "\\@", dirname($_SERVER['SCRIPT_NAME']))), $_SERVER['REQUEST_URI'], $matches) === 1) ? '/' . explode('?', $matches[1], 2)[0] : '';});
 	}
 
 	/**
@@ -158,7 +168,27 @@ class Request extends \ickx\fw2\core\net\http\Http {
 	 * @return	\ickx\fw2\vartype\arrays\LazyArrayObject	HTTPポストデータ
 	 */
 	public static function GetPostData () {
-		return static::LasyClassVarAccessCallback('data', function () {return LazyArrayObject::RecursiveCreate(static::GetPost()->data ?: []);});
+//@TODO 応急措置
+//		return static::LasyClassVarAccessCallback('data', function () {return LazyArrayObject::RecursiveCreate(static::GetPost()->data ?? []);});
+		return LazyArrayObject::RecursiveCreate($_POST['data'] ?? []);
+	}
+
+	/**
+	 * 現在のFILESを返します。
+	 *
+	 * @return	\ickx\fw2\vartype\arrays\LazyArrayObject	HTTPポスト
+	 */
+	public static function GetFiles () {
+		return static::LasyClassVarAccessCallback('_files', function () {return LazyArrayObject::RecursiveCreate($_FILES);});
+	}
+
+	/**
+	 * 現在のFILESデータを返します。
+	 *
+	 * @return	\ickx\fw2\vartype\arrays\LazyArrayObject	HTTPポストデータ
+	 */
+	public static function GetUploadFileData () {
+		return LazyArrayObject::RecursiveCreate($_FILES['data'] ?? []);
 	}
 
 	/**
@@ -178,9 +208,9 @@ class Request extends \ickx\fw2\core\net\http\Http {
 	 */
 	public static function GetCookie ($name, $callback_filter = null) {
 		if (is_callable($callback_filter)) {
-			return call_user_func($callback_filter, Arrays::AdjustValue($_COOKIE, $name));
+			return $callback_filter(...($_COOKIE[$name] ?? []));
 		}
-		return Arrays::AdjustValue($_COOKIE, $name);
+		return $_COOKIE[$name] ?? null;
 	}
 
 	/**
@@ -221,7 +251,7 @@ class Request extends \ickx\fw2\core\net\http\Http {
 			static::RemoveClassVar('data', $name);
 		}
 		if (Arrays::ExistsLowest($_POST, array_merge(['data'], (array) $name))) {
-			Arrays::RemoveLowest($_POST, array_merge(['data'], (array) $name));
+			$_POST = Arrays::RemoveLowest($_POST, array_merge(['data'], (array) $name));
 		}
 	}
 
@@ -243,13 +273,11 @@ class Request extends \ickx\fw2\core\net\http\Http {
 	 * @param	mixed	$value	上書きするデータ
 	 */
 	public static function OverWritePostData ($name, $value) {
-		$keys = array_merge(['data'], Arrays::AdjustArray($name));
+		$name = Arrays::AdjustArray($name);
+		$keys = array_merge(['data'], $name);
 		static::SetClassVar($keys, $value);
 		static::SetClassVar(array_merge(['_post'], $keys), $value);
-		if (!isset($_POST['data'])) {
-			$_POST['data'] = [];
-		}
-		$_POST['data'] = Arrays::SetLowest($_POST['data'], $name, $value);
+		$_POST['data'] = Arrays::SetLowest($_POST['data'] ?? [], $name, $value);
 	}
 
 	/**
@@ -290,7 +318,7 @@ class Request extends \ickx\fw2\core\net\http\Http {
 	 */
 	public static function EnableSSL () {
 		return static::LasyClassVarConstAccessCallback('enable_ssl', function () {
-				return (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+			return (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (isset($_SERVER['HTTPS']) && !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
 		});
 	}
 

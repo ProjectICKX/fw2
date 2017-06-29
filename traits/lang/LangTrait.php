@@ -21,7 +21,6 @@
 namespace ickx\fw2\traits\lang;
 
 use ickx\fw2\international\language\Language;
-use ickx\fw2\io\file_system\IniFile;
 use ickx\fw2\io\file_system\ArrayIniFile;
 use ickx\fw2\core\exception\CoreException;
 

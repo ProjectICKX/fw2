@@ -21,7 +21,6 @@
 namespace ickx\fw2\vartype\vars;
 
 use ickx\fw2\core\exception\CoreException;
-use ickx\fw2\vartype\arrays\Arrays;
 
 /**
  * 変数ユーティリティクラスです。
@@ -149,7 +148,7 @@ class Vars {
 	 * @exception	CoreException	$optionsにmessageが指定されていて検証に失敗した場合、CoreExceptionをthrowする。
 	 */
 	public static function IsNumber ($value, $options = []) {
-		$prefix = (Arrays::AdjustValue($options, 'decimal')) ? "[1-9]" : '';
+		$prefix = ($options['decimal'] ?? false) ? "[1-9]" : '';
 		if (preg_match("/^". $prefix ."[0-9]+$/", $value)) {
 			return true;
 		}
@@ -173,7 +172,7 @@ class Vars {
 	 * @exception	CoreException	$optionsにmessageが指定されていて検証に失敗した場合、CoreExceptionをthrowする。
 	 */
 	public static function IsNotNumber ($value, $options = []) {
-		$prefix = (Arrays::AdjustValue($options, 'decimal')) ? "[1-9]" : '';
+		$prefix = ($options['decimal'] ?? false) ? "[1-9]" : '';
 		if (!preg_match("/^". $prefix ."[0-9]+$/", $value)) {
 			return true;
 		}

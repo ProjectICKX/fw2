@@ -325,7 +325,7 @@ abstract class SdfDriverAbstract implements \ickx\fw2\io\sdf\drivers\interfaces\
 		$i = 1;
 /*
 		//テーブル名取得
-		$table_name = Arrays::AdjustValue($options, 'table_name');
+		$table_name = $options['table_name'] ?? null;
 
 		//カラム情報
 		$columns = $this->getColumns($table_name);

@@ -89,7 +89,7 @@ class Objects {
 	 * @param	mixed	$default_value	配列に値が無かった場合に代入される値
 	 */
 	public static function AdjustProperty ($instance, $array, $name, $default_value = null) {
-		$instance->$name = \ickx\fw2\vartype\arrays\Arrays::AdjustValue($array, $name, $default_value);
+		$instance->$name = $array[$name] ?? $default_value;
 	}
 
 	/**
@@ -102,7 +102,7 @@ class Objects {
 	 */
 	public static function AdjustPropertyFromArray ($instance, $array, $name_list, $default_value = null) {
 		foreach ($name_list as $name) {
-			$instance->$name = \ickx\fw2\vartype\arrays\Arrays::AdjustValue($array, $name, $default_value);
+			$instance->$name = $array[$name] ?? $default_value;
 		}
 	}
 }

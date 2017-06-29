@@ -22,6 +22,7 @@ namespace ickx\fw2\extensions\twig;
 
 use ickx\fw2\router\Router;
 use ickx\fw2\vartype\objects\Objects;
+use ickx\fw2\vartype\arrays\Arrays;
 
 class Twig_Extension_Function extends \Twig_Extension {
 	use	\ickx\fw2\traits\data_store\ClassVariableTrait,
@@ -57,6 +58,7 @@ class Twig_Extension_Function extends \Twig_Extension {
 			new \Twig_Function('current_full_url',		[$this, 'currentFullUrl']),
 			new \Twig_Function('filter',				[$this, 'filter'], ['needs_environment' => true]),
 			new \Twig_Function('replace_sub_domain',	[$this, 'replaceSubDomain']),
+			new \Twig_Function('action_switch',			[$this, 'actionSwitch']),
 
 			//==============================================
 			//var type
@@ -69,8 +71,14 @@ class Twig_Extension_Function extends \Twig_Extension {
 			new \Twig_Function('array_unshift',	[$this, 'arrayUnshift']),
 			new \Twig_Function('array_push',	[$this, 'arrayPush']),
 			new \Twig_Function('array_add',		[$this, 'arrayAdd']),
+			new \Twig_Function('array_merge',	[$this, 'merge']),
+			new \Twig_Function('implode',		'implode'),
+			new \Twig_Function('explode',		'explode'),
+			new \Twig_Function('array_filter',	'array_filter'),
 
 			new \Twig_Function('merge',			[$this, 'merge']),
+
+			new \Twig_Function('late_array_bind',	[$this, 'lateArrayBind']),
 
 			//==============================================
 			//Native Functions
@@ -81,7 +89,17 @@ class Twig_Extension_Function extends \Twig_Extension {
 			//==============================================
 			//disp support
 			//==============================================
-			new \Twig_Function('adjust',	[$this, 'adjust']),
+			new \Twig_Function('adjust',		[$this, 'adjust']),
+			new \Twig_Function('params_adjust',	[$this, 'paramsAdjust']),
+			new \Twig_Function('sprintf',		'sprintf'),
+			new \Twig_Function('has_validator',	[$this, 'hasValidator']),
+			new \Twig_Function('elvis',			[$this, 'elvis']),
+			new \Twig_Function('switch',		[$this, 'elvis']),
+
+			new \Twig_Function('make_id',		[$this, 'makeId']),
+
+			new \Twig_Function('json_encode',	[$this, 'jsonEncode']),
+			new \Twig_Function('json_decode',	[$this, 'jsonDecode']),
 
 			//==============================================
 			//form data set
@@ -158,11 +176,32 @@ class Twig_Extension_Function extends \Twig_Extension {
 	/**
 	 * RouterからURLを取得します。
 	 *
+	 * コントーラ名、アクション名、パラメータからURLを構築します。
+	 *
+	 * コントローラ名、アクション名、パラメータが完全に一致する接続パスからURLを構築します。
+	 * その際、パラメータの値も見ます。
+	 *
+	 * GetUrl実行時には値を確定出来ないパラメータ名は$var_parametersに指定してください。
+	 *
+	 * ex)
+	 * Router::Connect('/{:controller:index}/{:action:index}/{id:\d+}/}');
+	 *
+	 * Router::GetUrl('index', 'index');					// => false, パラメータなしのURLが接続パスが設定されていない
+	 * Router::GetUrl('index', 'index', ['id' => 'aaa']);	// => false, idパラメータが\d+にマッチしない
+	 * Router::GetUrl('index', 'index', ['id' => '123']);	// => /index/index/123/
+	 * Router::GetUrl('index', 'index', [], ['id']);		// => /index/index/{:id}/
+	 *
+	 * @param	string	$controller_name	コントローラ名
+	 * @param	string	$action_name		アクション名
+	 * @param	array	$parameters			パラメータ
+	 * @param	array	$var_parameters		後付けで差し替えたいパラメータ
+	 * @return	mixed	接続パスに存在するURLの場合はstring URL、存在しないURLの場合はbool false
 	 */
 	public function makeUrl ($controller_name, $action_name = '', $parameters = [], $var_parameters = [], $query = []) {
 		if ($controller_name === null) {
 			return '';
 		}
+
 		$query = !empty($query) ? '?'. http_build_query($query) : '';
 		return $this->asset(Router::GetUrl($controller_name, $action_name ?: '', $parameters ?: [], $var_parameters ?: [])) . $query;
 	}
@@ -170,6 +209,24 @@ class Twig_Extension_Function extends \Twig_Extension {
 	/**
 	 * Routerからドメイン名付のURLを取得します。
 	 *
+	 * コントローラ名、アクション名、パラメータが完全に一致する接続パスからURLを構築します。
+	 * その際、パラメータの値も見ます。
+	 *
+	 * GetUrl実行時には値を確定出来ないパラメータ名は$var_parametersに指定してください。
+	 *
+	 * ex)
+	 * Router::Connect('/{:controller:index}/{:action:index}/{id:\d+}/}');
+	 *
+	 * Router::GetUrl('index', 'index');					// => false, パラメータなしのURLが接続パスが設定されていない
+	 * Router::GetUrl('index', 'index', ['id' => 'aaa']);	// => false, idパラメータが\d+にマッチしない
+	 * Router::GetUrl('index', 'index', ['id' => '123']);	// => /index/index/123/
+	 * Router::GetUrl('index', 'index', [], ['id']);		// => /index/index/{:id}/
+	 *
+	 * @param	string	$controller_name	コントローラ名
+	 * @param	string	$action_name		アクション名
+	 * @param	array	$parameters			パラメータ
+	 * @param	array	$var_parameters		後付けで差し替えたいパラメータ
+	 * @return	mixed	接続パスに存在するURLの場合はstring URL、存在しないURLの場合はbool false
 	 */
 	public function makeDomainUrl ($controller_name, $action_name = '', $parameters = [], $var_parameters = [], $query = []) {
 		if ($controller_name === null) {
@@ -335,5 +392,67 @@ class Twig_Extension_Function extends \Twig_Extension {
 			$result = array_merge($result, (array) $array);
 		}
 		return $result;
+	}
+
+	public function actionSwitch ($action_name, $text, $default = '') {
+		return DI::GetClassVar('render')['action'] === str_replace('/', '_', $action_name ?? 'index') ? $text : $default;
+	}
+
+	public function paramsAdjust ($params, $adjuster = []) {
+		$add_list = $adjuster[0] ?? $adjuster['add'] ?? [];
+		$remove_list =$adjuster[1] ?? $adjuster['remove'] ?? $adjuster['delete'] ?? [];
+
+		foreach ($add_list as $key => $value) {
+			$params[$key] = $value;
+		}
+
+		foreach ((array) $remove_list as $key) {
+			unset($params[$key]);
+		}
+
+		return $params;
+	}
+
+	public function hasValidator () {
+		return $_POST['data']['has_validator'] ?? DI::GetClassVar('render')['has_validator'] ?? false;
+	}
+
+	public function elvis ($condition, $true, $false = '') {
+		return $condition ? $true : $false;
+	}
+
+	public function makeId ($attribute_list, $name, $value, $optional) {
+		if (isset($attribute_list['id'])) {
+			return $attribute_list['id'];
+		}
+
+		return (implode('_', array_filter([
+			$name,
+			!is_array($value) && !is_object($value) ? $value : $optional
+		], function ($value) {return !(is_null($value) || $value === '' || $value === false);})));
+	}
+
+	public function jsonEncode ($value) {
+		return json_encode($value, \JSON_HEX_TAG | \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT);
+	}
+
+	public function jsonDecode ($value) {
+		return json_decode($value);
+	}
+
+	public function lateArrayBind ($target_list, $sub_data = []) {
+		$render = DI::GetClassVar('render');
+
+		foreach ($target_list as $key => $target) {
+			if (is_callable($target)) {
+				$target_list[$key] = $target($render);
+			} else if (is_array($target)){
+				$target_list[$key] = Arrays::GetLowest($render, $target);
+			} else {
+				$target_list[$key] = $render[$target];
+			}
+		}
+
+		return $target_list;
 	}
 }

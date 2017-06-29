@@ -50,4 +50,8 @@ trait ViewTrait {
 	public function assignData ($key, $value) {
 		return [$key => $value];
 	}
+
+	public function setRender ($key, $value) {
+		$this->render[$key] = $value;
+	}
 }

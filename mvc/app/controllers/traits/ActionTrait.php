@@ -21,7 +21,7 @@
 namespace ickx\fw2\mvc\app\controllers\traits;
 
 use ickx\fw2\core\exception\CoreException;
-use ickx\fw2\vartype\arrays\Arrays;
+use ickx\fw2\mvc\app\builders\ActionBuilder;
 
 /**
  * Flywheel2 Action特性です。
@@ -44,6 +44,10 @@ trait ActionTrait {
 
 	/** @var	array	次のアクションindex */
 	public $nextAction			= null;
+
+	public static function ActionBuilder ($executer, $is_var = false) {
+		return (new ActionBuilder())->executer($executer, $is_var);
+	}
 
 	/**
 	 * 以降のアクションチェインをパージさせます。
@@ -114,60 +118,102 @@ trait ActionTrait {
 			return [];
 		}
 
-		while (($action = each($action_set)) !== false) {
+		while (($action = current($action_set)) !== false) {
+			$key	= key($action_set);
+			$action = [
+				1		=> $action,
+				'value'	=> $action,
+				0		=> $key,
+				'key'	=> $key,
+			];
+			next($action_set);
+
 			if ($this->isPurgeActionChain()) {
 				return $this->render;
 			}
 
-			$key = Arrays::AdjustValue($action, ['key', 0]);
+			$key = $action['key'] ??  $action[0] ?? null;
 
 			$action = current($action);
-			if (!is_callable($action[0])) {
-				if ($action[0] === null) {
-					if ($this->isError()) {
-						throw CoreException::RaiseSystemError('エラー時のメソッドが未定義です。%sActionを実装するか、\'error\'ルールに実行アクションリストまたはfalseを設定してください。', [$this->action]);
+
+			$is_var = $action[4] ?? false;
+			if ($is_var) {
+				$action[1] = $action[1] ?? [];
+				$result_alias = $action[2] ?? null;
+				$post_action_filter = $action[3] ?? null;
+
+				$result_part_list = $action[0];
+			} else {
+				if (!is_callable($action[0])) {
+					if ($action[0] === null) {
+						if ($this->isError()) {
+							throw CoreException::RaiseSystemError('エラー時のメソッドが未定義です。%sActionを実装するか、\'error\'ルールに実行アクションリストまたはfalseを設定してください。', [$this->action]);
+						}
+						throw CoreException::RaiseSystemError('アクションメソッドが未定義です。%sActionを実装するか、\'action\'ルールに実行アクションリストまたはfalseを設定してください。', [$this->action]);
 					}
-					throw CoreException::RaiseSystemError('アクションメソッドが未定義です。%sActionを実装するか、\'action\'ルールに実行アクションリストまたはfalseを設定してください。', [$this->action]);
+					throw CoreException::RaiseSystemError('実行不能なメソッドを指定されました。method:%s, caller_class:%s, action:%s, trigger:%s', [$action[0] ? 'null' : serialize($action[0]), static::class, $this->action, $this->trigger]);
 				}
-				throw CoreException::RaiseSystemError('実行不能なメソッドを指定されました。method:%s, caller_class:%s, action:%s, trigger:%s', [$action[0] ? 'null' : serialize($action[0]), static::class, $this->action, $this->trigger]);
-			}
 
-			$action[1] = isset($action[1]) ? $action[1] : [];
-			$result_alias = isset($action[2]) ? $action[2] : null;
-			$post_action_filter = isset($action[3]) ? $action[3] : null;
+				$action[1] = $action[1] ?? [];
+				$result_alias = $action[2] ?? null;
+				$post_action_filter = $action[3] ?? null;
 
-			$inject_console = [];
-			$trait_console = false;
-			if (isset($this->rule->inject_console[$key])) {
-				$inject_console = $this->rule->inject_console[$key];
-				foreach (['start', 'end', 'header', 'prompt'] as $idx => $target_idx) {
-					$inject_console[$target_idx] = Arrays::AdjustValue($inject_console, [$target_idx, $idx]);
+				$inject_console = [];
+				$trait_console = false;
+				if (isset($this->rule->inject_console[$key])) {
+					$inject_console = $this->rule->inject_console[$key];
+					foreach (['start', 'end', 'header', 'prompt'] as $idx => $target_idx) {
+						$inject_console[$target_idx] = $inject_console[$target_idx] ?? $inject_console[$idx] ?? null;
+					}
+					$trait_console = method_exists($this, 'ConsoleLog') && method_exists($this, 'ConsoleHeader') && method_exists($this, 'Prompt');
 				}
-				$trait_console = method_exists($this, 'ConsoleLog') && method_exists($this, 'ConsoleHeader') && method_exists($this, 'Prompt');
+
+				if (isset($inject_console['header']) && $trait_console) {
+					static::ConsoleHeader($inject_console['header']);
+				}
+				if (isset($inject_console['start']) && $trait_console) {
+					static::ConsoleLog($inject_console['start']);
+				}
+				if (isset($inject_console['prompt']) && is_array($inject_console['prompt']) && $trait_console) {
+					$this->render['prompt_value'] = static::Prompt(
+						$inject_console['prompt']['message'] ?? $inject_console['prompt'][0] ?? null,
+						$inject_console['prompt']['validate_rule'] ?? $inject_console['prompt'][1] ?? null,
+						$inject_console['prompt']['data_name'] ?? $inject_console['prompt'][2] ?? null
+					);
+				}
+
+				$params = $action[1];
+				foreach ($params as $idx => $value) {
+					if (is_object($value) && is_callable($value)) {
+						$params[$idx] = $value($this->render);
+					}
+				}
+
+				//action本体の実行
+				$result_part_list = $action[0](...$params);
 			}
 
-			if (isset($inject_console['header']) && $trait_console) {
-				static::ConsoleHeader($inject_console['header']);
-			}
-			if (isset($inject_console['start']) && $trait_console) {
-				static::ConsoleLog($inject_console['start']);
-			}
-			if (isset($inject_console['prompt']) && is_array($inject_console['prompt']) && $trait_console) {
-				$this->render['prompt_value'] = static::Prompt(
-					Arrays::AdjustValue($inject_console['prompt'], ['message', 0]),
-					Arrays::AdjustValue($inject_console['prompt'], ['validate_rule', 1]),
-					Arrays::AdjustValue($inject_console['prompt'], ['data_name', 2])
-				);
+			if ($post_action_filter !== null && is_callable($post_action_filter)) {
+				$result_part_list = $post_action_filter(...$result_part_list);
 			}
 
-			//action本体の実行
-			$result_part_list = call_user_func_array($action[0], array_merge($action[1], [$render]));
-			if ($post_action_filter !== null && is_callable($post_action_filter[0])) {
-				$post_action_filter[1] = isset($post_action_filter[1]) ? (array) $post_action_filter[1] : [];
-				$result_part_list = call_user_func_array($post_action_filter[0], [$result_part_list] + $post_action_filter[1]);
-			}
-			if ($result_alias !== null) {
-				$result_part_list = [$result_alias => $result_part_list];
+			if (!is_null($result_alias)) {
+				if (is_array($result_alias)) {
+					$tmp = [];
+					$end = false;
+					reset($result_part_list);
+					foreach ($result_alias as $alias) {
+						if (!$end) {
+							$tmp[$alias] = current($result_part_list);
+							$end = next($result_part_list);
+						} else {
+							$tmp[$alias] = null;
+						}
+					}
+					$result_part_list = $tmp;
+				} else {
+					$result_part_list = [$result_alias => $result_part_list];
+				}
 			}
 
 			if (isset($inject_console['end']) && $trait_console) {
@@ -191,11 +237,13 @@ trait ActionTrait {
 
 			if (!empty($this->nextAction) && isset($action_set[$this->nextAction])) {
 				reset($action_set);
-				while (($action = each($action_set)) !== false) {
-					if ($action[0] === $this->nextAction) {
+				while (($action = current($action_set)) !== false) {
+					next($action_set);
+					if (key($action_set) === $this->nextAction) {
 						break;
 					}
 				}
+
 				prev($action_set);
 				$this->setNextAction(null);
 			}
@@ -212,9 +260,16 @@ trait ActionTrait {
 	 * @return	array		アクションセット
 	 */
 	public static function GetExecuteAction ($instance, $action_list) {
+		static $internal_functions;
+		if (!isset($internal_functions)) {
+			$internal_functions = get_defined_functions()['internal'];
+		}
+
 		$action_set = [];
 
 		$key = null;
+
+		$action_builder_class = ActionBuilder::class;
 
 		//アクションそのものがコーラブルな場合、一度実行する
 		if (is_object($action_list) && is_callable($action_list)) {
@@ -227,72 +282,93 @@ trait ActionTrait {
 				$action = Strings::ToLowerCamelCase($instance->action.'_action');
 			}
 
-			//アクション実行用のパラメータを設定
-			$parameters = [];
-			if (!is_object($action)) {
-				if (is_array($action[0]) && is_callable($action[0])) {
-					$parameters = Arrays::AdjustValue($action, ['parameters', 1], []);
-				} else if (isset($action[1]) && is_string($action[1])) {
-					$parameters = Arrays::AdjustValue($action, ['parameters', 2], []);
+			if (is_object($action) && $action instanceof $action_builder_class) {
+				$action = $action->toArray();
+			}
+
+			$is_var = $action[4] ?? false;
+
+			if ($is_var) {
+				$result_alias = $action[2] ?? null;
+				$action_set[$key] = [$action[0], null, $result_alias, null, $is_var];
+				continue;
+			} else {
+				//アクション実行用のパラメータを設定
+				$parameters = [];
+				if (!is_object($action)) {
+					if (is_array($action[0]) && is_callable($action[0])) {
+						$parameters = $action['parameters'] ?? $action[1] ?? [];
+					} else if (isset($action[1]) && is_string($action[1])) {
+						$parameters = $action['parameters'] ?? $action[2] ?? [];
+					}
 				}
-			}
 
-			//メソッドが現在のインスタンスに実行可能な状態で存在する場合の処理
-			//例	'action'	=> 'indexAction',
-			//		$this->indexAction($parameters);
-			if (is_string($action) && method_exists($instance, $action)) {
-				$action_set[$key] = [[$instance, $action], $parameters];
-				continue;
-			}
+				//メソッドが現在のインスタンスに実行可能な状態で存在する場合の処理
+				//例	'action'	=> 'indexAction',
+				//		$this->indexAction($parameters);
+				if (is_string($action) && method_exists($instance, $action)) {
+					$action_set[$key] = [[$instance, $action], $parameters];
+					continue;
+				}
 
-			//指定されたアクションそのものが実行可能な形式の場合の処理
-			//ルールにてactionキーへ直接設定を書いた場合のみ該当する
-			//例	ベタの関数の場合
-			//		'action'	=> 'array_fliter',
-			//		array_fliter($parameters)
-			if (is_callable($action)) {
-				$action_set[$key] = [$action, $parameters];
-				continue;
+				//指定されたアクションそのものが実行可能な形式の場合の処理
+				//ルールにてactionキーへ直接設定を書いた場合のみ該当する
+				//例	ベタの関数の場合
+				//		'action'	=> 'array_fliter',
+				//		array_fliter($parameters)
+				if (is_callable($action)) {
+					$action_set[$key] = [$action, $parameters];
+					continue;
+				}
 			}
 
 			//複数アクションを指定していた場合の処理
 			if (is_array($action)) {
 				//結果に対して別名を付ける
 				//[$result_alias => call_user_func_array($action[0], $action[1])];と同様の効果
-				$result_alias = isset($action[2]) ? $action[2] : null;
+				$result_alias = $action[2] ?? null;
 
 				//action実行後に結果に対して実行するフィルタ
 				$post_action_filter = isset($action[3]) ? (array) $action[3] : null;
 
-				if (is_string($action[0]) && strpos($action[0], '::') !== false) {
-					//PHPネイティブでは指定できないが、'クラスパス::メソッド名'の指定に合わせるための処理
-					$action[0] = explode('::', $action[0], 2);
-				} else if (is_string($action[0])) {
+				$is_var = $action[4] ?? false;
+				if ($is_var) {
+					$action_set[$key] = [$action[0], null, $result_alias, null, $is_var];
+					continue;
+				}
+
+				if (is_string($action[0])) {
 					//インスタンスメソッドを指定する場合
 					$action[0] = [$instance, $action[0]];
 				}
 
 				//アクションセットの設定
 				if (is_callable($action[0])) {
-					$action_set[$key] = [$action[0], isset($action[1]) ? $action[1] : $parameters, $result_alias, $post_action_filter];
+					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter];
 					continue;
 				}
 
 				//'action' => [$callback, $parameter],として設定した場合
 				if (is_callable($action[0][0]) && !is_string($action[0][1])) {
-					$action_set[$key] = [$action[0], isset($action[1]) ? $action[1] : $parameters, $result_alias, $post_action_filter];
+					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter];
 					continue;
 				}
 
 				//'action' => [$instance, 'methodName'],として設定した場合、$instanceは任意のオブジェクトの指定が可能
 				if (method_exists($action[0][0], $action[0][1])) {
-					$action_set[$key] = [$action[0], isset($action[1]) ? $action[1] : $parameters, $result_alias, $post_action_filter];
+					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter];
+					continue;
+				}
+
+				//'action' => ['function_name'],として設定した場合
+				if ($action[0][0] === $instance && is_callable($action[0][1])) {
+					$action_set[$key] = [$action[0][1], $action[1] ?? $parameters, $result_alias, $post_action_filter];
 					continue;
 				}
 			}
 
 			//
-			CoreException::RaiseSystemError('未定義のメソッドを指定されました。');
+			throw CoreException::RaiseSystemError('未定義のメソッドを指定されました。');
 		}
 
 		if ($key === null || empty($action_set)) {

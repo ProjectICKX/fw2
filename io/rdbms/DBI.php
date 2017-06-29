@@ -22,7 +22,6 @@ namespace ickx\fw2\io\rdbms;
 
 use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\io\file_system\IniFile;
-use ickx\fw2\security\validators\Validator;
 use ickx\fw2\vartype\arrays\Arrays;
 use ickx\fw2\vartype\strings\Strings;
 
@@ -135,12 +134,12 @@ class DBI {
 		}
 
 		$dsn_options = [];
-		foreach (Arrays::AdjustValue($dsn, 'options', []) as $option) {
+		foreach ($dsn['options'] ?? [] as $option) {
 			$dsn_options[(int)$option['name']] = (int)$option['value'];
 		}
 		$dsn['options'] = $dsn_options;
 
-		$dsn['schemas'] = Arrays::AdjustValue($dsn, 'schemas', []);
+		$dsn['schemas'] = $dsn['schemas'] ?? [];
 
 		static::$_dsnList[static::AdjustConnectionName($options, $dsn)][static::AdjustPriority($options)][static::AdjustStackNumber($options)] = $dsn;
 	}
@@ -252,6 +251,17 @@ class DBI {
 		return static::GetConnection($options)->save($table_name, $values, $options);
 	}
 
+	/**
+	 * データの削除を行います。
+	 *
+	 * @param	string	$table_name	生成先テーブル名
+	 * @param	array	$values		値
+	 * @param	array	$options	オプション
+	 */
+	public static function Delete ($table_name, array $values = [], array $options = []) {
+		return static::GetConnection($options)->delete($table_name, $values, $options);
+	}
+
 	//==============================================
 	//Transaction
 	//==============================================
@@ -346,7 +356,7 @@ class DBI {
 	 * @return	string	コネクション名
 	 */
 	public static function AdjustConnectionName ($options, $dsn = []) {
-		return Arrays::AdjustValue($options, ['connection_name', 0], Arrays::AdjustValue($dsn, 'dbname', static::CONNECTION_NAME_DEFAULT));
+		return $options['connection_name'] ?? $options[0] ?? $dsn['dbname'] ?? static::CONNECTION_NAME_DEFAULT;
 	}
 
 	/**
@@ -356,7 +366,7 @@ class DBI {
 	 * @return	string	プライオリティ名
 	 */
 	public static function AdjustPriority ($options) {
-		return Arrays::AdjustValue($options, ['priority', 1], DBI::PRIORITY_MASTER);
+		return $options['priority'] ?? $options[1] ?? DBI::PRIORITY_MASTER;
 	}
 
 	/**
@@ -366,7 +376,7 @@ class DBI {
 	 * @return	string	スタックナンバー
 	 */
 	public static function AdjustStackNumber ($options) {
-		return Arrays::AdjustValue($options, ['number', 2], DBI::DEFAULT_STACK_NO);
+		return $options['number'] ?? $options[2] ?? DBI::DEFAULT_STACK_NO;
 	}
 
 	public static function UpdateTableInfo ($target_table_list = [], $options = []) {

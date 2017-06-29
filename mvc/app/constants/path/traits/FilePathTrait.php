@@ -69,6 +69,7 @@ trait FilePathTrait {
 			'APP_NAME'				=> Flywheel::GetAppName(),
 
 			'PACKAGE_NS_PATH'		=> static::GetPackageNsPath(),
+			'COMMONS_NS_PATH'		=> static::GetCommonsNsPath(),
 			'APP_NS_PATH'			=> static::GetAppNsPath(),
 
 			'SRC_DIR'				=> static::GetSrcDir(),
@@ -93,6 +94,14 @@ trait FilePathTrait {
 		return implode('/', [
 			Flywheel::GetVendorName(),
 			Flywheel::GetPackageName(),
+		]);
+	}
+
+	public static function GetCommonsNsPath () {
+		return implode('/', [
+			Flywheel::GetVendorName(),
+			Flywheel::GetPackageName(),
+			'commons',
 		]);
 	}
 

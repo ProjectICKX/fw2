@@ -123,7 +123,7 @@ trait CookieAuthTrait {
 				break;
 			case 'redirect':
 				if ($this->controller !== static::$_cookieAuthLogin[0] || $this->action !== static::$_cookieAuthLogin[1]) {
-					$this->redirect(Flywheel::AssetUrl(call_user_func_array([get_called_class(), 'MakeUrl'], static::$_cookieAuthLogin)));
+					$this->redirect(Flywheel::AssetUrl(call_user_func_array([static::class, 'MakeUrl'], static::$_cookieAuthLogin)));
 					$this->skipAction();
 					$this->cancelEvents();
 				}
@@ -137,7 +137,7 @@ trait CookieAuthTrait {
 		}
 		CookieAuth::AuthDelete(null, $name);
 		if (static::$_cookieAuthAfterLogout === 'redirect') {
-			$this->redirect(Flywheel::AssetUrl(call_user_func_array([get_called_class(), 'MakeUrl'], static::$_cookieAuthLogout)));
+			$this->redirect(Flywheel::AssetUrl(call_user_func_array([static::class, 'MakeUrl'], static::$_cookieAuthLogout)));
 		$this->skipAction();
 		}
 		return true;

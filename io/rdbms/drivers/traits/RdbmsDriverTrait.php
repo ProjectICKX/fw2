@@ -20,10 +20,6 @@
 
 namespace ickx\fw2\io\rdbms\drivers\traits;
 
-use ickx\fw2\vartype\strings\Strings;
-use ickx\fw2\core\exception\CoreException;
-use ickx\fw2\vartype\arrays\Arrays;
-
 /**
  * Flywheel2 RDBMSDriver Trait
  *
@@ -48,18 +44,18 @@ trait RdbmsDriverTrait {
 
 			return new static (
 				static::MakeDsn($dsn),
-				Arrays::AdjustValue($dsn, 'username', null),
-				Arrays::AdjustValue($dsn, 'password', null),
-				static::MakeOptionList(Arrays::AdjustValue($dsn, 'options', []))
+				$dsn['username'] ?? null,
+				$dsn['password'] ?? null,
+				static::MakeOptionList($dsn['options'] ?? [])
 			);
 		} catch (\PDOException $pdo_e) {
  			throw new \Exception(sprintf(
  				'%s dsn=%s user=%s password=%s options=%s',
  				$pdo_e->getMessage(),
  				static::MakeDsn($dsn),
- 				Arrays::AdjustValue($dsn, 'username', ''),
- 				Arrays::AdjustValue($dsn, 'password', ''),
- 				implode(', ', static::MakeOptionList(Arrays::AdjustValue($dsn, 'options', [])))
+ 				$dsn['username'] ?? '',
+ 				$dsn['password'] ?? '',
+ 				implode(', ', static::MakeOptionList($dsn['options'] ?? []))
  			), 0, $pdo_e);
 		}
 	}

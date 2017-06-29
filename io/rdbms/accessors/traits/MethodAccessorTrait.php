@@ -20,10 +20,7 @@
 
 namespace ickx\fw2\io\rdbms\accessors\traits;
 
-use ickx\fw2\vartype\arrays\Arrays;
-
 use ickx\fw2\core\exception\CoreException;
-
 use ickx\fw2\vartype\strings\Strings;
 
 /**
@@ -74,14 +71,32 @@ trait MethodAccessorTrait {
 	 * @return	\PDOStatement	検索実行後のプリペアドステートメントインスタンス
 	 */
 	public static function FindAll ($options = []) {
-		$conditions = isset($options['conditions']) ? $options['conditions'] : [];
-		return static::ExecuteQuery(self::CreateSelectQuery($options), $conditions);
+		if (isset($options['conditions'])) {
+			$conditions = $options['conditions'];
+		} else if (isset($options['where'])) {
+			$conditions = [];
+			foreach ($options['where'] as $where) {
+				$conditions[] = $where[1];
+			}
+		} else {
+			$conditions = [];
+		}
+		return static::ExecuteQuery(static::CreateSelectQuery($options), $conditions);
 	}
 
 	public static function CountAll ($options = []) {
 		$options['columns'] = ['COUNT (*) as count'];
-		$conditions = isset($options['conditions']) ? $options['conditions'] : [];
-		return static::ExecuteQuery(self::CreateSelectQuery($options), $conditions);
+		if (isset($options['conditions'])) {
+			$conditions = $options['conditions'];
+		} else if (isset($options['where'])) {
+			$conditions = [];
+			foreach ($options['where'] as $where) {
+				$conditions[] = $where[1];
+			}
+		} else {
+			$conditions = [];
+		}
+		return static::ExecuteQuery(static::CreateSelectQuery($options), $conditions);
 	}
 
 	/**
@@ -103,7 +118,11 @@ trait MethodAccessorTrait {
 			$columns = [];
 			foreach ($options['columns'] as $column) {
 				if (is_array($column)) {
-					$columns[] = sprintf('%s(%s)%s', $column[1], $column[0], isset($column[2]) ? sprintf(' AS %s', $column[2]) : '');
+//@TODO $column[1]に対してSUM、COUNTで検証
+//@TODO DBごとのエスケープ
+					$columns[] = sprintf('%s(%s%s)%s', $column[1], (isset($column[3]) ? sprintf('%s ', $column[3]) : ''), $column[0], isset($column[2]) ? sprintf(' AS %s', $column[2]) : '');
+				} else if (is_object($column) && $column instanceof \ickx\fw2\io\rdbms\accessors\Column) {
+					$columns[] = $column(static::class);
 				} else {
 					$columns[] = $column;
 				}
@@ -125,7 +144,7 @@ trait MethodAccessorTrait {
 			foreach ($options['where'] as $where) {
 				$value_length = count($where[1]);
 				$placeholder = $value_length > 1 ? '('. implode(', ', array_fill(0, $value_length, '?')) .')' : '?';
-				$operator = !isset($where[2]) ? $where[2] : ($value_length > 1 ? 'in' : '=');
+				$operator = isset($where[2]) ? $where[2] : ($value_length > 1 ? 'in' : '=');
 
 				if ($is_not_first) {
 					$wheres[] = 'AND';
@@ -137,17 +156,17 @@ trait MethodAccessorTrait {
 			$query[] = implode(' ', $wheres);
 		}
 
-		if (isset($options['order']) && is_array($options['order'])) {
+		if (isset($options['group']) && !empty($options['group'])) {
+			$query[] = 'GROUP BY';
+			$query[] = implode(', ', (array) $options['group']);
+		}
+
+		if (isset($options['order']) && is_array($options['order']) && !empty($options['order'])) {
 			$order = ['ORDER BY'];
 			foreach ($options['order'] as $order_by) {
 				$order[] = vsprintf(is_array($order_by) ? '%s %s' : '%s', $order_by);
 			}
 			$query[] = implode(' ', $order);
-		}
-
-		if (isset($options['group'])) {
-			$query[] = 'GROUP BY';
-			$query[] = implode(', ', (array) $options['group']);
 		}
 
 		if (isset($options['limit'])) {
@@ -171,6 +190,11 @@ trait MethodAccessorTrait {
 		//初期データセット
 		$column_list = static::GetColumnList();
 		$table_name = static::GetName();
+
+		//特殊ルール適用
+		if ($matches[1] === 'PKey') {
+			$matches[1] = static::GetPkeys()[0];
+		}
 
 		//Find target set
 		$target_column_name = Strings::ToSnakeCase($matches[1]);
@@ -197,8 +221,8 @@ trait MethodAccessorTrait {
 			$columns = [];
 			foreach ((array) $arguments[2] as $idx => $column_name) {
 				if (!isset($column_list[$column_name])) {
-			throw CoreException::RaiseSystemError('存在しないカラムを指定されました。%s.%s', [$table_name, $target_column_name]);
-		}
+					throw CoreException::RaiseSystemError('存在しないカラムを指定されました。%s.%s', [$table_name, $target_column_name]);
+				}
 				$columns[$idx] = $column_list[$column_name];
 			}
 		} else {

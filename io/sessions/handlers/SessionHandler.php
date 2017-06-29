@@ -38,7 +38,7 @@ class SessionHandler extends \SessionHandler {
 	 * @return	bool	セッションハンドラの設定に成功した場合はTRUE 失敗した場合はFALSE
 	 */
 	public static function SetHandler ($handler_class = null, $register_shutdown = false) {
-		$handler_class = $handler_class ?: get_called_class();
+		$handler_class = $handler_class ?: static::class;
 		if (is_string($handler_class)) {
 			$handler_class = new $handler_class;
 		}

@@ -21,6 +21,7 @@
 namespace ickx\fw2\mvc;
 
 use ickx\fw2\core\environment\Environment;
+use ickx\fw2\core\cli\Cli;
 
 /**
  * Flywheel Freamwork spin-up class
@@ -54,9 +55,7 @@ class Flywheel {
 	 * phase1:Checking
 	 */
 	public static function Checking () {
-		ClassLoader::Connect('Flywheel',		get_called_class());
-
-		ClassLoader::Connect('FilePath',		'ickx\fw2\mvc\app\constants\path\FilePath');
+		ClassLoader::Connect('Flywheel',		static::class);
 
 		ClassLoader::Connect('DI',				'ickx\fw2\container\DI');
 		ClassLoader::Connect('Queue',			'ickx\fw2\container\Queue');
@@ -131,7 +130,7 @@ class Flywheel {
 //@TODO Clutch enable switch
 //@TODO FW2 Swich's
 //@TODO Free dir layout (target dir adding)
-		$VENDOR_DIR_byte_length = strlen(FilePath::VENDOR_DIR());
+		$vendor_dir_byte_length = strlen(FilePath::VENDOR_DIR());
 
 		foreach (new \DirectoryIterator(FilePath::CONTROLLER_PATH()) as $app_dir) {
 			if ($app_dir->isFile()) {
@@ -144,7 +143,7 @@ class Flywheel {
 			$controller_name = ucfirst(preg_replace_callback("/(?:^|_)([a-z])/", function ($matches) {return strtoupper($matches[1]);}, $app_dir->getBasename()));
 			$class_base = $app_dir->getPath() .'/'. $app_dir->getBasename() .'/'. $controller_name .'Clutch';
 			$clutch_file_path = $class_base .'.php';
-			$clutch_class_name = str_replace('/', "\\", substr($class_base, $VENDOR_DIR_byte_length));
+			$clutch_class_name = str_replace('/', "\\", substr($class_base, $vendor_dir_byte_length));
 
 			clearstatcache(true, $clutch_file_path);
 			if (file_exists($clutch_file_path) && class_exists($clutch_class_name, true)) {
@@ -165,7 +164,7 @@ class Flywheel {
 	 * phase5:Ignition
 	 */
 	public static function Ignition ($url = null, $app_namespace = null) {
-		$called_class = get_called_class();
+		$called_class = static::class;
 
 		static::SetClassVar(static::URL_PARAM_NAME, $url ?: static::GetRequestUrl());
 		static::SetClassVar('app_namespace', $app_namespace ?: substr($called_class, 0, strrpos($called_class, "\\")));
@@ -247,7 +246,8 @@ class Flywheel {
 			}
 			$action_url = $argv[0];
 		} else {
-			$path_info = parse_url(sprintf('http://localhost%s', $_SERVER['REQUEST_URI']), \PHP_URL_PATH);
+			$request_uri = Environment::IsCli() ? (Cli::GetRequestParameterList()[0] ?? '') : $_SERVER['REQUEST_URI'];
+			$path_info = parse_url(sprintf('http://localhost%s', $request_uri), \PHP_URL_PATH);
 			if (preg_match("@\?([^\?&=]+)(?:&|$)@", $path_info, $mat)) {
 				$action_url = $mat[1];
 			} else {
@@ -294,7 +294,7 @@ class Flywheel {
 	 * @return	string	vendor name
 	 */
 	public static function GetVendorName () {
-		$called_class = get_called_class();
+		$called_class = static::class;
 		return substr($called_class, 0, strpos($called_class, "\\"));
 	}
 
@@ -304,7 +304,7 @@ class Flywheel {
 	 * @return	string	package path
 	 */
 	public static function GetPackagePath () {
-		$called_class = get_called_class();
+		$called_class = static::class;
 		$offset = strpos($called_class, "\\") + 1;
 		return str_replace("\\", '/', substr($called_class, 0, strpos($called_class, "\\", $offset)));
 	}
@@ -329,7 +329,7 @@ class Flywheel {
 	}
 
 	public static function GetCallTypePath () {
-		$called_class = get_called_class();
+		$called_class = static::class;
 		$offset = strpos($called_class, "\\") + 1;
 		$offset = strpos($called_class, "\\", $offset) + 1;
 		return str_replace("\\", '/', substr($called_class, 0, strpos($called_class, "\\", $offset)));
@@ -360,7 +360,7 @@ class Flywheel {
 	 * @return	string	package path
 	 */
 	public static function GetAppPath () {
-		$called_class = get_called_class();
+		$called_class = static::class;
 		$offset = strpos($called_class, "\\") + 1;
 		$offset = strpos($called_class, "\\", $offset) + 1;
 		$offset = strpos($called_class, "\\", $offset) + 1;
@@ -373,7 +373,26 @@ class Flywheel {
 	 * @return	string	package full path
 	 */
 	public static function GeAppFullPath () {
-		return static::GetVendorPath() .'/'. static::GetAppPath();
+		static $app_full_path;
+		if (!isset($app_full_path)) {
+			if (!is_null($composer_loader = ClassLoader::GetComposerLoader())) {
+				$psr4_map = $composer_loader->getPrefixesPsr4();
+				for ($base_app_path = $app_path = str_replace("/", "\\", rtrim(static::GetAppPath(), '/')) . "\\"; !isset($psr4_map[$app_path]) && $app_path !== "\\"; $app_path = mb_substr($app_path, 0, mb_strrpos($app_path, "\\", -2)) . "\\");
+			}
+
+			if (isset($psr4_map[$app_path])) {
+				$app_full_path = str_replace("\\", '/', str_replace($app_path, realpath($psr4_map[$app_path][0]) . '/', $base_app_path));
+			}
+
+			$vendor_dir = static::GetVendorPath();
+
+			isset($app_full_path) && file_exists($app_full_path)
+			 ?: file_exists($app_full_path = dirname($vendor_dir) . '/' . static::GetAppPath())
+			 ?: file_exists($app_full_path = $vendor_dir .'/'. static::GetAppPath())
+			 ?: false;
+		}
+
+		return $app_full_path;
 	}
 
 	/**
@@ -416,7 +435,7 @@ class Flywheel {
 	 * @return	string	パッケージのパス
 	 */
 	public static function GetCalledFlywheelPath () {
-		return str_replace("\\", '/', get_called_class());
+		return str_replace("\\", '/', static::class);
 	}
 
 	/**
@@ -480,15 +499,17 @@ class Flywheel {
 			PhpIni::ReflectFromIniFile($app_session_ini['ini_path']);
 		}
 
-		$session_ini_path = FilePath::SESSION_INI_PATH();
-		if ($session_ini_path === null || $session_ini_path === '' || FileSystem::IsReadableFile($session_ini_path) !== true) {
-			$session_ini_path =FilePath::FW2_DEFAULTS_SESSION_INI_PATH();
+		if (!Environment::IsCli()) {
+			$session_ini_path = FilePath::SESSION_INI_PATH();
+			if ($session_ini_path === null || $session_ini_path === '' || FileSystem::IsReadableFile($session_ini_path) !== true) {
+				$session_ini_path =FilePath::FW2_DEFAULTS_SESSION_INI_PATH();
+			}
+			$app_session_ini = IniFile::GetConfig($session_ini_path, ['ini_path'], ['cache_dir' => FilePath::INI_CACHE_DIR(), 'static_cache' => true]);
+			if (!isset($app_session_ini['ini_path'])) {
+				throw CoreException::RaiseSystemError('セッション用iniファイルパスが設定されていません。');
+			}
+			PhpIni::ReflectFromIniFile($app_session_ini['ini_path'], PhpIni::SESSION);
 		}
-		$app_session_ini = IniFile::GetConfig($session_ini_path, ['ini_path'], ['cache_dir' => FilePath::INI_CACHE_DIR(), 'static_cache' => true]);
-		if (!isset($app_session_ini['ini_path'])) {
-			throw CoreException::RaiseSystemError('セッション用iniファイルパスが設定されていません。');
-		}
-		PhpIni::ReflectFromIniFile($app_session_ini['ini_path'], PhpIni::SESSION);
 	}
 
 	/**

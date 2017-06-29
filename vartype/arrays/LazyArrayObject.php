@@ -185,13 +185,13 @@ class LazyArrayObject extends \ArrayObject implements \Serializable {
 	 * @return	LazyArrayObject	変換後の配列
 	 */
 	public static function Create () {
-		$args = func_get_args();
+		$args = func_num_args() === 0 ? [[]] : func_get_args();
 		if ((isset($args[1]) || array_key_exists(1, $args)) && $args[1] === null) {
 			unset($args[1]);
 		} else {
 			$args[1] = \ArrayObject::STD_PROP_LIST | \ArrayObject::ARRAY_AS_PROPS;
 		}
-		$argc = func_num_args();
+
 		switch (count($args)) {
 			case 3:
 				return new static($args[0], $args[1], $args[2]);

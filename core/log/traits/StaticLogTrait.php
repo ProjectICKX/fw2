@@ -21,6 +21,8 @@
 namespace ickx\fw2\core\log\traits;
 
 use ickx\fw2\vartype\strings\Strings;
+use ickx\fw2\core\environment\Environment;
+use ickx\fw2\core\cli\Cli;
 
 /**
  * スタティックログ特性です。
@@ -133,7 +135,8 @@ trait StaticLogTrait {
 		$exclusion_uri_list = isset($options['exclusion_uri']) ? (array) $options['exclusion_uri'] : [];
 
 		//取得対象外URIの場合、処理終了
-		if (in_array($_SERVER['REQUEST_URI'], $exclusion_uri_list)) {
+		$request_uri = Environment::IsCli() ? (Cli::GetRequestParameterList()[0] ?? '') : $_SERVER['REQUEST_URI'];
+		if (in_array($request_uri, $exclusion_uri_list, true)) {
 			return null;
 		}
 
@@ -141,7 +144,8 @@ trait StaticLogTrait {
 		$exclusion_remote_addr_list = isset($options['exclusion_remote_addr']) ? (array) $options['exclusion_remote_addr'] : [];
 
 		//取得対象外URIの場合、処理終了
-		if (in_array($_SERVER['REMOTE_ADDR'], $exclusion_remote_addr_list)) {
+		$remote_addr = Environment::IsCli() ? null : $_SERVER['REMOTE_ADDR'];
+		if (in_array($remote_addr, $exclusion_remote_addr_list, true)) {
 			return null;
 		}
 
@@ -269,10 +273,12 @@ trait StaticLogTrait {
 		//ログパスの構築
 			$json_log_dir = isset($options['json_log_name']) ? $options['json_log_name'] : $log_dir;
 			$json_log_name = isset($options['json_log_name']) ? $options['json_log_name'] : 'json.log';
-		$log_file_path = implode(DIRECTORY_SEPARATOR, [$json_log_dir, $json_log_name]);
+			$log_file_path = implode(DIRECTORY_SEPARATOR, [$json_log_dir, $json_log_name]);
+
+			$request_uri = Environment::IsCli() ? (Cli::GetRequestParameterList()[0] ?? '') : $_SERVER['REQUEST_URI'];
 
 			$json_data = [
-				'REQUEST_URI'	=> $_SERVER['REQUEST_URI'],
+				'REQUEST_URI'	=> $request_uri,
 				'GET'			=> $_GET,
 				'POST'			=> $_POST,
 				'COOKIE'		=> $_COOKIE,

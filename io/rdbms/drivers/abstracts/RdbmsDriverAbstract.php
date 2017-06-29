@@ -201,7 +201,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 		//IN句構築
 		//==============================================
 		$in_list = [];
-		foreach ($conditions as $idx => $condition) {
+		foreach ($conditions as $condition) {
 			$column_value = current((array) $condition);
 			if (is_array($column_value)) {
 				$in_list[] = implode(', ', array_fill(0, count($column_value), '?'));
@@ -261,7 +261,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 		$i = 1;
 /*
 		//テーブル名取得
-		$table_name = Arrays::AdjustValue($options, 'table_name');
+		$table_name = $options['table_name'] ?? null;
 
 		//カラム情報
 		$columns = $this->getColumns($table_name);
@@ -442,12 +442,12 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 			$tmp_values = $tmp_where = $tmp_data = array_keys($values);
 		}
 
-		$update_flag = isset($options['force_update']) ? $options['force_update'] : false;
-		foreach ((array) $match_indexes as $pkey) {
-			if (isset($values[$pkey])) {
-				$update_flag = true;
-				break;
-			}
+		$force_insert_flag = $options['force_insert'] ?? false;
+		$use_ukey = false;
+		$update_flag = false;
+		if (!$force_insert_flag) {
+			$use_ukey = array_intersect($match_indexes, array_keys($values)) === $match_indexes;
+			$update_flag = $options['force_update'] ?? $use_ukey;
 		}
 
 		if ($update_flag) {
@@ -468,18 +468,18 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 				foreach ($tmp_values as $value) {
 					$stmt->bindValue($i++, $value);
 				}
-				if (!$stmt->execute()) {
-					//
+				if (!$ret = $stmt->execute()) {
 				}
-				$ret = $stmt->rowCount();
+				$row_count = $stmt->rowCount();
 			} catch (\PDOException $pdo_e) {
 				StaticLog::WriteLog('sql_error', implode(', ', $this->errorInfo()));
-
 				StaticLog::WriteLog('sql_error', serialize($tmp_values));
 				throw $pdo_e;
 			}
 
-			return $ret;
+			if ($row_count !== 0) {
+				return $row_count;
+			}
 		}
 
 		return $this->create($table_name, [$values], $options);
@@ -532,20 +532,20 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 
 		$column_name_list = array_keys($values[0]);
 		$query = sprintf(
- 			'INSERT INTO %s (%s%s%s) VALUES (%s)',
- 			$table_name,
+			'INSERT INTO %s (%s%s%s) VALUES (%s)',
+			$table_name,
 			static::IDENTIFIER,
- 			implode(static::IDENTIFIER.', '.static::IDENTIFIER, $column_name_list),
+			implode(static::IDENTIFIER.', '.static::IDENTIFIER, $column_name_list),
 			static::IDENTIFIER,
- 			implode(', ', array_fill(0, count($column_name_list), '?'))
- 		);
+			implode(', ', array_fill(0, count($column_name_list), '?'))
+		);
 
- 		$ret = [];
+		$ret = [];
 
 //@TODO mode setting
- 		$log_flag = false;
+		$log_flag = false;
 		$execute_time = microtime(true);
- 		try {
+		try {
 			$stmt = $this->prepare($query);
 			foreach ($values as $value) {
 				$i = 1;
@@ -602,7 +602,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 					$query_string,
 					$debug_dump_params
 			);
-print $message;
+//print $message;
 			StaticLog::WriteLog('sql_error', $message);
 
 			throw $pdo_e;
@@ -626,7 +626,99 @@ print $message;
 	/**
 	 * データの削除を行います。
 	 */
-	public function delete () {
+	public function delete ($table_name, array $values = [], $options = []) {
+		$tmp_where	= [];
+		$tmp_data	= [];
+		$tmp_values	= [];
+
+		$unique_indexe_names = $this->getUniqueIndexNames($table_name);
+		$column_name_list = $this->getColumnNames($table_name);
+		$target_indexes = [];
+
+		//カラムの実在チェックとユニークインデックス存在確認を同時に行う
+		if (isset($options['exsist_column_check']) && $options['exsist_column_check']) {
+			foreach ($values as $key => $value) {
+				if (!isset($column_name_list[$key])) {
+					CoreException::RaiseSystemError(sprintf('テーブルに存在しないカラムを指定されました。column name:%s', $key));
+				}
+
+				if (isset($unique_indexe_names[$key])) {
+					foreach ($unique_indexe_names[$key] as $index_name) {
+						$target_indexes[$index_name][] = $key;
+					}
+				}
+			}
+		} else {
+			foreach ($values as $key => $value) {
+				if (!isset($column_name_list[$key])) {
+					unset($values[$key]);
+				}
+
+				if (isset($unique_indexe_names[$key])) {
+					foreach ($unique_indexe_names[$key] as $index_name) {
+						$target_indexes[$index_name][] = $key;
+					}
+				}
+			}
+		}
+
+		$indexes = $this->getIndexes($table_name);
+		$match_indexes = [];
+		foreach ($target_indexes as $index_name => $column_list) {
+			if (!isset($indexes['sorted_column_list'])) {
+				foreach ($indexes[$index_name] as $index) {
+					$indexes['sorted_column_list'][] = $index['column_name'];
+				}
+				sort($indexes['sorted_column_list']);
+			}
+			sort($column_list);
+			if ($indexes['sorted_column_list'] === $column_list) {
+				$match_indexes = array_combine($column_list, $column_list);
+			}
+		}
+
+		if (!empty($match_indexes)) {
+			$match_indexes = array_combine($match_indexes, $match_indexes);
+			foreach ($values as $key => $value) {
+				if (isset($match_indexes[$key])) {
+					$tmp_where[] = $key;
+				} else {
+					$tmp_data[] = $key;
+					$tmp_values[] = $value;
+				}
+			}
+
+			foreach ($tmp_where as $key) {
+				$tmp_values[] = $values[$key];
+			}
+		} else {
+			$tmp_values = $tmp_where = $tmp_data = array_keys($values);
+		}
+
+		$query = sprintf(
+			'DELETE FROM %s WHERE %s = ?',
+			$table_name,
+			implode(' = ? AND ',	$tmp_where)
+		);
+
+		try {
+			$stmt = $this->prepare($query);
+			$i = 1;
+			foreach ($tmp_values as $value) {
+				$stmt->bindValue($i++, $value);
+			}
+			if (!$stmt->execute()) {
+				//
+			}
+			$ret = $stmt->rowCount();
+		} catch (\PDOException $pdo_e) {
+			StaticLog::WriteLog('sql_error', implode(', ', $this->errorInfo()));
+
+			StaticLog::WriteLog('sql_error', serialize($tmp_values));
+			throw $pdo_e;
+		}
+
+		return $stmt->rowCount();
 	}
 
 	//==============================================
@@ -868,15 +960,15 @@ print $message;
 }
 
 	public static function SetCreatePrepare (array $options, $deta_filed, $where = null) {
-		$prepare_name = Arrays::AdjustValue($options, 'prepare_name', ':default::'. microtime(true));
-		buildCreatePlaceholder();
+		$prepare_name = $options['prepare_name'] ?? ':default::'. microtime(true);
+		static::buildCreatePlaceholder();
 		$this->_prepareList[$prepare_name] = $this->prepare($query);
 		return $prepare_name;
 	}
 
 	public static function ReleasePrepare (array $options) {
 		$prepare_key_list = array_keys($this->_prepareList);
-		$prepare_name = Arrays::AdjustValue($options, 'prepare_name', array_pop($prepare_name_list));
+		$prepare_name = $options['prepare_name'] ?? array_pop($prepare_name_list);
 		if (isset($this->_prepareList[$prepare_name])) {
 			unset($this->_prepareList[$prepare_name]);
 		}

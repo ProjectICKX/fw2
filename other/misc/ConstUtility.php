@@ -22,7 +22,6 @@ namespace ickx\fw2\other\misc;
 
 use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\container\DI;
-use ickx\fw2\vartype\arrays\Arrays;
 use ickx\fw2\vartype\strings\Strings;
 
 /**
@@ -99,7 +98,7 @@ class ConstUtility {
 						} else if (!is_array($method) && !function_exists($method[0])) {
 							throw CoreException::RaiseSystemError('実行できない関数名が設定されています。%s', [$method[0]]);
 						}
-						$const_value = call_user_func($method, Arrays::AdjustValue($chunk, 1));
+						$const_value = call_user_func($method, $chunk[1] ?? null);
 						$const_value !== null ?: $null_count++;
 						return $const_value;
 					case 'CONST':
@@ -118,8 +117,8 @@ class ConstUtility {
 						$chunk = explode('|', $matches[2]);
 
 						$file_path = $chunk[0];
-						$target_row = Arrays::AdjustValue($chunk, 1, 1);
-						$default_value = Arrays::AdjustValue($chunk, 2, '');
+						$target_row = $chunk[1] ?? 1;
+						$default_value = $chunk[2] ?? '';
 
 						if ($file_path == '') {
 							return $default_value;

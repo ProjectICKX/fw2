@@ -120,15 +120,16 @@ class PhpIni implements interfaces\IPhpIniConst {
 	 */
 	public static function ToByte ($size_string) {
 		$size_string = trim($size_string);
-		switch(strtolower($size_string[strlen($size_string)-1])) {
+		list($size, $unit) = str_split($size_string, strlen($size_string) - 1);
+		switch(strtolower($unit)) {
 			case 'g':
-				$size_string *= 1024;
+				$size *= 1024;
 			case 'm':
-				$size_string *= 1024;
+				$size *= 1024;
 			case 'k':
-				$size_string *= 1024;
+				$size *= 1024;
 		}
-		return $size_string;
+		return $size;
 	}
 
 	/**

@@ -40,17 +40,17 @@ trait MethodAccessorTrait {
 		return [
 			[
 				'matcher'	=> "/^CountBy([A-Za-z0-9]+)$/",
-				'method'	=> [get_called_class(), '_CountBy'],
+				'method'	=> [static::class, '_CountBy'],
 				'is_last'	=> true,
 			],
 			[
 				'matcher'	=> "/^FindBy([A-Za-z0-9]+)$/",
-				'method'	=> [get_called_class(), '_FindBy'],
+				'method'	=> [static::class, '_FindBy'],
 				'is_last'	=> true,
 			],
 			[
 				'matcher'	=> "/^DistinctBy([A-Za-z0-9]+)$/",
-				'method'	=> [get_called_class(), '_DistinctBy'],
+				'method'	=> [static::class, '_DistinctBy'],
 				'is_last'	=> true,
 			],
 		];
@@ -118,7 +118,7 @@ trait MethodAccessorTrait {
 
 	public static function _FindBy ($name, $arguments, $matches) {
 		if (empty($arguments)) {
-			throw CoreException::RaiseSystemError('%s::%sメソッドの第一引数が設定されていません。', [get_called_class(), $name]);
+			throw CoreException::RaiseSystemError('%s::%sメソッドの第一引数が設定されていません。', [static::class, $name]);
 		}
 		$condition	= [[$arguments[0]]];
 		$options	= isset($arguments[1]) ? $arguments[1] : null;

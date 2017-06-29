@@ -35,12 +35,6 @@ call_user_func(function ($find_package_phar = false) {
 	//==============================================
 	//オートローダーの登録
 	//==============================================
-	//composer用オートローダー登録
-	if (file_exists($composer_autoloade_path = implode('/', [FW2_VENDOR_ROOT_DIR, 'autoload.php']))) {
-		$loader =  require $composer_autoloade_path;
-		\ickx\fw2\core\loader\ClassLoader::UseOtherLoader();
-	}
-
 	$auto_loader_configs = [
 		//Flywheel用オートローダー登録
 		['vendor' => 'ickx', 'package' => 'fw2', 'path' => ['core', 'loader', 'ClassLoader.php'], 'register' => ['\ickx\fw2\core\loader\ClassLoader', 'Register']],
@@ -76,6 +70,13 @@ call_user_func(function ($find_package_phar = false) {
 
 		require $register_path;
 		$register_function();
+	}
+
+	//composer用オートローダー登録
+	if (file_exists($composer_autoloade_path = implode('/', [FW2_VENDOR_ROOT_DIR, 'autoload.php']))) {
+		$composer_loader = require $composer_autoloade_path;
+		\ickx\fw2\core\loader\ClassLoader::SetComposerLoader($composer_loader);
+		$composer_loader->unregister();
 	}
 
 }, isset($find_package_phar) ? $find_package_phar : false);

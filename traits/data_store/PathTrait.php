@@ -49,7 +49,7 @@ trait PathTrait {
 	public static function __callStatic($name, $args = []) {
 		$path = static::GetClassVar($name);
 		if (!$path || (isset($args[0]) && !empty($args[0]))) {
-			return call_user_func_array(get_called_class().'::MakePath', array_merge([$name], $args));
+			return static::MakePath(...array_merge([$name], $args));
 		}
 		return $path;
 	}
@@ -62,7 +62,7 @@ trait PathTrait {
 	 * @return	string	パス
 	 */
 	public static function MakePath ($name, $node_list = [], $path_config = null) {
-		$class_const = get_called_class().'::'.$name;
+		$class_const = static::class.'::'.$name;
 		if (!defined($class_const)) {
 			throw new \Exception(sprintf('未定義のパス定数を設定されました。%s', $class_const));
 		}
@@ -72,12 +72,14 @@ trait PathTrait {
 
 		$path = constant($class_const);
 		$add_node_flag = !empty($node_list);
-		!$add_node_flag ?: $path .= '/'. implode('/', $node_list);
+		!$add_node_flag ?: $path .= '/'. implode('/', (array) $node_list);
 		foreach ($path_config ?: static::PathConfig() as $name => $value) {
 			$path = str_replace('{:'.$name.'}', $value, $path);
 		}
 		$path = str_replace('//', '/', $path);
+
 		$add_node_flag ?: static::SetClassVar($name, $path);
+
 		return $path;
 	}
 

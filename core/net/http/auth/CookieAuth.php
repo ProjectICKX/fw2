@@ -22,10 +22,8 @@ namespace ickx\fw2\core\net\http\auth;
 
 use ickx\fw2\crypt\Hash;
 use ickx\fw2\core\exception\CoreException;
-use ickx\fw2\vartype\arrays\Arrays;
 use ickx\fw2\crypt\OpenSSL;
 use ickx\fw2\compression\CompressionGz;
-use ickx\fw2\core\net\http\Request;
 
 /**
  * Http Cookie Auth Class
@@ -500,7 +498,7 @@ class CookieAuth implements interfaces\IAuth, interfaces\IDigestResponse {
 	 * @return	string	クッキー認証用セッションファイルの保存先
 	 */
 	public static function GetAuthCookieSessionSavePath ($name = self::DEFAULT_CONNECTION_NAME) {
-		return Arrays::AdjustValue(static::GetAuthCookieOptions($name), 'cookie_save_dir', sys_get_temp_dir());
+		return static::GetAuthCookieOptions($name)['cookie_save_dir'] ?? sys_get_temp_dir();
 	}
 
 	/**

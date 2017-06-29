@@ -48,7 +48,17 @@ trait SessionTrait {
 	 * @param	mixed	$value	型
 	 */
 	public static function WriteClassSession ($name, $value, $class_path = null) {
-		Session::Write(static::_GetSeesionClassLayerPath($name, $class_path ?: get_called_class()), $value);
+		Session::Write(static::_GetSeesionClassLayerPath($name, $class_path ?: static::class), $value);
+	}
+
+	/**
+	 * コントローラクラス内で共有されるセッションに値があるか調べます。
+	 *
+	 * @param	string	$name	名前
+	 * @return	mixed	値
+	 */
+	public static function ExistsClassSession ($name = null, $class_path = null) {
+		return Session::Exists(static::_GetSeesionClassLayerPath($name, $class_path ?: static::class));
 	}
 
 	/**
@@ -58,7 +68,7 @@ trait SessionTrait {
 	 * @return	mixed	値
 	 */
 	public static function ReadClassSession ($name = null, $class_path = null) {
-		return Session::Read(static::_GetSeesionClassLayerPath($name, $class_path ?: get_called_class()));
+		return Session::Read(static::_GetSeesionClassLayerPath($name, $class_path ?: static::class));
 	}
 
 	/**
@@ -67,7 +77,7 @@ trait SessionTrait {
 	 * @return	array	SUIDセッション内で共有されているセッション名のリスト。
 	 */
 	public static function GetClassSessionNames ($class_path = null) {
-		return Session::Read(static::_GetSeesionClassLayerPath([], $class_path ?: get_called_class()));
+		return Session::Read(static::_GetSeesionClassLayerPath([], $class_path ?: static::class));
 	}
 
 	/**
@@ -77,14 +87,14 @@ trait SessionTrait {
 	 * @return	mixed	削除された値
 	 */
 	public static function RemoveClassSession ($name, $class_path = null) {
-		return Session::Delete(static::_GetSeesionClassLayerPath($name, $class_path ?: get_called_class()));
+		return Session::Delete(static::_GetSeesionClassLayerPath($name, $class_path ?: static::class));
 	}
 
 	/**
 	 * コントローラクラス内で共有するセッションを削除します。
 	 */
 	public static function DeleteClassSession ($class_path = null) {
-		Session::Delete(static::_GetSeesionClassLayerPath(null, $class_path ?: get_called_class()));
+		Session::Delete(static::_GetSeesionClassLayerPath(null, $class_path ?: static::class));
 	}
 
 	//======================================================
@@ -229,7 +239,7 @@ trait SessionTrait {
 	 * @return bool	SUID内にいる場合はtrue, そうでない場合はfalse
 	 */
 	public static function SeesionOnSu () {
-		return (Request::GetPostData()->__suid !== null);
+		return (Request::GetPostData()->__suid ?? null !== null);
 	}
 
 	//======================================================
@@ -245,7 +255,7 @@ trait SessionTrait {
 		$classes_layer_path = [
 			'fw2',
 			'classes',
-			$class_path ?: get_called_class()
+			$class_path ?: static::class
 		];
 		return array_merge($classes_layer_path, Arrays::AdjustArray($name));
 	}
@@ -283,7 +293,7 @@ trait SessionTrait {
 	protected static function _GetSeesionLayerPath ($name = null) {
 		$base_layer_path = array_merge(
 			static::_GetSeesionSuidLayerPath(),
-			[get_called_class()]
+			[static::class]
 		);
 		return array_merge($base_layer_path, Arrays::AdjustArray($name));
 	}
