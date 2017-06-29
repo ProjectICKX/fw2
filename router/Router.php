@@ -20,8 +20,6 @@
 
 namespace ickx\fw2\router;
 
-use ickx\fw2\vartype\arrays\Arrays;
-
 /**
  * URLルーティング処理を行うクラスです。
  *
@@ -109,7 +107,7 @@ abstract class Router {
 	 * @param	array	$var_parameters		後付けで差し替えたいパラメータ
 	 * @return	mixed	接続パスに存在するURLの場合はstring URL、存在しないURLの場合はbool false
 	 */
-	public static function GetUrl ($controller_name, $action_name, $parameters = [], $var_parameters = []) {
+	public static function GetUrl ($controller_name = null, $action_name = null, $parameters = [], $var_parameters = []) {
 		//未指定の場合はindexとみなす
 		$controller_name	= $controller_name ?: 'index';
 		$action_name		= $action_name ?: 'index';
@@ -199,7 +197,7 @@ abstract class Router {
 
 			//詳細検証：値は初回検証で必ずあると判断されている
 			foreach ($matching_set as $name => $pattern) {
-				if (in_array($name, $var_parameters)) {
+				if (in_array($name, $var_parameters, true)) {
 					continue;
 				}
 
@@ -323,7 +321,7 @@ abstract class Router {
 
 				$protocol = (array) (isset($options['protocol']) ? $options['protocol'] : $default_protocol);
 
-				if (!in_array($current_protocol, $protocol)) {
+				if (!in_array($current_protocol, $protocol, true)) {
 					continue;
 				}
 

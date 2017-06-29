@@ -121,7 +121,7 @@ trait RuleTrait {
 	 * @return	LazyArrayObject	現在のアクションルール
 	 */
 	public function purseActionRule ($trigger = null) {
-		$action_rule_list = $this->getActionRule();
+		$action_rule_list = $this->currentRule ?? $this->getActionRule();
 		$trigger = $this->searchTrigger($action_rule_list);
 
 		if (substr($trigger, 0, 8) === ':router:') {

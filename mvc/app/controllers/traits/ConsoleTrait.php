@@ -20,8 +20,6 @@
 
 namespace ickx\fw2\mvc\app\controllers\traits;
 
-use ickx\fw2\core\exception\CoreException;
-use ickx\fw2\vartype\arrays\Arrays;
 use ickx\fw2\international\encoding\Encoding;
 use ickx\fw2\security\validators\Validator;
 
@@ -71,7 +69,7 @@ trait ConsoleTrait {
 	}
 
 	public static function ConsoleLog ($messages, $options = []) {
-		$options['timestamp'] = Arrays::AdjustValue($options, 'timestamp', true);
+		$options['timestamp'] = $options['timestamp'] ?? true;
 		static::ConsoleEcho($messages, $options);
 	}
 
@@ -137,15 +135,15 @@ trait ConsoleTrait {
 
 	public static function ConsoleEcho ($messages, $options = []) {
 		if (\PHP_SAPI === 'cli') {
-			$left_pad = Arrays::AdjustValue($options, [0, 'left'], 0);
-			$right_pad = Arrays::AdjustValue($options, [1, 'right'], 0);
+			$left_pad = $options[0] ?? $options['left'] ?? 0;
+			$right_pad = $options[1] ?? $options['right'] ?? 0;
 
 			$os_view_encoding = Encoding::GetOsViewEncoding();
 
-			$prefix = Encoding::Adjust(Arrays::AdjustValue($options, [2, 'prefix'], ''), $os_view_encoding);
-			$safix = Encoding::Adjust(Arrays::AdjustValue($options, [3, 'safix'], ''), $os_view_encoding);
+			$prefix = Encoding::Adjust($options[2] ?? $options['prefix'] ?? '', $os_view_encoding);
+			$safix = Encoding::Adjust($options[3] ?? $options['safix'] ?? '', $os_view_encoding);
 
-			$timesampe = Arrays::AdjustValue($options, ['timestamp'], false);
+			$timesampe = $options['timestamp'] ?? false;
 
 			$encoding = isset($options['encoding']) ? $options['encoding'] : 'UTF-8';
 
@@ -170,6 +168,7 @@ trait ConsoleTrait {
 	}
 }
 
+//@TODO support
 /*
 assert
 count

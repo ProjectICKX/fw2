@@ -20,7 +20,6 @@
 
 namespace ickx\fw2\other\pager;
 
-use ickx\fw2\vartype\arrays\Arrays;
 use ickx\fw2\core\exception\CoreException;
 
 /**
@@ -68,8 +67,8 @@ class PagerUtility {
 		//==============================================
 		//オプションの取得と展開
 		//==============================================
-		$in_list_position	= Arrays::AdjustValue($options, 'in_list_position',	3);
-		$max_link_disp		= Arrays::AdjustValue($options, 'max_link_disp',	5);
+		$in_list_position	= $options['in_list_position'] ?? 3;
+		$max_link_disp		= $options['max_link_disp'] ?? 5;
 
 		//==============================================
 		//ページ数の構成
@@ -91,14 +90,18 @@ class PagerUtility {
 		if ($current_page < $in_list_position) {
 			$link_start_page	= 1;
 		} else {
-			$link_start_page	= $current_page - $in_list_position + 2;
-			if ($link_start_page + $max_link_disp > $max_page) {
+			$link_start_page	= $current_page - ceil($in_list_position / 2);
+			if ($link_start_page + $max_link_disp >= $max_page) {
 				$link_start_page	= $max_page - $max_link_disp + 1;
 			}
 		}
 
+		if ($link_start_page < 1) {
+			$link_start_page = 1;
+		}
+
 		//終了位置
-		$link_end_page = $link_start_page + $in_list_position;
+		$link_end_page = $link_start_page + $max_link_disp - 1;
 		if ($link_end_page > $max_page) {
 			$link_end_page = $max_page;
 		}

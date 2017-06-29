@@ -30,7 +30,7 @@
  # @return	string	formタグ
  #}
 {% macro open(attribute_list, action) %}
-{% import "macros/utilitys/tag.macro.twig" as tags %}{{ form_open(attribute_list.method|default('POST')) }}
+{% import _self as _forms %}{% import "macros/utilitys/tag.macro.twig" as tags %}{{ form_open(attribute_list.method|default('POST')) }}
 {% if file_upload('max_file_size') > 0 %}
 <form method="POST" action="{{ action|default(current_url()) }}" enctype="multipart/form-data"{{ tags.attr(attribute_list, ['action', 'method', 'enctype']) }}>
 <input type="hidden"  name="MAX_FILE_SIZE" value="{{ file_upload('max_file_size') }}" />
@@ -39,7 +39,7 @@
 {% endif %}
 {% filter del_lf|raw %}
 {% if form_data('__suid') %}
-{{ _self.hidden('__suid', form_data('__suid')) }}
+{{ _forms.hidden('__suid', form_data('__suid')) }}
 {% endif %}
 {% endfilter %}
 {% endmacro %}

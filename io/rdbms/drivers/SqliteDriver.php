@@ -141,8 +141,8 @@ class SqliteDriver extends abstracts\RdbmsDriverAbstract {
 		return [
 			//数値
 			'INTEGER'			=> \PDO::PARAM_INT,
-			'NUMERIC'			=> \PDO::PARAM_INT,
-			'REAL'				=> \PDO::PARAM_INT,
+			'NUMERIC'			=> \PDO::PARAM_STR,
+			'REAL'				=> \PDO::PARAM_STR,
 			//文字・文字列
 			'TEXT'				=> \PDO::PARAM_STR,
 			//バイナリ
@@ -225,7 +225,7 @@ class SqliteDriver extends abstracts\RdbmsDriverAbstract {
 				'default'			=> $columns['dflt_value'],
 				'auto_increment'	=> $auto_increment_column_name === $columns['name'],
 				'comment'			=> '',
-				'primary_key'		=> filter_var($columns['pk'], FILTER_VALIDATE_BOOLEAN),
+				'primary_key'		=> $columns['pk'],
 				'raw_data'			=> $columns,
 				'pdo_param'			=> $pdo_param_list[$columns['type']],
 			];
@@ -267,7 +267,6 @@ class SqliteDriver extends abstracts\RdbmsDriverAbstract {
 						'raw_data'			=> null,
 					];
 				}
-				break;
 			}
 		}
 

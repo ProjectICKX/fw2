@@ -39,7 +39,7 @@ trait ExtensionTrait {
 	public static function IsCsvExtension ($extension) {
 		return in_array($extension, [
 			static::EXTENSION_CSV,
-		]);
+		], true);
 	}
 
 	/**
@@ -52,6 +52,6 @@ trait ExtensionTrait {
 		return in_array($extension, [
 			static::EXTENSION_HTML,
 			static::EXTENSION_HTM,
-		]);
+		], true);
 	}
 }

@@ -684,4 +684,16 @@ class Strings implements \ArrayAccess, \Iterator {
 		mb_convert_variables('UTF-8', 'UTF-16', $matches[0]);
 		return $matches[0];
 	}
+
+	public static function ToCsv ($data) {
+		$memory = 'php://memory';
+		$mp = fopen($memory, 'bw+');
+		foreach ($data as $row) {
+			fputcsv($mp, $row);
+		}
+		rewind($mp);
+		ob_start(function () use ($mp) {fclose($mp);});
+		fpassthru($mp);
+		return ob_get_flush();
+	}
 }

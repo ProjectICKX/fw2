@@ -25,7 +25,6 @@ use ickx\fw2\core\status\Status;
 use ickx\fw2\international\encoding\Encoding;
 use ickx\fw2\io\file_system\FileSystem;
 use ickx\fw2\basic\outcontrol\OutputBuffer;
-use ickx\fw2\vartype\arrays\Arrays;
 use ickx\fw2\vartype\strings\Strings;
 
 /**
@@ -61,8 +60,10 @@ class Response extends \ickx\fw2\core\net\http\Http {
 	 * @throws	CoreException	値に配列やオブジェクトを設定した場合
 	 */
 	public static function SetCookie ($name, $value, array $options = [], $callback_filter = null) {
-		$expire		= Arrays::AdjustValue($options, 'expire', 0);
-		$path		= Arrays::AdjustValue($options, 'path',		static::SET_COOKIE_DEFAULT);
+		$expire		= $options['expire']	?? 0;
+		$path		= $options['path']		?? static::SET_COOKIE_DEFAULT;
+		$domain		= $options['domain']	?? Request::GetDomainName();
+		$secure		= $options['secure']	?? (Request::GetCurrnetProtocol() === Request::PROTOCOL_SECURE);
 
 		if (is_array($value) || is_object($value)) {
 			throw CoreException::RaiseSystemError('Cookieに配列やオブジェクトを指定することはできません。name:%s', [$name]);
@@ -72,7 +73,7 @@ class Response extends \ickx\fw2\core\net\http\Http {
 			$value = call_user_func($callback_filter, $value);
 		}
 
-		return setcookie($name, $value, $expire, $path, Request::GetDomainName(), true, true);
+		return setcookie($name, $value, $expire, $path, $domain, $secure, true);
 	}
 
 	/**
@@ -83,7 +84,7 @@ class Response extends \ickx\fw2\core\net\http\Http {
 	 * @return	bool		クッキーの設定に成功した場合はtreu 失敗した場合はfalse
 	 */
 	public static function DeleteCookie ($name, array $options = []) {
-		$path		= Arrays::AdjustValue($options, 'path',		static::SET_COOKIE_DEFAULT);
+		$path		= $options['path'] ?? static::SET_COOKIE_DEFAULT;
 
 		if (isset($_COOKIE[$name])) {
 			unset($_COOKIE[$name]);
@@ -105,11 +106,11 @@ class Response extends \ickx\fw2\core\net\http\Http {
 	 * @throws	CoreException	値に配列やオブジェクトを設定した場合
 	 */
 	public static function SetNotSafeCookie ($name, $value = self::SET_COOKIE_DEFAULT, array $options = [], $filter = null) {
-		$expire		= Arrays::AdjustValue($options, 'expire',	static::SET_COOKIE_DEFAULT);
-		$path		= Arrays::AdjustValue($options, 'path',		static::SET_COOKIE_DEFAULT);
-		$domain		= Arrays::AdjustValue($options, 'domain',	static::SET_COOKIE_DEFAULT);
-		$secure		= Arrays::AdjustValue($options, 'secure',	static::SET_COOKIE_DEFAULT);
-		$httponly	= Arrays::AdjustValue($options, 'httponly',	static::SET_COOKIE_DEFAULT);
+		$expire		= $options['expire']	?? static::SET_COOKIE_DEFAULT;
+		$path		= $options['path']		?? static::SET_COOKIE_DEFAULT;
+		$domain		= $options['domain']	?? static::SET_COOKIE_DEFAULT;
+		$secure		= $options['secure']	?? static::SET_COOKIE_DEFAULT;
+		$httponly	= $options['httponly']	?? static::SET_COOKIE_DEFAULT;
 
 		if (is_array($value) || is_object($value)) {
 			throw CoreException::RaiseSystemError('Cookieに配列やオブジェクトを指定することはできません。name:%s', [$name]);
@@ -132,10 +133,10 @@ class Response extends \ickx\fw2\core\net\http\Http {
 	 * @return	bool		クッキーの設定に成功した場合はtreu 失敗した場合はfalse
 	 */
 	public static function DeleteNotSafeCookie ($name, array $options = []) {
-		$path		= Arrays::AdjustValue($options, 'path',		static::SET_COOKIE_DEFAULT);
-		$domain		= Arrays::AdjustValue($options, 'domain',	static::SET_COOKIE_DEFAULT);
-		$secure		= Arrays::AdjustValue($options, 'secure',	static::SET_COOKIE_DEFAULT);
-		$httponly	= Arrays::AdjustValue($options, 'httponly',	static::SET_COOKIE_DEFAULT);
+		$path		= $options['path']		?? static::SET_COOKIE_DEFAULT;
+		$domain		= $options['domain']	?? static::SET_COOKIE_DEFAULT;
+		$secure		= $options['secure']	?? static::SET_COOKIE_DEFAULT;
+		$httponly	= $options['httponly']	?? static::SET_COOKIE_DEFAULT;
 
 		if (isset($_COOKIE[$name])) {
 			unset($_COOKIE[$name]);
@@ -195,13 +196,13 @@ class Response extends \ickx\fw2\core\net\http\Http {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$raise_exception		= Arrays::AdjustValue($options, 'raise_exception',		true);
-		$filename_from_charset	= Arrays::AdjustValue($options, 'from_charset',			Encoding::UTF_8);
-		$filename_to_charset	= Arrays::AdjustValue($options, 'to_charset',			Encoding::SJIS);
-		$lf_code				= Arrays::AdjustValue($options, 'lf_code',				Strings::CRLF);
-		$last_lf_trim			= Arrays::AdjustValue($options, 'last_lf_trim',			true);
-		$emulation_mode			= Arrays::AdjustValue($options, 'emulation_mode',		false);
-		$content_disposition	= Arrays::AdjustValue($options, 'content_disposition',	static::CONTENT_DISPOSITION_ATTACHMENT);
+		$raise_exception		= $options['raise_exception']		?? true;
+		$filename_from_charset	= $options['from_charset']			?? Encoding::UTF_8;
+		$filename_to_charset	= $options['to_charset']			?? Encoding::SJIS;
+		$lf_code				= $options['lf_code']				?? Strings::CRLF;
+		$last_lf_trim			= $options['last_lf_trim']			?? true;
+		$emulation_mode			= $options['emulation_mode']		?? false;
+		$content_disposition	= $options['content_disposition']	?? static::CONTENT_DISPOSITION_ATTACHMENT;
 
 		//==============================================
 		//型確認
@@ -314,10 +315,10 @@ class Response extends \ickx\fw2\core\net\http\Http {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$filename_from_charset	= Arrays::AdjustValue($options, 'from_charset',			Encoding::UTF_8);
-		$filename_to_charset	= Arrays::AdjustValue($options, 'to_charset',			Encoding::SJIS);
-		$chunk_size				= Arrays::AdjustValue($options, 'chunk_size',			static::CHUNK_SIZE);
-		$content_disposition	= Arrays::AdjustValue($options, 'content_disposition',	static::CONTENT_DISPOSITION_ATTACHMENT);
+		$filename_from_charset	= $options['from_charset']			?? Encoding::UTF_8;
+		$filename_to_charset	= $options['to_charset']			?? Encoding::SJIS;
+		$chunk_size				= $options['chunk_size']			?? static::CHUNK_SIZE;
+		$content_disposition	= $options['content_disposition']	?? static::CONTENT_DISPOSITION_ATTACHMENT;
 
 		//==============================================
 		//ファイル存在確認
@@ -401,10 +402,10 @@ class Response extends \ickx\fw2\core\net\http\Http {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$filename_from_charset	= Arrays::AdjustValue($options, 'from_charset',			Encoding::UTF_8);
-		$filename_to_charset	= Arrays::AdjustValue($options, 'to_charset',			Encoding::SJIS);
-		$chunk_size				= Arrays::AdjustValue($options, 'chunk_size',			static::CHUNK_SIZE);
-		$content_disposition	= Arrays::AdjustValue($options, 'content_disposition',	static::CONTENT_DISPOSITION_ATTACHMENT);
+		$filename_from_charset	= $options['from_charset']			?? Encoding::UTF_8;
+		$filename_to_charset	= $options['to_charset']			?? Encoding::SJIS;
+		$chunk_size				= $options['chunk_size']			?? static::CHUNK_SIZE;
+		$content_disposition	= $options['content_disposition']	?? static::CONTENT_DISPOSITION_ATTACHMENT;
 
 		//==============================================
 		//データサイズ取得
@@ -416,7 +417,7 @@ class Response extends \ickx\fw2\core\net\http\Http {
 		//==============================================
 		if ($mime_type === null) {
 			$ext = pathinfo($file_name, \PATHINFO_EXTENSION);
-			$mime_type = isset(self::GetMimeTypeMapForExt()[$ext]) ? self::GetMimeTypeMapForExt()[$ext] : self::MIME_TYPE_BINARY;
+			$mime_type = self::GetMimeTypeMapForExt()[$ext] ?? self::MIME_TYPE_BINARY;
 		}
 
 		//==============================================
@@ -457,5 +458,28 @@ class Response extends \ickx\fw2\core\net\http\Http {
 		//==============================================
 		//処理の終了
 		//==============================================
+	}
+
+	/**
+	 * 拡張子からContent-Typeヘッダを構築し返します。
+	 *
+	 * 該当するContent-Typeヘッダが存在しない場合、application/octet-streamとして返します。
+	 *
+	 * @param	string	$ext	拡張子
+	 * @return	string	Conent-Typeヘッダ
+	 */
+	public static function GetContentTypeHeaderByExt ($ext) {
+		return sprintf('Content-Type: %s', static::GetMimeTypeMapForExt()[$ext] ?? self::MIME_TYPE_BINARY);
+	}
+
+	/**
+	 * 拡張子からContent-Typeヘッダを構築し出力します。
+	 *
+	 * 該当するContent-Typeヘッダが存在しない場合、application/octet-streamとして出力します。
+	 *
+	 * @param	string	$ext	拡張子
+	 */
+	public static function SendContentTypeHeaderByExt ($ext) {
+		header(sprint('Content-Type: %s', static::GetMimeTypeMapForExt()[$ext] ?? self::MIME_TYPE_BINARY));
 	}
 }

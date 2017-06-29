@@ -74,7 +74,7 @@ trait StaticMethodCacheTrait {
 		//初期化
 		//======================================================
 		//実行中のクラス名の特定
-		$current_class = get_called_class();
+		$current_class = static::class;
 
 		//引数の正規化
 		$arguments === null ? $arguments = [] : $arguments = (array) $arguments;

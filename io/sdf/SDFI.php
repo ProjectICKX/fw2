@@ -23,7 +23,6 @@ namespace ickx\fw2\io\sdf;
 use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\io\file_system\IniFile;
 use ickx\fw2\security\validators\Validator;
-use ickx\fw2\vartype\arrays\Arrays;
 use ickx\fw2\vartype\strings\Strings;
 
 /**
@@ -109,7 +108,7 @@ class SDFI {
 		}
 
 		$dsn_options = [];
-		foreach (Arrays::AdjustValue($dsn, 'options', []) as $option) {
+		foreach ($dsn['options'] ?? [] as $option) {
 			$dsn_options[$option['name']] = (int)$option['value'];
 		}
 		$dsn['options'] = $dsn_options;
@@ -202,6 +201,6 @@ class SDFI {
 	 * @return	string	コネクション名
 	 */
 	public static function AdjustConnectionName ($options) {
-		return Arrays::AdjustValue($options, ['connection_name', 0], static::CONNECTION_NAME_DEFAULT);
+		return $options['connection_name'] ?? $options[0] ?? static::CONNECTION_NAME_DEFAULT;
 	}
 }

@@ -64,8 +64,8 @@ trait EscapeTrait {
 
 	public static function EscapeSpecificTagsHtmlFragment ($html, $sanitize_tags = null, $sanitize_attributes = null, $restriction_schemas = null, $restriction_schema_target_list = null, $encoding = null) {
 		!empty($encoding) ?: $encoding = mb_internal_encoding();
-		!empty($sanitize_tags) ?: $sanitize_tags = static::GetDefaultSanitizeTags();
-		!empty($sanitize_attributes) ?: $sanitize_attributes = static::GetDefaultSanitizeAttributes();
+		!empty($sanitize_tags) ?: $sanitize_tags = static::GetDefaultWatchTags();
+		!empty($sanitize_attributes) ?: $sanitize_attributes = static::GetDefaultWatchAttributes();
 		!empty($restriction_schemas) ?: $restriction_schemas = static::GetRestrictionSchemas();
 		!empty($restriction_schema_target_list) ?: $restriction_schema_target_list = static::GetRestrictionSchemaTagets();
 

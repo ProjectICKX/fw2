@@ -20,7 +20,8 @@
 
 namespace ickx\fw2\mvc\app\traits;
 
-use ickx\fw2\io\php_ini\PhpIni;
+use ickx\fw2\core\environment\Environment;
+use ickx\fw2\core\cli\Cli;
 
 /**
  * AppTwigRenderTrait
@@ -110,10 +111,12 @@ trait AppTwigRenderTrait {
 		$render['data'] += (isset($render['data']) ? $render['data'] : []) + Request::GetPostData()->getArrayCopy();
 		$render['parameters'] = $this->request->parameter instanceof \ArrayObject ? $this->request->parameter->getArrayCopy() : $this->request->parameter;
 		$render['querys'] = Request::GetParameters() instanceof \ArrayObject? Request::GetParameters()->getArrayCopy() : Request::GetParameters();
+		$render['route'] = $this->route;
 
 		$render['controller']	= $this->controller;
 		$render['action']		= $this->action;
 
+		$render['has_validator'] = $this->hasValidator;
 		$render['error'] = $this->error;
 		$render['warn'] = $this->warn;
 		$render['info'] = $this->info;
@@ -124,7 +127,8 @@ trait AppTwigRenderTrait {
 		}
 		$render += $render + $options;
 
-		$render['canonical_url']	= isset($render['canonical_url']) ? $render['canonical_url'] : parse_url(''.$_SERVER['REQUEST_URI'], \PHP_URL_PATH);
+		$request_uri = Environment::IsCli() ? (Cli::GetRequestParameterList()[0] ?? '') : $_SERVER['REQUEST_URI'];
+		$render['canonical_url']	= isset($render['canonical_url']) ? $render['canonical_url'] : parse_url(''.$request_uri, \PHP_URL_PATH);
 
 		$render['layout_path']	= implode('.', [Strings::ToSnakeCase($this->layout), $this->mimeType, 'twig']);
 

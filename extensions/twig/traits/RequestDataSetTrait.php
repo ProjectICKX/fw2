@@ -21,7 +21,6 @@
 namespace ickx\fw2\extensions\twig\traits;
 
 use ickx\fw2\container\DI;
-use ickx\fw2\core\net\http\Request;
 use ickx\fw2\vartype\arrays\Arrays;
 
 trait RequestDataSetTrait {

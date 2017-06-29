@@ -20,11 +20,8 @@
 
 namespace ickx\fw2\io\file_system;
 
-use ickx\fw2\vartype\arrays\Arrays;
 use \ickx\fw2\core\exception\CoreException;
 use \ickx\fw2\other\misc\ConstUtility;
-use \ickx\fw2\vartype\strings\Strings;
-use ickx\fw2\io\file_system\status\DirectoryStatus;
 
 /**
  * INI形式ファイルを扱います。
@@ -83,48 +80,97 @@ abstract class IniFile {
 	 * @return	array	設定のリスト
 	 */
 	public static function LoadConfig ($ini_path, $allow_parameter_list = [], $options = []) {
-		//==============================================
-		//ファイルパスの検証
-		//==============================================
-		static::IsReadableFile($ini_path, ['raise_exception' => true, 'name' => Arrays::AdjustValue($options, 'name')]);
+		static $enable_apcu;
 
-		//==============================================
-		//キャッシュリターン
-		//==============================================
-		isset($options['cache_dir']) && static::$_iniCacheFilePathList[$ini_path] = static::GetCacheFilePath($ini_path, $options['cache_dir']);
-		$cache_file_path = isset(static::$_iniCacheFilePathList[$ini_path]) ? static::$_iniCacheFilePathList[$ini_path] : null;
+		if (!isset($enable_apcu)) {
+			$enable_apcu = function_exists('apc_store');
+		}
 
-		if ($cache_file_path !== null) {
-			$ini_set = static::LoadCache($ini_path, $cache_file_path);
-			if ($ini_set !== null) {
-				return $ini_set;
+		if ($enable_apcu) {
+			//==============================================
+			//キャッシュリターン
+			//==============================================
+			isset($options['cache_dir']) && static::$_iniCacheFilePathList[$ini_path] = static::GetCacheFilePath($ini_path, $options['cache_dir']);
+			$cache_file_path = static::$_iniCacheFilePathList[$ini_path] ?? null;
+
+			if ($options['clear'] ?? false) {
+				\apcu_delete($cache_file_path);
 			}
+
+			if ($cache_file_path !== null) {
+				$hit = false;
+				$ini_set = apc_fetch($cache_file_path, $hit);
+				if ($hit === true) {
+					return $ini_set;
+				}
+			}
+
+			//==============================================
+			//設定値の調整
+			//==============================================
+			//設定値の取得
+			$ini_set = parse_ini_file($ini_path, TRUE, INI_SCANNER_RAW);
+
+			//設定名の確定
+			$key = (isset($options['target']) && isset($ini_list[$options['target']])) ? $options['target'] : key($ini_set);
+			if (empty($ini_set)) {
+				return [];
+			}
+
+			//設定値配列の次元を下げる
+			$ini_list = $ini_set[$key];
+
+			//キャッシュが有効な場合はキャッシュファイルを構築する
+			if ($cache_file_path !== null) {
+				apcu_store($cache_file_path, $ini_list);
+			}
+
+			//処理の終了
+			return $ini_list;
+		} else {
+			//==============================================
+			//ファイルパスの検証
+			//==============================================
+			static::IsReadableFile($ini_path, ['raise_exception' => true, 'name' => $options['name'] ?? null]);
+
+			//==============================================
+			//キャッシュリターン
+			//==============================================
+			isset($options['cache_dir']) && static::$_iniCacheFilePathList[$ini_path] = static::GetCacheFilePath($ini_path, $options['cache_dir']);
+			$cache_file_path = static::$_iniCacheFilePathList[$ini_path] ?? null;
+
+			if ($cache_file_path !== null) {
+				$ini_set = static::LoadCache($ini_path, $cache_file_path);
+				if ($ini_set !== null) {
+					return $ini_set;
+				}
+			}
+
+			//==============================================
+			//設定値の調整
+			//==============================================
+			//設定値の取得
+			$ini_set = parse_ini_file($ini_path, TRUE, INI_SCANNER_RAW);
+
+			//設定名の確定
+			$key = (isset($options['target']) && isset($ini_list[$options['target']])) ? $options['target'] : key($ini_set);
+			if (empty($ini_set)) {
+				return [];
+			}
+
+			//設定値配列の次元を下げる
+			$ini_list = $ini_set[$key];
+
+			//キャッシュが有効な場合はキャッシュファイルを構築する
+			if ($cache_file_path !== null) {
+				$parent_cache_dir = dirname($cache_file_path);
+				!file_exists($parent_cache_dir) && mkdir($parent_cache_dir, 0755, true);
+				file_put_contents($cache_file_path, "<?php\n\nreturn " . var_export($ini_list, true));
+			}
+
+			//処理の終了
+			return $ini_list;
 		}
-
-		//==============================================
-		//設定値の調整
-		//==============================================
-		//設定値の取得
-		$ini_set = parse_ini_file($ini_path, TRUE, INI_SCANNER_RAW);
-
-		//設定名の確定
-		$key = (isset($options['target']) && isset($ini_list[$options['target']])) ? $options['target'] : key($ini_set);
-		if (empty($ini_set)) {
-			return [];
-		}
-
-		//設定値配列の次元を下げる
-		$ini_list = $ini_set[$key];
-
-		//キャッシュが有効な場合はキャッシュファイルを構築する
-		if ($cache_file_path !== null) {
-			$parent_cache_dir = dirname($cache_file_path);
-			!file_exists($parent_cache_dir) && mkdir($parent_cache_dir, 0755, true);
-			file_put_contents($cache_file_path, "<?php\n\nreturn " . var_export($ini_list, true));
-		}
-
-		//処理の終了
-		return $ini_list;
 	}
 
 	/**

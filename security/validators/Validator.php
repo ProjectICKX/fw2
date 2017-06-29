@@ -52,9 +52,12 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	const CONFIG_SKIP				= 'skip';
 	const CONFIG_CALLBACK_SKIP		= 'callback_skip';
 	const CONFIG_VALUE				= 'value';
+	const CONFIG_FETCH_FROM_KEYS	= 'fetch_from_keys';
+	const CONFIG_FETCH_ALL			= 'fetch_all';
 	const CONFIG_FORCE_USE_VALUE	= 'force_use_value';
 	const CONFIG_FILTER				= 'filter';
 	const CONFIG_FORCE_VALIDATE		= 'force_validate';
+	const CONFIG_FORCE_ERROR		= 'force_error';
 	const CONFIG_RAISE_EXCEPTION	= 'raise_exception';
 	const CONFIG_IS_LAST			= 'is_last';
 	const CONFIG_PREMISE			= 'premise';
@@ -62,6 +65,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	const CONTIG_SET_VALIDATE_TYPE	= 'set_validate_type';
 	const CONFIG_VALIDATE_SET		= 'validate_set';
 	const CONFIG_STOP_AFTER			= 'stop_after';
+	const CONFIG_RULES				= 'rules';
 
 	const RULE_REQUIRE				= 'require';
 	const RULE_NOT_EMPTY			= 'not_empty';
@@ -96,6 +100,17 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	const OP_NOT_IN					= 'not in';
 
 	//==============================================
+	//For utility const
+	//==============================================
+	const FILES_KEY_LIST			= [
+		'name',
+		'type',
+		'size',
+		'tmp_name',
+		'error',
+	];
+
+	//==============================================
 	//Validation
 	//==============================================
 	/**
@@ -104,13 +119,14 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	 * @param	string	$rule_name	検証ルール名
 	 * @param	string	$value		検証する値
 	 * @param	array	$options	オプション
+	 * @param	array	$meta		メタ情報
 	 * @return	bool	検証に合格した場合:true、検証に失敗した場合:false
 	 * @throws	\ickx\fw2\core\exception\CoreException	検証ルールが実在しなかった場合
 	 */
-	public static function Rule ($rule_name, $value, $options = []) {
+	public static function Rule ($rule_name, $value, $options = [], $meta = []) {
 		$rule_list = static::GetValidateRuleList();
-		if ($rule = isset($rule_list[$rule_name]) ? $rule_list[$rule_name] : false) {
-			return (is_callable($rule[0]) || is_array($rule[0])) ? $rule[0]($value, $options) : preg_match($rule[0], $value) === 1;
+		if ($rule = $rule_list[$rule_name] ?? false) {
+			return (is_callable($rule[0]) || is_array($rule[0])) ? $rule[0]($value, $options, $meta) : preg_match($rule[0], $value) === 1;
 		}
 		throw CoreException::RaiseSystemError('Validation not found. Rule name:%s', [$rule_name]);
 	}
@@ -118,13 +134,16 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	/**
 	 * 検証を行い、検証に失敗した要素についてはメッセージをリストで返します。
 	 *
-	 * @param	mixed	$data				検証対象データ
-	 * @param	array	$data_rule_list		検証ルールリスト
+	 * @param	mixed	$data			検証対象データ
+	 * @param	array	$data_rule_list	検証ルールリスト
+	 * @param	mixed	$data_name		検証対象名
+	 * @param	array	$before_errors		先行検証分のエラーリスト
+	 * @param	array	$meta			メタ情報
 	 * @return	mixed	検証に合格した場合:null、検証に失敗した場合:エラーメッセージの入ったリスト
 	 * @throws	\ickx\fw2\core\exception\CoreException	検証ルールが実在しなかった場合
 	 */
-	public static function Check ($data, $rule_list, $data_name = 0) {
-		$ret = static::BulkCheck([$data_name => $data], [$data_name => $rule_list]);
+	public static function Check ($data, $rule_list, $data_name = 0, $before_errors = [], $meta = []) {
+		$ret = static::BulkCheck([$data_name => $data], [$data_name => $rule_list], $before_errors, $meta);
 		return array_pop($ret)['message'];
 	}
 
@@ -134,10 +153,11 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	 * @param	array	$data				検証対象データ
 	 * @param	array	$data_rule_list		検証ルールリスト
 	 * @param	array	$before_errors		先行検証分のエラーリスト
+	 * @param	array	$meta				チェック実行時のメタ情報
 	 * @return	array	検証に合格した場合:[]、検証に失敗した場合:エラーリスト
 	 * @throws	\ickx\fw2\core\exception\CoreException	検証ルールが実在しなかった場合
 	 */
-	public static function BulkCheck ($data, $data_rule_list, $before_errors = []) {
+	public static function BulkCheck ($data, $data_rule_list, $before_errors = [], $meta = []) {
 		//==============================================
 		//初期化
 		//==============================================
@@ -151,19 +171,31 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 		//==============================================
 		foreach ($data_rule_list as $data_name => $rule_list) {
 			//==============================================
+			// rulesに入れていたものをフラット化する
+			//==============================================
+			if (isset($rule_list[static::CONFIG_RULES])) {
+				$rule_list = array_merge($rule_list, $rule_list[static::CONFIG_RULES]);
+			}
+
+			//==============================================
+			// 特殊系対応
+			//==============================================
+			$is_upload_file = ($rule_list['source'] ?? null) === 'upload';
+
+			//==============================================
 			//ルールごとの初期化
 			//==============================================
 			//ルールリストの初期化：未設定の場合、not_emptyのみ設定されたものと見なす
 			$rule_list = is_string($rule_list) ? [static::RULE_NOT_EMPTY] : $rule_list;
 
 			//強制検証フラグが有効な場合、フラグを変数化する
-			$config_force_validate = isset($rule_list[static::CONFIG_FORCE_VALIDATE]) ? $rule_list[static::CONFIG_FORCE_VALIDATE] : false;
+			$config_force_validate = $rule_list[static::CONFIG_FORCE_VALIDATE] ?? false;
 
 			//強制上書きフラグの取得
-			$config_force_use_value = isset($rule_list[static::CONFIG_FORCE_USE_VALUE]) && $rule_list[static::CONFIG_FORCE_USE_VALUE];
+			$config_force_use_value = $rule_list[static::CONFIG_FORCE_USE_VALUE] ?? false;
 
 			//対象データの取得：フォースバリューが設定されている場合は強制上書き
-			$target_value = isset($data[$data_name]) ? $data[$data_name] : null;
+			$target_value = $is_upload_file ? static::AdjustUploadFile($data, $data_name) : ($data[$data_name] ?? null);
 
 			if (isset($rule_list[static::CONFIG_USE_CURRENT_DATA]) && static::CONFIG_USE_CURRENT_DATA) {
 				$target_value = [$data_name => $data];
@@ -175,13 +207,26 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 				$rule_list[static::CONFIG_FORCE_VALIDATE] = true;
 			}
 
+			if (isset($rule_list[static::CONFIG_FETCH_FROM_KEYS])) {
+				$target_value = [];
+				foreach ((array) $rule_list[static::CONFIG_FETCH_FROM_KEYS] as $name) {
+					$target_value[$name] = $data[$name];
+				}
+				$rule_list[static::CONFIG_FORCE_VALIDATE] = true;
+			}
+
+			if (isset($rule_list[static::CONFIG_FETCH_ALL])) {
+				$target_value = $data;
+				$rule_list[static::CONFIG_FORCE_VALIDATE] = true;
+			}
+
 			//フィルタが有効な場合はフィルタをかける
-			if (($filter = isset($rule_list[static::CONFIG_FILTER]) ? $rule_list[static::CONFIG_FILTER] : null) && is_callable($filter)) {
+			if (($filter = $rule_list[static::CONFIG_FILTER] ?? null) && is_callable($filter)) {
 				$target_value = $filter($target_value);
 			}
 
 			//NULL時スキップフラグがある場合は次のデータへ
-			if ((isset($rule_list[static::CONFIG_NULL_SKIP]) ? $rule_list[static::CONFIG_NULL_SKIP] : null) && !static::Rule(static::RULE_REQUIRE, $target_value)) {
+			if (($rule_list[static::CONFIG_NULL_SKIP] ?? null) && !static::Rule(static::RULE_REQUIRE, $target_value)) {
 				continue;
 			}
 
@@ -216,15 +261,15 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 
 			//ストップ後処理指定があり、有効な値が設定されている場合、デフォルトとして登録する。
 			$stop_after = null;
-			if (isset($rule_list[static::CONFIG_STOP_AFTER]) && in_array($rule_list[static::CONFIG_STOP_AFTER], [static::OPTION_IS_LAST, static::OPTION_RAISE_EXCEPTION])) {
+			if (isset($rule_list[static::CONFIG_STOP_AFTER]) && in_array($rule_list[static::CONFIG_STOP_AFTER], [static::OPTION_IS_LAST, static::OPTION_RAISE_EXCEPTION], true)) {
 				$stop_after = $rule_list[static::CONFIG_STOP_AFTER];
 			}
 
 			//例外対応フラグの取得
-			$config_raise_exception = isset($rule_list[static::CONFIG_RAISE_EXCEPTION]) ? $rule_list[static::CONFIG_RAISE_EXCEPTION] : false;
+			$config_raise_exception = $rule_list[static::CONFIG_RAISE_EXCEPTION] ?? false;
 
 			//エラー時停止フラグの取得
-			$config_is_last = isset($rule_list[static::CONFIG_IS_LAST]) && $rule_list[static::CONFIG_IS_LAST];
+			$config_is_last = $rule_list[static::CONFIG_IS_LAST] ?? false;
 
 			//値によるバリデーションセットの切り替え
 			if (isset($rule_list[static::CONTIG_SET_VALIDATE_TYPE]) && is_callable($rule_list[static::CONTIG_SET_VALIDATE_TYPE])) {
@@ -245,18 +290,18 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 			//オプションの初期化
 			//----------------------------------------------
 			//ルール共通prefixの取得
-			$prefix = isset($rule_list[static::CONFIG_PREFIX]) ? $rule_list[static::CONFIG_PREFIX] : '';
+			$prefix = $rule_list[static::CONFIG_PREFIX] ?? '';
 
 			//ルール共通safixの取得
-			$safix = isset($rule_list[static::CONFIG_SAFIX]) ? $rule_list[static::CONFIG_SAFIX] : '';
+			$safix = $rule_list[static::CONFIG_SAFIX] ?? '';
 
 			//単語置換帖
 			$message_list = [];
-			foreach (isset($rule_list[static::CONFIG_VARS]) ? $rule_list[static::CONFIG_VARS] : [] as $target => $text) {
+			foreach ($rule_list[static::CONFIG_VARS] ?? [] as $target => $text) {
 				$message_list[$target] = $text;
 			}
 
-			if ($title = isset($rule_list[static::CONFIG_TITLE]) ? $rule_list[static::CONFIG_TITLE] : null) {
+			if ($title = $rule_list[static::CONFIG_TITLE] ?? null) {
 				$message_list[static::CONFIG_TITLE] = $title;
 			}
 
@@ -265,7 +310,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 			}
 
 			//error配列に登録する名前
-			$error_form_name = isset($rule_list[static::CONFIG_NAME]) ? $rule_list[static::CONFIG_NAME] : $data_name;
+			$error_form_name = $rule_list[static::CONFIG_FORCE_ERROR] ?? $rule_list[static::CONFIG_NAME] ?? $data_name;
 
 			//----------------------------------------------
 			//実行前最終調整
@@ -345,7 +390,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 				}
 
 				//強制検証フラグの初期化
-				$option_force_validate = isset($options[static::OPTION_FORCE_VALLIDATE]) ? $options[static::OPTION_FORCE_VALLIDATE] : $config_force_validate;
+				$option_force_validate = $options[static::OPTION_FORCE_VALLIDATE] ?? $config_force_validate;
 
 				//----------------------------------------------
 				//検証
@@ -354,7 +399,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 				$work_value = $target_value;
 
 				//キーを見る設定にされている場合はarray_keysをかける
-				if (isset($options[static::OPTION_SEE_ARRAY_KEYS]) ? $options[static::OPTION_SEE_ARRAY_KEYS] : false) {
+				if ($options[static::OPTION_SEE_ARRAY_KEYS] ?? false) {
 					if (!static::Rule(static::RULE_IS_ARRAY, $work_value, $options) && !$work_value instanceof \ArrayObject) {
 						throw \ickx\fw2\core\exception\CoreException::RaiseSystemError('array_keysオプションが与えられていますが値が配列ではありません。is_arrayオプション使用時はそれより前にis_arrayルールで値を検証してください。 value:%s', [$target_value]);
 					}
@@ -367,21 +412,25 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 				}
 
 				//対象を配列と見なさない場合、更に一段深くする
-				if (isset($options[static::OPTION_NOT_DEAL_ARRAY]) ? $options[static::OPTION_NOT_DEAL_ARRAY] : false) {
+				if ($options[static::OPTION_NOT_DEAL_ARRAY] ?? false) {
 					$work_value = [$work_value];
 				} else {
 					//ルールに突合させて検証
 					if ($rule_name === static::RULE_IS_ARRAY) {
 						$work_value = [$work_value];
 					} else {
-						$work_value = (array) $work_value;
+						if ($work_value instanceof \ArrayObject) {
+							$work_value = $work_value->getArrayCopy();
+						} else {
+							$work_value = (array) $work_value;
+						}
 					}
 				}
 
 				//強制検証フラグが無効な場合の処理
 				if (!$option_force_validate) {
 					//ルールレベルでの空時スキップ判定時はスキップされない
-					if (isset($options[static::OPTION_EMPTY_SKIP]) ? $options[static::OPTION_EMPTY_SKIP] : false && static::Rule(static::RULE_NOT_EMPTY, $work_value)) {
+					if ($options[static::OPTION_EMPTY_SKIP] ?? false && static::Rule(static::RULE_NOT_EMPTY, $work_value)) {
 					continue;
 				}
 
@@ -406,31 +455,49 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 					}
 				}
 
+				//is array modeが有効か確認
+				$mode_is_array = $options[static::RULE_IS_ARRAY] ?? false;
+
 				//ループ回数カウント
 				$idx = 0;
 
+				//メタ情報更新
+				$tmp_meta = $meta;
+				$tmp_meta['loop_index']	= $idx;
+
+				$is_last = false;
+
 				//検証の実行
 				foreach ($work_value as $key => $value) {
-					if (!static::Rule($rule_name, $value, $options)) {
+					if (($validator_message = static::Rule($rule_name, $value, $options, $tmp_meta)) !== true) {
 						//繰り返し要素用エラーメッセージの更新
 						$message_list['loop_index0'] = $idx;
 						$message_list['loop_index'] = $idx + 1;
 						$message_list['key'] = $key;
 
+						//
+						if (is_array($validator_message)) {
+							$validator_message['validator_message'] = $validator_message['validator_message'];
+						} else {
+							$validator_message = ['validator_message' => $validator_message];
+						}
+
 						//エラーメッセージの構築
-						list($message, $message_list) = static::CreateErrorMessage($rule_name, $message_list, $prefix, $safix, $options, $value);
+						list($message, $message_list) = static::CreateErrorMessage($rule_name, $message_list, $validator_message, $prefix, $safix, $options, $value, $tmp_meta);
 
 						//メッセージがまだない場合のみリストに追加
-						if (!isset($error_message_list[$error_form_name][$message])) {
-							$errors[$error_form_name][] = [
-								'message'	=> $message,
-								'options'	=> $options,
-							];
-							$error_message_list[$error_form_name][$message] = true;
+						foreach ((array) $error_form_name as $target_form_name) {
+							if (!isset($error_message_list[$target_form_name][$message])) {
+								$errors[$target_form_name][] = [
+									'message'	=> $message,
+									'options'	=> $options,
+								];
+								$error_message_list[$target_form_name][$message] = true;
+							}
 						}
 
 						//ルールセットにおいて例外判定がある場合は次の処理へ
-						if ((isset($options[static::OPTION_RAISE_EXCEPTION]) ? $options[static::OPTION_RAISE_EXCEPTION] : $config_raise_exception) || $stop_after === static::OPTION_RAISE_EXCEPTION) {
+						if (($options[static::OPTION_RAISE_EXCEPTION] ?? $config_raise_exception) || $stop_after === static::OPTION_RAISE_EXCEPTION) {
 							if (is_array($value)) {
 								$value = implode(', ', $value);
 							}
@@ -438,11 +505,16 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 						}
 
 						//ルールセットにおいて末尾判定がある場合は次の処理へ
-						if ((isset($options[static::OPTION_IS_LAST]) ? $options[static::OPTION_IS_LAST] : $config_is_last) || $stop_after === static::OPTION_IS_LAST) {
+						$is_last = ($options[static::OPTION_IS_LAST] ?? $config_is_last) || $stop_after === static::OPTION_IS_LAST;
+						if ($mode_is_array !== true && $is_last) {
 							break 2;
 						}
 					}
 					$idx++;
+				}
+
+				if ($is_last) {
+					break;
 				}
 			}
 		}
@@ -456,51 +528,55 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	/**
 	 * エラーメッセージを構築します。
 	 *
-	 * @param	string	$rule_name		ルール名
-	 * @param	array	$message_list	既存の置換用メッセージリスト
-	 * @param	string	$prefix			メッセージプリフィックス
-	 * @param	string	$safix			メッセージサフィックス
-	 * @param	array	$options		オプション
-	 * @param	mixed	$value			値
+	 * @param	string	$rule_name			ルール名
+	 * @param	array	$message_list		既存の置換用メッセージリスト
+	 * @param	array	$validator_message	バリデータが返したメッセージ
+	 * @param	string	$prefix				メッセージプリフィックス
+	 * @param	string	$safix				メッセージサフィックス
+	 * @param	array	$options			オプション
+	 * @param	mixed	$value				値
 	 * @return	array	エラーメッセージと更新されたメッセージリストの配列
 	 */
-	public static function CreateErrorMessage ($rule_name, array $message_list = [], $prefix = '', $safix = '', array $options = [], $value = null) {
+	public static function CreateErrorMessage ($rule_name, $message_list = [], $validator_message = [], $prefix = '', $safix = '', $options = [], $value = null, $meta = []) {
 		//エラーメッセージの構築
-		$ret = isset($options['message']) ? $options['message'] : static::GetErrorMessage($rule_name);
+		$ret = $options['message'] ?? static::GetErrorMessage($rule_name);
+		if (is_object($ret) && is_callable($ret)) {
+			$ret = $ret($value, $options, $meta);
+		}
 
 		//メッセージの構築
-		$message_list += $message_list + $options + static::GetExtraReplaceValues($rule_name, $value, $options);
+		$message_list += array_merge($message_list + $options + static::GetExtraReplaceValues($rule_name, $value, $options), $validator_message);
 
 		//メッセージの差し替え
-		preg_match_all("/\{:([^:]+)(?::(0|[1-9][0-9]*))?\}/", $ret, $matches, \PREG_SET_ORDER);
-		foreach ($matches as $stage) {
-			if (isset($message_list[$stage[1]])) {
-				$message = $message_list[$stage[1]];
-			} else {
-				switch ($stage[1]) {
-					case 'value':
-						$message = $value;
-						break;
-					case 'encoding':
-						$message = static::DetectEncoding($value, $options);
-						break;
-					default:
-						if (isset($message_list[$stage[2]])) {
-				$message = $message_list[$stage[2]];
+		$before_ret = '';
+		while (preg_match_all("/\{:([^:]+)(?::(0|[1-9][0-9]*))?\}/u", $ret, $matches, \PREG_SET_ORDER) !== false && $before_ret !== $ret) {
+			$before_ret = $ret;
+			foreach ($matches as $stage) {
+				if (isset($message_list[$stage[1]])) {
+					$message = $message_list[$stage[1]];
+				} else {
+					switch ($stage[1]) {
+						case 'value':
+							$message = $value;
 							break;
-						}
-				continue;
-			}
-			}
+						case 'encoding':
+							$message = static::DetectEncoding($value, $options);
+							break;
+						default:
+							$message = $message_list[$stage[2] ?? ''] ?? $stage[0];
+						continue;
+					}
+				}
 
-			if (is_object($message)) {
-				$message = (new \ReflectionObject($message))->hasMethod('__toString') ? (string) $message : '';
-			}
-			if (is_array($message)) {
-				$message = implode(', ', $message);
-			}
+				if (is_object($message)) {
+					$message = (new \ReflectionObject($message))->hasMethod('__toString') ? (string) $message : '';
+				}
+				if (is_array($message)) {
+					$message = implode(', ', $message);
+				}
 
-			$ret = str_replace($stage[0], $message, $ret);
+				$ret = str_replace($stage[0], $message, $ret);
+			}
 		}
 
 		//値の返却
@@ -597,19 +673,20 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	 *
 	 * @param	string	$value		検証する値
 	 * @param	array	$options	オプション
+	 * @param	array	$meta		メタ情報
 	 * @return	bool	検証に合格した場合:true、検証に失敗した場合:false
 	 * @throws	\ickx\fw2\core\exception\CoreException	検証ルールが実在しなかった場合や検証メソッドが存在しない場合、返り値がboolでない場合
 	 */
-	public static function Callback ($value, $options) {
+	public static function Callback ($value, $options, $meta = []) {
 		//==============================================
 		//起動検証と初期化
 		//==============================================
 		//ターゲット関数の取得
-		$function_name = isset($options[0]) ? $options[0] : null;
-		$function_name = $function_name ?: (isset($options['function']) ? $options['function'] : null);
+		$function_name = $options[0] ?? null;
+		$function_name = $function_name ?: ($options['function'] ?? null);
 
 		//引数の取得
-		$args = isset($options['args']) ? $options['args'] : [];
+		$args = $options['args'] ?? [];
 
 		//呼び出し可能か検証
 		if (!is_callable($function_name, false, $callable_name)) {
@@ -619,7 +696,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 		//==============================================
 		//実行
 		//==============================================
-		$ret = call_user_func($function_name, $value, $args, $options);
+		$ret = $function_name($value, $args, $options, $meta);
 
 		//返り値はboolのみ許可
 		if (!is_bool($ret)) {
@@ -647,6 +724,33 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 				static::OPTION_FORCE_VALLIDATE	=> static::OPTION_FORCE_VALLIDATE,
 			];}
 		);
+	}
+
+	public static function AdjustUploadFile ($data, $data_name) {
+		$multiple = is_array($data['name'][$data_name] ?? null);
+
+		$files = [];
+		if ($multiple) {
+			foreach (static::FILES_KEY_LIST as $key) {
+				foreach ($data[$key] as $values) {
+					foreach ($values as $idx => $value) {
+						$files[$idx][$key] = $value;
+					}
+				}
+			}
+		} else {
+			foreach (static::FILES_KEY_LIST as $key) {
+				$files[0][$key] = $data[$key];
+			}
+		}
+
+		foreach ($files as $idx => $file) {
+			if (!isset($file['error']) || !is_int($file['error'])) {
+				$files[0] = null;
+			}
+		}
+
+		return $multiple  ? (empty($files) ? null : $files) : ($files[0] ?? null);
 	}
 
 	/**

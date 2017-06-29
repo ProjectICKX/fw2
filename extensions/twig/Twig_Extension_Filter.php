@@ -48,6 +48,8 @@ class Twig_Extension_Filter extends \Twig_Extension {
 			new \Twig_Filter('var_dump',		'var_dump'),
 			new \Twig_Filter('back_fill',		[$this, 'backFill']),
 
+			new \Twig_Filter('vsprintf',		[$this, 'vsprintf']),
+
 			new \Twig_Filter('sort',			[$this, 'sort']),
 			new \Twig_Filter('rsort',			[$this, 'rSort']),
 			new \Twig_Filter('ksort',			[$this, 'kSort']),
@@ -58,11 +60,21 @@ class Twig_Extension_Filter extends \Twig_Extension {
 			new \Twig_Filter('self_combine',	[$this, 'selfCombine']),
 
 			new \Twig_Filter('shift',			[$this, 'shift']),
+			new \Twig_Filter('current',			'current'),
+			new \Twig_Filter('key',				'key'),
 
 			new \Twig_Filter('adjust',			[$this, 'adjust']),
 
+			new \Twig_Filter('gmdate',			[$this, 'gmdate']),
+
 			//error
 			new \Twig_Filter('adjust_error',	[$this, 'adjustError']),
+
+			new \Twig_Filter('toggle',			[$this, 'toggle']),
+
+			new \Twig_Filter('route_toggle',	[$this, 'routeToggle']),
+
+			new \Twig_Filter('exit',			'exit'),
 
 			//==============================================
 			//error support
@@ -116,7 +128,7 @@ class Twig_Extension_Filter extends \Twig_Extension {
 	 * @return	bool	文字列が含まれている場合true, そうでない場合false
 	 */
 	public function strSearch ($haystack, $needle, $offset = 0) {
-		return strpos($haystack, $needle, $offset) !== false;
+		return mb_strpos($haystack, $needle, $offset) !== false;
 	}
 
 	public function strToTime ($var) {
@@ -199,5 +211,33 @@ class Twig_Extension_Filter extends \Twig_Extension {
 
 	public function adjustError ($label, $name, $default = null) {
 		return Arrays::ExistsLowest(DI::GetClassVar('render'), ['error', $name]) ? $label : $default;
+	}
+
+	public function gmdate ($ts, $format) {
+		return gmdate($format, $ts);
+	}
+
+	public function toggle ($text, $switch = false, $default = '') {
+		return $switch ? $text : $default;
+	}
+
+	public function routeToggle ($text, $route = null, $default = '') {
+		$render = DI::GetClassVar('render');
+
+		$controller_status = $render['controller'] === str_replace('/', '_', $route[0] ?? $route['controller'] ?? 'index');
+
+		$action_status = false;
+		foreach ((array) ($route[1] ?? $route['action'] ?? 'index') as $action) {
+			if ($render['action'] === str_replace('/', '_', $action)) {
+				$action_status = true;
+				break;
+			}
+		}
+
+		return $controller_status && $action_status ? $text : $default;
+	}
+
+	public function vsprintf ($format, $values) {
+		return vsprintf($format, $values ?? []);
 	}
 }

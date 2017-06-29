@@ -31,6 +31,6 @@ namespace ickx\fw2\mvc\app;
  */
 class AppFile {
  	use	\ickx\fw2\mvc\app\files\traits\FileTrait,
- 		\ickx\fw2\traits\magic_methods\CallStatic,
+ 		\ickx\fw2\traits\magic\CallStatic,
  		\ickx\fw2\io\sdf\accessors\traits\MethodAccessorTrait;
 }

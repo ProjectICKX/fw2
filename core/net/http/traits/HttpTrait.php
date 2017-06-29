@@ -42,6 +42,15 @@ trait HttpTrait {
 	 * @return	string	現在のサーバのドメイン名
 	 */
 	public static function GetDomainName () {
+		if (mb_substr($_SERVER['SERVER_SOFTWARE'], 0, 6, 'UTF-8') === 'nginx/') {
+			if (mb_substr($_SERVER['SERVER_NAME'], 0, 1, 'UTF-8') === '~') {
+				if (preg_match(sprintf('@%s@', mb_substr($_SERVER['SERVER_NAME'], 1, null, 'UTF-8')), $_SERVER['HTTP_HOST'], $mat) === false || $mat[0] !== $_SERVER['HTTP_HOST']) {
+					throw new \Exception(sprintf('HTTP HOSTインジェクションの疑いがあります。http host:%s', $_SERVER['HTTP_HOST']));
+				}
+				return $mat[0];
+			}
+		}
+
 		return isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : null;
 	}
 

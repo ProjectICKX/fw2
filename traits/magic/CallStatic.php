@@ -18,7 +18,7 @@
  * @varsion		2.0.0
  */
 
-namespace ickx\fw2\traits\magic_methods;
+namespace ickx\fw2\traits\magic;
 
 use ickx\fw2\core\exception\CoreException;
 
@@ -38,7 +38,7 @@ trait CallStatic {
 	 */
 	public static function __callStatic ($name, $arguments) {
 		static $method_cache;
-		$class_name = get_called_class();
+		$class_name = static::class;
 
 		if (!isset($method_cache[$class_name])) {
 			foreach (array_filter((new \ReflectionClass($class_name))->getMethods(), function ($rm) {return preg_match("/^_(?:bulkA|a)ppendStaticCallMethod.*/", $rm->name) !== 0;}) as $rm) {

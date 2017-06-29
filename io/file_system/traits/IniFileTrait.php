@@ -21,10 +21,7 @@
 namespace ickx\fw2\io\file_system\traits;
 
 use ickx\fw2\core\exception\CoreException;
-use ickx\fw2\io\file_system\status\DirectoryStatus;
 use ickx\fw2\other\misc\ConstUtility;
-use ickx\fw2\vartype\arrays\Arrays;
-use ickx\fw2\vartype\strings\Strings;
 
 /**
  * INI形式ファイルを扱います。
@@ -110,7 +107,7 @@ trait IniFileTrait {
 		//==============================================
 		//ファイルパスの検証
 		//==============================================
-		static::IsReadableFile($ini_path, ['raise_exception' => true, 'name' => Arrays::AdjustValue($options, 'name')]);
+		static::IsReadableFile($ini_path, ['raise_exception' => true, 'name' => $options['name'] ?? null]);
 
 		//==============================================
 		//キャッシュリターン

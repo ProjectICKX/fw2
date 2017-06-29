@@ -31,7 +31,7 @@ namespace ickx\fw2\mvc\app;
  */
 class AppModel {
 	use	\ickx\fw2\mvc\app\models\traits\ModelTrait,
-		\ickx\fw2\traits\magic_methods\CallStatic,
+		\ickx\fw2\traits\magic\CallStatic,
 		\ickx\fw2\io\rdbms\accessors\traits\MethodAccessorTrait;
 
 	protected static $priority	= DBI::PRIORITY_MASTER;

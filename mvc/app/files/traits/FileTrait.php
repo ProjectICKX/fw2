@@ -160,14 +160,14 @@ trait FileTrait {
 			throw CoreException::RaiseSystemError('トランザクションが展開されていません。');
 		}
 		//@TODO EventListにする
-		if (method_exists(get_called_class(), 'DefaultFilter')) {
-			$default_filter = [get_called_class(), 'DefaultFilter'];
+		if (method_exists(static::class, 'DefaultFilter')) {
+			$default_filter = [static::class, 'DefaultFilter'];
 			foreach ($values as $idx => $row) {
 				$values[$idx] = $default_filter($row);
 			}
 		}
-		if (method_exists(get_called_class(), 'CreateFilter')) {
-			$create_filter = [get_called_class(), 'CreateFilter'];
+		if (method_exists(static::class, 'CreateFilter')) {
+			$create_filter = [static::class, 'CreateFilter'];
 			foreach ($values as $idx => $row) {
 				$values[$idx] = $create_filter($row);
 			}
@@ -308,7 +308,7 @@ trait FileTrait {
 	 * @return	string	現在の接続名
 	 */
 	public static function GetConnectionName () {
-		$class_name = get_called_class();
+		$class_name = static::class;
 		if (!isset(static::$_connectionNameList[$class_name])) {
 			if (defined($class_name.'::CONNECTION_NAME')) {
 				$connection_name = $class_name::CONNECTION_NAME;
@@ -326,7 +326,7 @@ trait FileTrait {
 	 * @return	string	現在のファイル名
 	 */
 	public static function GetName () {
-		$class_name = get_called_class();
+		$class_name = static::class;
 		if (!isset(static::$_nameList[$class_name])) {
 			if (defined($class_name.'::NAME')) {
 				$name = $class_name::NAME;
@@ -388,7 +388,7 @@ trait FileTrait {
 	 * @return	array	テーブルが持つ全カラム名のリスト
 	 */
 	public static function GetColumnNameList ($forced_obtain = false, $options = []) {
-		$class_name = get_called_class();
+		$class_name = static::class;
 		$column_list =static::GetColumnList($forced_obtain, $options);
 
 		if ($class_name::$columnNameList !== null && $column_list !== $class_name::$columnNameList) {

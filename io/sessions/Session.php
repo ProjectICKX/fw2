@@ -106,7 +106,22 @@ class Session {
 	public static function Start () {
 		if (static::IsSessionNone()) {
 			static::Init();
-			return session_start();
+			if (session_start() !== false) {
+				return true;
+			}
+
+			switch (session_module_name()) {
+				case 'files':
+					$save_dir= session_save_path();
+					if (!file_exists($save_dir)) {
+						throw CoreException::RaiseSystemError(sprintf('セッションセーブディレクトリがありません。dir path:%s', $save_dir));
+					}
+
+					var_dump(getmyuid(), getmygid(), fileowner($save_dir), get_current_user (),filegroup($save_dir), fileperms($save_dir));
+					break;
+			}
+
+			return false;
 		}
 		return static::Status();
 	}
@@ -242,14 +257,15 @@ class Session {
 	 */
 	public static function DeleteSessionCookie () {
 		if (static::UseCookie()) {
+			$cookie_params = static::CookieParams();
 			setcookie(
 				static::Name(),
 				'',
 				time() - 42000,
-				static::CookieParams()['path'],
-				static::CookieParams()['domain'],
-				static::CookieParams()['secure'],
-				static::CookieParams()['httponly']
+				$cookie_params['path'],
+				$cookie_params['domain'],
+				$cookie_params['secure'],
+				$cookie_params['httponly']
 			);
 		}
 	}
@@ -402,7 +418,7 @@ class Session {
 	 * @see	http://www.php.net/manual/ja/function.session-cache-limiter.php
 	 */
 	public static function SetCacheLimiter ($cache_limiter) {
-		if (!in_array($cache_limiter, static::GetCacheLimiterList())) {
+		if (!in_array($cache_limiter, static::GetCacheLimiterList(), true)) {
 			throw CoreException::RaiseSystemError('存在しないlimiterを設定されました。session_cache_limiter:%s', [$cache_limiter]);
 		}
 		if (static::IsSessionActive()) {

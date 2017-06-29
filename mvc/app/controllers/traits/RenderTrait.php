@@ -69,6 +69,9 @@ trait RenderTrait {
 	/** @var	array	テンプレート用フィルタリスト */
 	public $templateFilterList	= [];
 
+	/** @var	bool	レンダー処理をスキップします */
+	public $skipRender			= false;
+
 	/**
 	 * テンプレートを設定します。
 	 *
@@ -95,12 +98,22 @@ trait RenderTrait {
 
 	abstract public function textRender($template_text, $render = null, $template_dir = []);
 
+	public function cancelRender () {
+		$this->skipRender = true;
+	}
+
 	/**
 	 * 描画しつつ出力
 	 *
 	 * @return	bool	常にtrue
 	 */
 	public function rendering () {
+		if ($this->skipRender) {
+			return true;
+		}
+
+		header(sprintf('Content-Type: %s', Http::GetMimeTypeByExt($this->mimeType ?? 'html')));
+
 		print $this->render();
 		return true;
 	}

@@ -199,7 +199,7 @@ class Arrays {
 	 */
 	public static function GetLowest ($array, $keys) {
 		foreach ((array) $keys as $key) {
-			if (isset($array[$key])) {
+			if (isset($array[$key]) || array_key_exists($key, $array)) {
 				$array = $array[$key];
 			} else {
 				return null;
@@ -215,28 +215,29 @@ class Arrays {
 	 * @param	mixed	$keys	階層
 	 * @return	array	設定後の配列
 	 */
-	public static function SetLowest ($array, $keys, $value) {
+	public static function SetLowest (array $array, $keys, $value) {
 		$keys = (array) $keys;
 		if (empty($array)) {
 			$tmp =& $array;
 		} else {
-			$tmp =& $array[array_shift($keys)];
+			if (is_array($array)) {
+				$tmp =& $array[array_shift($keys)];
+			} else if ($tmp instanceof \ickx\fw2\vartype\arrays\LazyArrayObject) {
+				$tmp =& $array->{array_shift($keys)};
+			}
 		}
 
 		foreach ($keys as $key) {
-			if ($tmp instanceof \ickx\fw2\vartype\arrays\LazyArrayObject) {
-				if ($tmp->$key === null) {
-					$tmp->$key = null;
-				}
-				$tmp =& $tmp->$key;
-			} else {
-				if (!isset($tmp[$key])) {
-					$tmp[$key] = null;
-				}
-				$tmp =& $tmp[$key];
+			$tmp = (array) $tmp;
+			if (!isset($tmp[$key])) {
+				$tmp[$key] = null;
 			}
+			$tmp =& $tmp[$key];
 		}
+
 		$tmp = $value;
+		unset($tmp);
+
 		return $array;
 	}
 
@@ -358,23 +359,5 @@ class Arrays {
 		return [
 			empty($keys) ? $key : sprintf('%s[%s]', $key, implode ('][', $keys)) => $array,
 		];
-	}
-
-	/**
-	 * 与えられた二次元配列をCSVに変換して返します。
-	 *
-	 * @param array $data
-	 * @return string CSV
-	 */
-	public static function ToCsv ($data) {
-		$memory = 'php://memory';
-		$mp = fopen($memory, 'bw+');
-		foreach ($data as $row) {
-			fputcsv($mp, $row);
-		}
-		rewind($mp);
-		ob_start(function () use ($mp) {fclose($mp);});
-		fpassthru($mp);
-		return ob_get_flush();
 	}
 }

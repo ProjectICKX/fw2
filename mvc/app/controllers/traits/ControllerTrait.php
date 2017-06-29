@@ -21,6 +21,8 @@
 namespace ickx\fw2\mvc\app\controllers\traits;
 
 use ickx\fw2\vartype\objects\Objects;
+use ickx\fw2\vartype\arrays\LazyArrayObject;
+
 /**
  * Flywheel2 Controller特性です。
  *
@@ -75,6 +77,8 @@ trait ControllerTrait {
 	/** @var	bool	トリガー開放フラグ */
 	public $keepTrigger		= false;
 
+	public $currentRule		= null;
+
 	/**
 	 * エグゼキュータ
 	 *
@@ -85,13 +89,14 @@ trait ControllerTrait {
 	public static function Execute ($params, $instance = null) {
 		$instance = new static;
 		if ($instance !== null) {
-			$class_name = get_called_class();
+			$class_name = static::class;
 			if (!($instance instanceof $class_name)) {
 				throw CoreException::RaiseSystemError('再利用するインスタンスのクラスが合いません。class_name:%s, instance_class_name:%s', [$class_name, (new \ReflectionObject($instance))->getName()]);
 			}
 		} else {
 			$instance = new static;
 		}
+
 		$params = LazyArrayObject::Create($params);
 		$instance->options		= LazyArrayObject::RecursiveCreate($params->options ?: []);
 		$instance->render		= LazyArrayObject::RecursiveCreate($params->render ?: []);
@@ -117,10 +122,12 @@ trait ControllerTrait {
 
 		$instance->params		= $params;
 
-		$instance->overWriteParameterSet($params->parameter ?: []);
+//@TODO 様子見
+//		$instance->overWriteParameterSet($params->parameter ?: []);
+		$instance->route		= LazyArrayObject::Create($params->parameter ?? []);
 
-		$instance->controller	= $params->controller ?: 'index';
-		$instance->action		= str_replace('/', '_', $params->action ?: 'index');
+		$instance->controller	= str_replace('/', '_', $params->controller ?? 'index');
+		$instance->action		= str_replace('/', '_', $params->action ?? 'index');
 
 		$instance->layout		= $instance->options->layout ?: 'default';
 
@@ -131,17 +138,17 @@ trait ControllerTrait {
 		if (is_array($instance->template) || $instance->template instanceof \ickx\fw2\vartype\arrays\LazyArrayObject) {
 			switch (count($instance->template)) {
 				case 2:
-					$instance->templateDir	= Arrays::AdjustValue($instance->template, ['controller', 0]);
-					$instance->template		= Arrays::AdjustValue($instance->template, ['action', 1]);
+					$instance->templateDir	= $instance->template['controller'] ?? $instance->template[0];
+					$instance->template		= $instance->template['action'] ?? $instance->template[1];
 					break;
 				default:
-					$instance->template		= Arrays::AdjustValue($instance->template, ['action', 0]);
+					$instance->template		= $instance->template['action'] ?? $instance->template[0];
 					break;
 			}
 		}
 
 		if (!$instance->canKeepTrigger() && $instance->trigger === null) {
-			$instance->trigger = $instance->searchTrigger($instance->getActionRule());
+			$instance->trigger = $instance->searchTrigger($instance->currentRule = $instance->getActionRule());
 		}
 
 		$instance->rule			= $instance->purseActionRule($instance->trigger);
@@ -163,6 +170,26 @@ trait ControllerTrait {
 		$instance->keepTrigger = false;
 
 		return $instance;
+	}
+	/**
+	 * Render用に変数をassignします。
+	 *
+	 * @param	$name	変数名
+	 * @param	$value	値
+	 */
+	public function assign ($name, $value) {
+		$this->render[$name] = $value;
+	}
+
+	/**
+	 * 配列で定義されたassign情報を元にRender用に変数をassignします。
+	 *
+	 * @param	$list	assign情報
+	 */
+	public function assigns ($list) {
+		foreach ($list as $name => $value) {
+			$this->render[$name] = $value;
+		}
 	}
 
 	/**
@@ -390,7 +417,7 @@ trait ControllerTrait {
 	 * CLIモード時のコマンドラインパラメータを取得します。
 	 *
 	 */
-	public function getCliRequestParameterList () {
+	public static function getCliRequestParameterList () {
 		if ($_SERVER['argc'] < 3) {
 			return [];
 		}
@@ -420,6 +447,7 @@ trait ControllerTrait {
 				$parameter_list[$current_key] = $argv;
 			}
 		}
+
 		return $parameter_list;
 	}
 

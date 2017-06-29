@@ -43,6 +43,7 @@ abstract class ClassLoader {
 
 	/** @var	string	ベンダールートディレクトリ */
 	protected static $_VendorRootDir = null;
+	protected static $_SrcRootDir = null;
 
 	/** @var	array	既に読み込んでいるファイルのリスト */
 	protected static $_LoadedRealFilePathList = [];
@@ -52,11 +53,9 @@ abstract class ClassLoader {
 		'ClassLoader'	=> 'ickx\fw2\core\loader\ClassLoader',
 	];
 
-	protected static $_UseOtherLoader = false;
+	protected static $_UseComposerLoader = false;
 
-	protected static $class_map_path = null;
-
-	protected static $_ComposerClassMap = null;
+	protected static $_ComposerLoader = null;
 
 	/**
 	 * 自身をオートローダーとして登録します。
@@ -68,7 +67,7 @@ abstract class ClassLoader {
 	public static function Register ($throw = true, $prepend = false) {
 		ini_set('unserialize_callback_func', 'spl_autoload_call');
 
-		static::InitVendorRootDir();
+		static::InitRootDir();
 		spl_autoload_register([static::class, 'AutoLoad'], $throw, $prepend);
 	}
 
@@ -99,10 +98,8 @@ abstract class ClassLoader {
 		}
 
 		$real_file_path = null;
-		if (static::$_UseOtherLoader) {
-			if (file_exists(static::$class_map_path ?? static::$class_map_path = static::$_VendorRootDir . '/composer/autoload_classmap.php')) {
-				$real_file_path = (static::$_ComposerClassMap ?? static::$_ComposerClassMap = include static::$class_map_path)[$class_path] ?? null;
-			}
+		if (static::$_UseComposerLoader) {
+			$real_file_path = ($real_file_path = static::$_ComposerLoader->findFile($load_class_path)) !== false ? realpath($real_file_path ) : $real_file_path;
 		}
 
 		//クラスパスをリアルファイルパスに変換
@@ -113,17 +110,13 @@ abstract class ClassLoader {
 		if (isset(static::$_LoadedRealFilePathList[$real_file_path])) {
 			//クラスエイリアスを設定する
 			if ($alias_class) {
-				class_alias($class_path, $load_class_path, false);
+				class_alias($class_path, $load_class_path, true);
 			}
 			return true;
 		}
 
 		//クラスファイルが存在するか確認
-		if (!file_exists($real_file_path)) {
-			if (static::$_UseOtherLoader) {
-				return true;
-			}
-
+		if (!static::$_UseComposerLoader && !file_exists($real_file_path)) {
 			throw new \Exception(sprintf('class file not found:%s, file path:%s', $class_path, $real_file_path));
 		}
 
@@ -138,14 +131,17 @@ abstract class ClassLoader {
 
 		//クラスエイリアスを設定する
 		if ($alias_class && $class_path !== $load_class_path) {
-			class_alias($class_path, $load_class_path, false);
+			if (!class_exists($load_class_path)) {
+				class_alias($class_path, $load_class_path, true);
+			}
 		}
 
 		//クラスが存在している事を確認
 		//パフォーマンスチューニング Ref) !static::ExistsClass($class_path)
-		if (!class_exists($class_path, false) && !interface_exists($class_path, false) && !trait_exists($class_path, false)) {
-			$class_name = basename($class_path);
-			throw new \Exception('class not found:'. $class_name .' '. $real_file_path);
+		if (!class_exists($class_path, true) && !interface_exists($class_path, true) && !trait_exists($class_path, true)) {
+			if (!static::AutoLoad($class_path, $class_file_ext)) {
+				throw new \Exception('class not found:'. $class_path .' file path:'. $real_file_path);
+			}
 		}
 
 		return true;
@@ -241,7 +237,33 @@ abstract class ClassLoader {
 	/**
 	 * ベンダールートディレクトリを割り出し、キャッシュします。
 	 */
-	protected static function InitVendorRootDir () {
+	protected static function InitRootDir () {
 		static::$_VendorRootDir = static::ExtractVendorRootDir();
+		static::$_SrcRootDir = dirname(static::$_VendorRootDir);
+	}
+
+	public static function GetVendorRootDir () {
+		return static::$_VendorRootDir = static::ExtractVendorRootDir();
+	}
+
+	public static function GetSrcRootDir () {
+		return static::$_SrcRootDir = dirname(static::$_VendorRootDir);
+	}
+
+	public static function GetClassPathList () {
+		return static::$_ClassPathList;
+	}
+
+	public static function GetLoadedRealFilePathList () {
+		return static::$_LoadedRealFilePathList;
+	}
+
+	public static function GetComposerLoader () {
+		return static::$_ComposerLoader;
+	}
+
+	public static function SetComposerLoader ($composer_loader) {
+		static::$_UseComposerLoader = true;
+		static::$_ComposerLoader = $composer_loader;
 	}
 }

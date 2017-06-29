@@ -20,7 +20,6 @@
 
 namespace ickx\fw2\core\net\http;
 
-use ickx\fw2\vartype\strings\Strings;
 use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\core\status\Status;
 
@@ -314,7 +313,7 @@ class Http implements interfaces\IMimeType {
 	 * @return	bool		接続先へのタイムアウトまたは404だった場合はfalse、そうでなければtrue
 	 */
 	public static function UrlExsist ($url, $timeout = 30, $protocol_version = self::VERSION_1_1) {
-		$result = static::HttpHeadRequest($url, $timeout, $protocol_version);
+		$result = static::HeadRequest($url, $timeout, $protocol_version);
 		return isset($result['http']['status']['code']) && $result['http']['status']['code'] !== '404';
 	}
 
@@ -326,7 +325,7 @@ class Http implements interfaces\IMimeType {
 	 * @param	$protocol_version	string	HTTPプロトコルバージョン
 	 * @return	bool		接続先へのタイムアウトまたは404だった場合はfalse、そうでなければtrue
 	 */
-	public static function HttpHeadRequest ($url, $timeout = 30, $protocol_version = self::VERSION_1_1) {
+	public static function HeadRequest ($url, $timeout = 30, $protocol_version = self::VERSION_1_1) {
 		$parsed_url = parse_url($url);
 
 		$host = $parsed_url['host'];
@@ -386,7 +385,7 @@ class Http implements interfaces\IMimeType {
 	 * @param	$protocol_version	string	HTTPプロトコルバージョン
 	 * @return	bool		接続先へのタイムアウトまたは404だった場合はfalse、そうでなければtrue
 	 */
-	public static function HttpPostRequest ($url, $post_data = [], $timeout = 30, $protocol_version = self::VERSION_1_1, $options = []) {
+	public static function PostRequest ($url, $post_data = [], $timeout = 30, $protocol_version = self::VERSION_1_1, $options = []) {
 		$parsed_url = parse_url($url);
 
 		$host = $parsed_url['host'];

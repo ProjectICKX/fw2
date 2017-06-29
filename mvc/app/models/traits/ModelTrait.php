@@ -108,20 +108,34 @@ trait ModelTrait {
 			throw CoreException::RaiseSystemError('トランザクションが展開されていません。');
 		}
 		//@TODO EventListにする
-		if (method_exists(get_called_class(), 'DefaultFilter')) {
-			$default_filter = [get_called_class(), 'DefaultFilter'];
+		if (method_exists(static::class, 'DefaultFilter')) {
+			$default_filter = [static::class, 'DefaultFilter'];
 			foreach ($values as $idx => $row) {
 				$values[$idx] = $default_filter($row);
 			}
 		}
-		if (method_exists(get_called_class(), 'CreateFilter')) {
-			$create_filter = [get_called_class(), 'CreateFilter'];
+		if (method_exists(static::class, 'CreateFilter')) {
+			$create_filter = [static::class, 'CreateFilter'];
 			foreach ($values as $idx => $row) {
 				$values[$idx] = $create_filter($row);
 			}
 		}
 		$options += $options + static::GetDefaultOptions();
 		return DBI::Create(static::GetName(), $values, $options);
+	}
+
+	/**
+	 * データの削除を行います。
+	 *
+	 * @param	array	$values		値
+	 * @param	array	$options	オプション
+	 */
+	public static function Delete ($values, $options = []) {
+		if (!static::InTransaction()) {
+			throw CoreException::RaiseSystemError('トランザクションが展開されていません。');
+		}
+		$options += $options + static::GetDefaultOptions();
+		return DBI::Delete(static::GetName(), $values, $options);
 	}
 
 	//==============================================
@@ -256,7 +270,7 @@ trait ModelTrait {
 	 * @return	string	現在の接続名
 	 */
 	public static function GetConnectionName () {
-		$class_name = get_called_class();
+		$class_name = static::class;
 		if (!isset(static::$_connectionNameList[$class_name])) {
 			if (defined($class_name.'::CONNECTION_NAME')) {
 				$connection_name = $class_name::CONNECTION_NAME;
@@ -274,7 +288,7 @@ trait ModelTrait {
 	 * @return	string	現在のテーブル名
 	 */
 	public static function GetName () {
-		$class_name = get_called_class();
+		$class_name = static::class;
 		if (!isset(static::$_nameList[$class_name])) {
 			if (defined($class_name.'::NAME')) {
 				$name = $class_name::NAME;
@@ -328,6 +342,18 @@ trait ModelTrait {
 	}
 
 	/**
+	 * 現在のテーブルが持つ全プライマリキーを返します。
+	 *
+	 * @param	bool	$forced_obtain	キャッシュを無視して取得するかどうか
+	 * @param	array	$options		オプション
+	 * @return	array	テーブルが持つプライマリキーのリスト
+	 */
+	public static function GetPKeys ($forced_obtain = false, $options = []) {
+		$options += $options + static::GetDefaultOptions();
+		return DBI::GetPkeys($options, static::GetName(), $forced_obtain);
+	}
+
+	/**
 	 * 現在のテーブルが持つ全インデックスを返します。
 	 *
 	 * @param	bool	$forced_obtain	キャッシュを無視して取得するかどうか
@@ -348,7 +374,7 @@ trait ModelTrait {
 	 * @return	array	テーブルが持つ全カラム名のリスト
 	 */
 	public static function GetColumnNameList ($forced_obtain = false, $options = []) {
-		$class_name = get_called_class();
+		$class_name = static::class;
 		$column_list =static::GetColumnList($forced_obtain, $options);
 
 		if ($class_name::$columnNameList !== null && $column_list !== $class_name::$columnNameList) {
@@ -478,7 +504,7 @@ trait ModelTrait {
 			}
 		}
 
-		$options['column_seed'] = Arrays::AdjustValue($options, 'column_seed', static::GetSchemaSeed());
+		$options['column_seed'] = $options['column_seed'] ?? static::GetSchemaSeed();
 		DBI::CreateTable($table_name, $options);
 
 		if ($forced_obtain) {
@@ -488,7 +514,7 @@ trait ModelTrait {
 
 	public static function CreateIndex ($options = [], $forced_obtain = true) {
 		$options += $options + static::GetDefaultOptions();
-		$options['index_seed'] = Arrays::AdjustValue($options, 'index_seed', static::GetIndexSeed());
+		$options['index_seed'] = $options['index_seed'] ?? static::GetIndexSeed();
 		DBI::CreateIndex(static::GetName(), $options);
 		if ($forced_obtain) {
 			DBI::UpdateTableInfo($options, static::GetName());

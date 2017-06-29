@@ -76,7 +76,7 @@ trait MimeTypeTrait {
 	 * @return	bool	PNGファイルのMIME TYPEの場合 bool true、そうでない場合 false
 	 */
 	public static function IsUploadPngImageMimeType ($mime_type) {
-		return in_array($mime_type, static::GetUploadPngImageMimeType());
+		return in_array($mime_type, static::GetUploadPngImageMimeType(), true);
 	}
 
 	/**
@@ -88,7 +88,7 @@ trait MimeTypeTrait {
 	 * @return	bool	JPEGファイルのMIME TYPEの場合 bool true、そうでない場合 false
 	 */
 	public static function IsUploadJpegImageMimeType ($mime_type) {
-		return in_array($mime_type, static::GetUploadJpegImageMimeType());
+		return in_array($mime_type, static::GetUploadJpegImageMimeType(), true);
 	}
 
 	/**
@@ -139,7 +139,7 @@ trait MimeTypeTrait {
 		if (static::IsCurrentUserAgentIe()) {
 			$mime_type_list[] = static::MIME_TYPE_MS_EXCEL;
 		}
-		return in_array($mime_type, $mime_type_list);
+		return in_array($mime_type, $mime_type_list, true);
 	}
 
 	/**

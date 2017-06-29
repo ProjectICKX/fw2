@@ -18,9 +18,7 @@
  * @varsion		2.0.0
  */
 
-namespace ickx\fw2\traits\magic_methods;
-
-use ickx\fw2\core\exception\CoreException;
+namespace ickx\fw2\traits\magic;
 
 /**
  * Flywheel2 Magic method supporter
@@ -45,7 +43,7 @@ trait CallStaticFilterTrait {
 			exit;
 		}
 
-		$current_class = get_called_class();
+		$current_class = static::class;
 
 		$method_name = explode('__', $trait_seed[0])[0];
 		$trait_name = $method_name . 'Trait';
