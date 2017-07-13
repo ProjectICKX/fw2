@@ -563,6 +563,12 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 							$message = static::DetectEncoding($value, $options);
 							break;
 						default:
+							foreach (array_slice($stage, 1) ?? [] as $key) {
+								if (isset($options[$key]) || array_key_exists($key, $options)) {
+									$message = is_null($options[$key]) ? 'NULL' : $options[$key];
+									continue 2;
+								}
+							}
 							$message = $message_list[$stage[2] ?? ''] ?? $stage[0];
 						continue;
 					}

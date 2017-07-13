@@ -34,7 +34,8 @@ use ickx\fw2\vartype\strings\Strings;
  * @varsion		2.0.0
  */
 class Session {
-	use traits\FilesSessionTrait;
+	use traits\FilesSessionTrait,
+		traits\MemcachedSessionTrait;
 
 	/**
 	 * @var	string	キャッシュリミッタ：クライアント及びプロキシにキャッシュを許可

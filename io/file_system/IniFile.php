@@ -221,15 +221,19 @@ abstract class IniFile {
 		$enable_ini_name_list = array_flip($allow_parameter_list);
 
 		foreach ($ini_list as $name => $value) {
-			if (!isset($enable_ini_name_list[$name])) {
+			if (!is_null($enable_ini_name_list) && !isset($enable_ini_name_list[$name])) {
 				throw CoreException::RaiseSystemError('許可されていない設定名が設定されています。name:%s, value:%s', [$name, $value]);
 			}
 			if (is_array($value)) {
 				foreach ($value as $option_name => $option_value) {
-					$config_list[$name][] = [
-						'name'	=> ConstUtility::ReplacePhpConstValue($option_name),
-						'value'	=> static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($option_value), $options),
-					];
+					if ($options['use_option_name_key'] ?? false) {
+						$config_list[$name][ConstUtility::ReplacePhpConstValue($option_name)] = static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($option_value), $options);
+					} else {
+						$config_list[$name][] = [
+							'name'	=> ConstUtility::ReplacePhpConstValue($option_name),
+							'value'	=> static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($option_value), $options),
+						];
+					}
 				}
 			} else {
 				$config_list[$name] = static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($value), $options);

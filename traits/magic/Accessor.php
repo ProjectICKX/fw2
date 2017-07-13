@@ -31,10 +31,11 @@ namespace ickx\fw2\traits\magic;
  */
 trait Accessor {
 	/**
+	 * インスタンスを生成し、指定されたメソッドを実行してからインスタンスを返します。
 	 *
-	 * @param unknown $name
-	 * @param unknown $arguments
-	 * @return unknown
+	 * @param	string	$name		静的呼び出しメソッド名
+	 * @param	string	$arguments	引数
+	 * @return	mixed	値が設定される場合は自身のインスタンス、引数なしの場合はプロパティの設定値
 	 */
 	public static function __callStatic ($name, $arguments) {
 		if (method_exists(static::class, 'init')) {
@@ -44,11 +45,12 @@ trait Accessor {
 	}
 
 	/**
+	 * プロパティマジックアクセサ
 	 *
-	 * @param unknown $name
-	 * @param unknown $arguments
-	 * @throws \RuntimeException
-	 * @return unknown|\ickx\fw2\traits\magic\Accessor
+	 * @param	string	$name		呼び出しメソッド名
+	 * @param	string	$arguments	引数
+	 * @throws	\RuntimeException	プロパティが存在しない場合
+	 * @return	mixed	値が設定される場合は自身のインスタンス、引数なしの場合はプロパティの設定値
 	 */
 	public function __call ($name, $arguments) {
 		if (method_exists($this, $name)) {
@@ -56,14 +58,15 @@ trait Accessor {
 		}
 
 		if (!property_exists($this, $name)) {
-			throw new \RuntimeException('Property fot found.');
+			throw new \RuntimeException(sprintf('Property:%s not found.', $name));
 		}
 
 		if (empty($arguments)) {
-			return $this->$name;
+			return method_exists($this, $name . 'GetPostProcess') ? $this->{$name . 'GetPostProcess'}($this->$name) : $this->$name;
 		}
 
-		$this->$name = $arguments[0];
+		$this->$name = method_exists($this, $name . 'SetPreProcess') ? $this->{$name . 'SetPreProcess'}($arguments[0]) : $arguments[0];
+
 		return $this;
 	}
 }

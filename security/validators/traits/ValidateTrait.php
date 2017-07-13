@@ -95,6 +95,12 @@ trait ValidateTrait {
 			'blank'			=> ["/^\s/", '{:title}には空白以外を入力しないでください。'],
 			'phone'			=> ["/^\d{2,4}\-\d{4}\-\d{4}\$/", '{:title}には電話番号を入力してください。例：000-0000-0000'],
 
+			//PHP session id
+			'session_id'	=> ["/\A[,0-9a-zA-Z\-]{1,128}\z/", '{:title}にはsession idとして有効な値を入力してください。'],
+
+			//UUID
+			'uuid_v4'		=> ["/\A[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-4[0-9a-fA-F]{3}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\z/", '{:title}にはUUID v4を入力してください。'],
+
 			//e-mail
 			'email'			=> [function ($value, $options, $meta = []) {return is_string(filter_var($value, \FILTER_VALIDATE_EMAIL));}, '{:title}にはemailアドレスを入力してください。例：user@example.com'],
 			'email_char'	=> [function ($value, $options, $meta = []) {return filter_var($value, \FILTER_SANITIZE_EMAIL) === $value;}, '{:title}にはemailアドレスで使用できる文字を入力してください。'],

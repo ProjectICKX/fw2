@@ -41,10 +41,10 @@ class Http implements interfaces\IMimeType {
 	//プロトコル名
 	//==============================================
 	/** @var	string	プロトコル名：HTTP */
-	const PROTOCOL			= 'HTTP';
+	const PROTOCOL			= 'http';
 
 	/** @var	string	プロトコル名：HTTPS */
-	const PROTOCOL_SECURE	= 'HTTPS';
+	const PROTOCOL_SECURE	= 'https';
 
 	//==============================================
 	//プロトコルバージョン

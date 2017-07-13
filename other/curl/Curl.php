@@ -173,4 +173,9 @@ class Curl {
 			'body'				=> $body,
 		];
 	}
+
+	public function capture (&$bind) {
+		$bind = $this;
+		return $this;
+	}
 }
