@@ -44,7 +44,8 @@ class ConstUtility {
 	 */
 	public static function Get ($const_name, $default_value = NULL, $undefined_exception = FALSE) {
 		$separator_pos = Strings::RearPosition($const_name, '::');
-		if ($separator_pos && !class_exists(Strings::Substring($const_name, 0, $separator_pos), TRUE) && $undefined_exception) {
+		$class_path = Strings::Substring($const_name, 0, $separator_pos);
+		if ($separator_pos && !(class_exists($class_path, TRUE) || interface_exists($class_path, TRUE)) && $undefined_exception) {
 			throw CoreException::RaiseSystemError('存在しないクラスが設定されています。const name:%s', [$const_name]);
 		}
 		if (!defined($const_name)) {
@@ -98,7 +99,8 @@ class ConstUtility {
 						} else if (!is_array($method) && !function_exists($method[0])) {
 							throw CoreException::RaiseSystemError('実行できない関数名が設定されています。%s', [$method[0]]);
 						}
-						$const_value = call_user_func($method, $chunk[1] ?? null);
+						$args = array_slice($chunk, 1);
+						$const_value = $method(...$args);
 						$const_value !== null ?: $null_count++;
 						return $const_value;
 					case 'CONST':

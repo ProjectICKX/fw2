@@ -55,6 +55,18 @@ trait FilesSessionTrait {
 	}
 
 	/**
+	 * 現在のセッションファイルパスを取得します。
+	 *
+	 * @return	string	現在のセッションファイルパス
+	 */
+	public static function GetSessionFilePath () {
+		return sprintf('%s/%s%s', session_save_path(), static::SESSION_FILE_NAME_PREFIX, session_id());
+	}
+
+	//==============================================
+	// Files
+	//==============================================
+	/**
 	 * セッションセーブハンドラがfilesの場合の初期処理を行います。
 	 */
 	public static function FilesInit () {
@@ -143,14 +155,5 @@ trait FilesSessionTrait {
 		//処理の終了
 		//==============================================
 		return true;
-	}
-
-	/**
-	 * 現在のセッションファイルパスを取得します。
-	 *
-	 * @return	string	現在のセッションファイルパス
-	 */
-	public static function GetSessionFilePath () {
-		return sprintf('%s/%s%s', session_save_path(), static::SESSION_FILE_NAME_PREFIX, session_id());
 	}
 }

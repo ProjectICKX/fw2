@@ -76,6 +76,11 @@ class Twig_Extension_Filter extends \Twig_Extension {
 
 			new \Twig_Filter('exit',			'exit'),
 
+			new \Twig_Filter('str_pad',			'str_pad'),
+			new \Twig_Filter('to_array',		[$this, 'toArray']),
+			new \Twig_Filter('to_text',			[$this, 'toText']),
+			new \Twig_Filter('camelize',		[$this, 'camelize']),
+
 			//==============================================
 			//error support
 			//==============================================
@@ -239,5 +244,45 @@ class Twig_Extension_Filter extends \Twig_Extension {
 
 	public function vsprintf ($format, $values) {
 		return vsprintf($format, $values ?? []);
+	}
+
+	public function toArray ($value) {
+		return is_array($value) ? $value : [$value];
+	}
+
+	public function camelize ($value) {
+		return ucFirst(str_replace('-', '', $value));
+	}
+
+	public function toText ($value, $null_text = false) {
+		switch (gettype($value)) {
+			case 'boolean':
+				return $value ? 'true' : 'false';
+				break;
+			case 'integer':
+				return (string) $value;
+				break;
+			case 'double':
+				return (string) $value;
+				break;
+			case 'string':
+				return $value;
+				break;
+			case 'array':
+				return empty($value) ? '[]' : implode(', ', $value);
+				break;
+			case 'object':
+				return 'object';
+				break;
+			case 'resource':
+				return 'resource';
+				break;
+			case 'NULL':
+				return $null_text ? 'null' : '';
+				break;
+			case 'unknown type':
+				return 'unknown type';
+				break;
+		}
 	}
 }

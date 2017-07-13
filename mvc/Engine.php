@@ -123,6 +123,15 @@ class Engine {
 		//主処理開始
 		//------------------------------------------------------
 		foreach (Queue::GetIterator() as $route) {
+			if (isset($route['path_through'])) {
+				$real_path = realpath($route['path_through']);
+//@TODO SRC以下以外ははじくようにする
+				if (substr($real_path, 0, 5) !== '/etc/' && file_exists($real_path)) {
+					readfile($route['path_through']);
+				}
+				break;
+			}
+
 			$controller_class = static::GetControllerClassPath($route, $namespace);
 			$controller_instance = $controller_class::Execute($route);
 			switch ($controller_instance->nextRule) {
@@ -150,7 +159,7 @@ class Engine {
 					Flywheel::SetCurrnetUrl($controller_instance->nextUrl);
 					continue;
 				case IController::NEXT_RENDERING:
-					if (!in_array($call_type, ['call', 'caller'])) {
+					if (!in_array($call_type, ['call', 'caller'], true)) {
 						return $controller_instance->rendering();
 					}
 					break;
