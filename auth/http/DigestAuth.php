@@ -219,7 +219,7 @@ class DigestAuth implements \ickx\fw2\auth\interfaces\IDigestAuth {
 	 * @param	string	$request_method	リクエストメソッド
 	 * @return	string	A2レスポンス
 	 */
-	public function createResponseA2 ($uri = null, $request_method = null) {
+	public function createResponseA2 ($uri = null, $method = null) {
 		return $this->responceA2 = Hash::String(
 			implode(static::RESPONSE_SEPARATOR, [
 				$method ?? $this->method ?? Request::GetMethod(),

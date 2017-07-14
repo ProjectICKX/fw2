@@ -65,7 +65,7 @@ abstract class IniFile {
 		if ($static_cache && $cache_file_path !== null) {
 			$parent_cache_dir = dirname($cache_file_path);
 			!file_exists($parent_cache_dir) && mkdir($parent_cache_dir, 0755, true);
-			file_put_contents($cache_file_path, "<?php\n\nreturn " . var_export($ini_list, true));
+			file_put_contents($cache_file_path, sprintf('<?php return %s;', var_export($ini_list, true)));
 		}
 
 		return $ini_list;
@@ -165,7 +165,7 @@ abstract class IniFile {
 			if ($cache_file_path !== null) {
 				$parent_cache_dir = dirname($cache_file_path);
 				!file_exists($parent_cache_dir) && mkdir($parent_cache_dir, 0755, true);
-				file_put_contents($cache_file_path, "<?php\n\nreturn " . var_export($ini_list, true));
+				file_put_contents($cache_file_path, sprintf('<?php return %s;', var_export($ini_list, true)));
 			}
 
 			//処理の終了

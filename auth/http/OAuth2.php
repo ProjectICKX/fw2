@@ -23,7 +23,6 @@ namespace ickx\fw2\auth\http;
 use ickx\fw2\other\curl\Curl;
 use ickx\fw2\core\net\http\Request;
 use ickx\fw2\security\validators\Validator;
-use ickx\fw2\mvc\app\recd\Recd;
 
 /**
  * OAuth2認証を扱います。
@@ -321,14 +320,19 @@ class OAuth2 {
 				}
 
 				// 認可クッキーが無い場合は認可ページへリダイレクト
-				if (empty($authSession = $this->authSession->get())) {
+				if (empty($auth_session = $this->authSession->get())) {
 					// 認証前仮クッキーの発行
 					$code_verifier	= $this->generateCodeVerifier();
+					$code_challenge	= $this->generateCodeChallenge($code_verifier);
+					$state			= $this->generateState();
+
+					$this->authSession->close();
+
 					$this->authSession->tmpUpdate([
 						static::PROPERTY_CODE_VERIFIER		=> $code_verifier,
-						static::PROPERTY_CODE_CHALLENGE		=> $this->generateCodeChallenge($code_verifier),
+						static::PROPERTY_CODE_CHALLENGE		=> $code_challenge,
 						static::PROPERTY_ORIGIN_REQUEST_URL	=> ((bool) $this->isForciblyDefaultAuthedPath && Request::GetMethod() !== 'GET') ? $this->defaultAuthedUrl : is_callable($this->originRequestUrl) ? $this->originRequestUrl()() : $this->originRequestUrl,
-						$this->stateParamName				=> $state = $this->generateState(),
+						$this->stateParamName				=> $state,
 					]);
 
 					// 認可ページへリダイレクト
@@ -337,7 +341,7 @@ class OAuth2 {
 				}
 
 				// 認可クッキーが存在するので、有効期限を確認する
-				$extra_data		= $authSession['raw_data']['extra_data'];
+				$extra_data		= $auth_session['raw_data']['extra_data'];
 				$access_token	= $extra_data['access_token'];
 
 				if (time() - $access_token['start_time'] > $access_token['expires_in']) {
@@ -349,11 +353,16 @@ class OAuth2 {
 						//トークンリフレッシュにも失敗した場合は認可ページへリダイレクト
 						// 認証前仮クッキーの発行
 						$code_verifier	= $this->generateCodeVerifier();
+						$code_challenge	= $this->generateCodeChallenge($code_verifier);
+						$state			= $this->generateState();
+
+						$this->authSession->close();
+
 						$this->authSession->tmpUpdate([
 							static::PROPERTY_CODE_VERIFIER		=> $code_verifier,
-							static::PROPERTY_CODE_CHALLENGE		=> $this->generateCodeChallenge($code_verifier),
+							static::PROPERTY_CODE_CHALLENGE		=> $code_challenge,
 							static::PROPERTY_ORIGIN_REQUEST_URL	=> ((bool) $this->isForciblyDefaultAuthedPath && Request::GetMethod() !== 'GET') ? $this->defaultAuthedUrl : is_callable($this->originRequestUrl) ? $this->originRequestUrl()() : $this->originRequestUrl,
-							$this->stateParamName				=> $state = $this->generateState(),
+							$this->stateParamName				=> $state,
 						]);
 
 						// 認可ページへリダイレクト
@@ -362,8 +371,11 @@ class OAuth2 {
 					}
 				}
 
-				//ここまで到達できている場合、有効な認可があると判断する
-				$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $this->token = $access_token]);
+				// ここまで到達できている場合、有効な認可があると判断する
+				// forwordで遷移する場合でも一回のみupdateされるようにする
+				if ($this->authSession->digestAuth()->nc() !== $auth_session['nc']) {
+					$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $this->token = $access_token]);
+				}
 
 				return true;
 		}
@@ -558,6 +570,17 @@ class OAuth2 {
 			$this->$property_name = $value;
 		}
 
+		return $this;
+	}
+
+	/**
+	 * 現在のインスタンスを参照渡しで引き渡します。
+	 *
+	 * @param	null	$bind
+	 * @return	\ickx\fw2\auth\http\OAuth2	自分自身のインスタンス
+	 */
+	public function capture (&$bind) {
+		$bind = $this;
 		return $this;
 	}
 
