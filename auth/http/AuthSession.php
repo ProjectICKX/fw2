@@ -384,7 +384,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		$cnonce_seed		= Hash::CreateRandomHash($dummy_user_name . random_int(0, 1000) . $dummy_realm, $this->tmpClientSalt, $this->tmpClientKey, $this->tmpSeparatorLength);
 
 		if ($this->getTmpCookieName() && !empty($old_server_data = $this->tmpGet())) {
-			$old_server_data[$this->digestAuth::PROPERTY_NC]++;
+			++$old_server_data[$this->digestAuth::PROPERTY_NC];
 
 			$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . $old_server_data[$this->digestAuth::PROPERTY_NC], $this->tmpClientSalt, $this->tmpClientKey, $this->tmpSeparatorLength))
 			->nc($old_server_data[$this->digestAuth::PROPERTY_NC])
@@ -810,7 +810,13 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		$server_data = $this->getOnServer();
 		$client_data = $this->getOnCookie($server_data['raw_data']['shadow'], $server_data['dummy_password']);
 
-		return $this->valid($server_data, $client_data) ? $server_data : [];
+		if ($this->valid($server_data, $client_data)) {
+			$this->digestAuth->nc($server_data['raw_data']['nc']);
+			return $server_data;
+		} else {
+			$this->digestAuth	= null;
+			return [];
+		}
 	}
 
 	/**
@@ -913,16 +919,12 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	 * @return	bool	認証が正常な場合はtrue、セッションが始まっていない場合はfalse
 	 */
 	public function valid ($server_data, $client_data) {
-		if ($server_data === ['raw_data' => false] && $client_data === false) {
+		if ($server_data === ['raw_data' => false] || $client_data === false) {
 			return false;
 		}
 
 		$server_data	= $server_data['raw_data'];
 		$server_data[$this->digestAuth::PROPERTY_USER_NAME]	= $server_data['shadow'];
-
-		if (!Hash::ValidRandomHash($client_data[$this->digestAuth::PROPERTY_CNONCE], $server_data['cnonce_seed'] . $server_data[$this->digestAuth::PROPERTY_NC], $this->clientKey, $this->clientSalt, $this->separatorLength)) {
-			return false;
-		}
 
 		$check_target_list = [
 			$this->digestAuth::PROPERTY_USER_NAME,
@@ -938,6 +940,10 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			if (($server_data[$name] ?? null) !== ($client_data[$name] ?? null)) {
 				throw new \ErrorException(sprintf('認証セッションに齟齬があります。name:%s, server:%s, client:%s', $name, $server_data[$name] ?? '未設定', $client_data[$name] ?? '未設定'));
 			}
+		}
+
+		if (!Hash::ValidRandomHash($client_data[$this->digestAuth::PROPERTY_CNONCE], $server_data['cnonce_seed'] . $server_data[$this->digestAuth::PROPERTY_NC], $this->clientKey, $this->clientSalt, $this->separatorLength)) {
+			throw new \ErrorException(sprintf('認証セッションに齟齬があります。ランダムハッシュの検証に失敗しました。'));
 		}
 
 		return true;
@@ -1044,6 +1050,9 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	 * @return	array	認証データ
 	 */
 	public function createAuthData ($dummy_user_name, $password, $uri = null, $method = null) {
+		$uri			= $uri ?? $this->digestAuth->uri() ?? static::getDefaultUri();
+		$method			= $method ?? $this->digestAuth->method() ?? Request::GetMethod();
+
 		$response_a1	= $this->digestAuth->createResponseA1($dummy_user_name, $password);
 		$response_a2	= $this->digestAuth->createResponseA2($uri, $method);
 		$response		= $this->digestAuth->createResponse($response_a1, $response_a2);
@@ -1054,7 +1063,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			$this->digestAuth::PROPERTY_NC			=> $this->digestAuth->nc(),
 			$this->digestAuth::PROPERTY_NONCE		=> $this->digestAuth->nonce(),
 			$this->digestAuth::PROPERTY_CNONCE		=> $this->digestAuth->cnonce(),
-			$this->digestAuth::PROPERTY_URI			=> $this->digestAuth->uri(),
+			$this->digestAuth::PROPERTY_URI			=> $uri,
 			$this->digestAuth::PROPERTY_RESPONSE	=> $response,
 		];
 	}
