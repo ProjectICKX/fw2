@@ -100,11 +100,16 @@ abstract class ClassLoader {
 		$real_file_path = null;
 		if (static::$_UseComposerLoader) {
 			$real_file_path = ($real_file_path = static::$_ComposerLoader->findFile($load_class_path)) !== false ? realpath($real_file_path ) : $real_file_path;
+			if (!$real_file_path) {
+				$real_file_path = static::$_ComposerLoader->findFile($class_path);
+			}
 		}
 
 		//クラスパスをリアルファイルパスに変換
 		//パフォーマンスチューニング Ref) static::ClassPathToRealFilePath($class_path, $class_file_ext)
-		$real_file_path  = $real_file_path ?? static::$_VendorRootDir . str_replace(static::NAMESPACE_SEPARATOR, '/', ltrim($class_path, static::NAMESPACE_SEPARATOR)) . $class_file_ext;
+		if ($real_file_path === false) {
+			$real_file_path  = static::$_VendorRootDir . str_replace(static::NAMESPACE_SEPARATOR, '/', ltrim($class_path, static::NAMESPACE_SEPARATOR)) . $class_file_ext;
+		}
 
 		//ファイルがロードされていない場合のみ実行
 		if (isset(static::$_LoadedRealFilePathList[$real_file_path])) {

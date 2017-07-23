@@ -20,11 +20,11 @@
 
 namespace ickx\fw2\io\php_ini;
 
-use ickx\fw2\io\cache\file\ArrayCache;
 use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\io\file_system\FileSystem;
 use ickx\fw2\io\file_system\IniFile;
 use ickx\fw2\vartype\arrays\Arrays;
+use ickx\fw2\io\cache\Cache;
 
 /**
  * php.iniの設定値を扱います。
@@ -246,19 +246,6 @@ class PhpIni implements interfaces\IPhpIniConst {
 	 * @return	array	設定後配列
 	 */
 	public static function ReflectFromIniFile ($ini_file_path, $extension = null, $options = []) {
-		$cache_dir		= isset($options['cache']) ? $options['cache'] : null;
-
-		if ($cache_dir) {
-			$ini = ArrayCache::GetCache($ini_file_path, $cache_dir, $options);
-			if ($ini) {
-				static::Set($ini);
-				return $ini;
-			}
-		}
-
-		//ファイル生存系確認：本当はvalidationでやりたい
-		FileSystem::IsReadableFile($ini_file_path);
-
 		$allow_parameter_list = array_keys((($extension === null) ? static::GetCurrent() : static::GetCurrent($extension)));
 		switch ($extension) {
 			case static::SESSION:
@@ -266,11 +253,6 @@ class PhpIni implements interfaces\IPhpIniConst {
 				break;
 		}
 
-		$ini = IniFile::GetConfig($ini_file_path, $allow_parameter_list, $options);
-		if ($cache_dir) {
-			ArrayCache::SetCache($ini_file_path, $cache_dir, $ini, $options);
-		}
-
-		return static::Set($ini);
+		return static::Set(IniFile::GetConfig($ini_file_path, $allow_parameter_list, $options));
 	}
 }

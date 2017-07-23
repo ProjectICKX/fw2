@@ -814,7 +814,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			$this->digestAuth->nc($server_data['raw_data']['nc']);
 			return $server_data;
 		} else {
-			$this->digestAuth	= null;
+			$this->digestAuth->nc(null);
 			return [];
 		}
 	}

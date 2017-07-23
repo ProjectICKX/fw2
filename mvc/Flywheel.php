@@ -491,12 +491,17 @@ class Flywheel {
 			FilePath::FW2_DEFAULTS_ERROR_INI_PATH(),
 			FilePath::FW2_DEFAULTS_FILE_UPLOAD_INI_PATH(),
 		];
+
+		$ini_cache_dir = FilePath::INI_CACHE_DIR();
+		$options = ['cache_dir' => $ini_cache_dir, 'static_cache' => true];
+		$allow_parameter_list = ['ini_path'];
+
 		foreach ($target_ini_list as $target_ini) {
-			$app_session_ini = IniFile::GetConfig($target_ini, ['ini_path'], ['cache_dir' => FilePath::INI_CACHE_DIR(), 'static_cache' => true]);
+			$app_session_ini = IniFile::GetConfig($target_ini, $allow_parameter_list, $options);
 			if (!isset($app_session_ini['ini_path'])) {
 				throw CoreException::RaiseSystemError('iniファイルパスが設定されていません。');
 			}
-			PhpIni::ReflectFromIniFile($app_session_ini['ini_path']);
+			PhpIni::ReflectFromIniFile($app_session_ini['ini_path'], null, $options);
 		}
 
 		if (!Environment::IsCli()) {
@@ -504,11 +509,11 @@ class Flywheel {
 			if ($session_ini_path === null || $session_ini_path === '' || FileSystem::IsReadableFile($session_ini_path) !== true) {
 				$session_ini_path =FilePath::FW2_DEFAULTS_SESSION_INI_PATH();
 			}
-			$app_session_ini = IniFile::GetConfig($session_ini_path, ['ini_path'], ['cache_dir' => FilePath::INI_CACHE_DIR(), 'static_cache' => true]);
+			$app_session_ini = IniFile::GetConfig($session_ini_path, $allow_parameter_list, $options);
 			if (!isset($app_session_ini['ini_path'])) {
 				throw CoreException::RaiseSystemError('セッション用iniファイルパスが設定されていません。');
 			}
-			PhpIni::ReflectFromIniFile($app_session_ini['ini_path'], PhpIni::SESSION);
+			PhpIni::ReflectFromIniFile($app_session_ini['ini_path'], PhpIni::SESSION, $options);
 		}
 	}
 

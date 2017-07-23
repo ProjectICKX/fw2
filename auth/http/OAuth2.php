@@ -35,7 +35,7 @@ use ickx\fw2\security\validators\Validator;
  */
 class OAuth2 {
 	use	\ickx\fw2\traits\singletons\Multiton,
-	\ickx\fw2\traits\magic\Accessor;
+		\ickx\fw2\traits\magic\Accessor;
 
 	//==============================================
 	// クラスコンスト
@@ -153,6 +153,11 @@ class OAuth2 {
 	 */
 	protected $authSession	= null;
 
+	/**
+	 * @var	bool		認証済み状態管理フラグ
+	 */
+	protected $isAuthed		= false;
+
 	//----------------------------------------------
 	// エンドポイントパス
 	//----------------------------------------------
@@ -173,6 +178,11 @@ class OAuth2 {
 	 * @var	string	接続先ホスト名：スキーマの指定も必要
 	 */
 	protected $authHost				= null;
+
+	/**
+	 * @var	string	API接続先ホスト名：スキーマの指定も必要
+	 */
+	protected $authApiHost			= null;
 
 	/**
 	 * @var	string	クライアントID
@@ -289,6 +299,10 @@ class OAuth2 {
 	 * @return	bool	認可が維持されている場合はtrue、そうでない場合はfalse
 	 */
 	public function auth () {
+		if ($this->isAuthed()) {
+			return true;
+		}
+
 		switch ($this->grantType) {
 			//==============================================
 			// オーサライゼーションコード時の処理
@@ -373,9 +387,9 @@ class OAuth2 {
 
 				// ここまで到達できている場合、有効な認可があると判断する
 				// forwordで遷移する場合でも一回のみupdateされるようにする
-				if ($this->authSession->digestAuth()->nc() !== $auth_session['nc']) {
-					$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $this->token = $access_token]);
-				}
+				$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $this->token = $access_token]);
+
+				$this->isAuthed(true);
 
 				return true;
 		}
@@ -476,7 +490,7 @@ class OAuth2 {
 
 		$start_time	= time();
 
-		$result = Curl::url(sprintf('%s%s', is_callable($this->authHost) ? $this->authHost()() : $this->authHost, $this->accessTokenPath))->headers([
+		$result = Curl::url(sprintf('%s%s', is_callable($this->authApiHost) ? $this->authApiHost()() : $this->authApiHost, $this->accessTokenPath))->headers([
 			'Authorization'	=> sprintf('%s %s', static::AUTHORIZATION_HADER_BASIC, base64_encode(sprintf('%s:%s', $this->clientId, $this->secret))),
 		])->parameters([
 			'response_type'			=> static::RESPONSE_TYPE_CODE,
@@ -517,7 +531,7 @@ class OAuth2 {
 	public function refreshToken ($access_token) {
 		$start_time	= time();
 
-		$result = Curl::url(sprintf('%s%s', is_callable($this->authHost) ? $this->authHost()() : $this->authHost, $this->accessTokenPath))->headers([
+		$result = Curl::url(sprintf('%s%s', is_callable($this->authApiHost) ? $this->authApiHost()() : $this->authApiHost, $this->accessTokenPath))->headers([
 			'Authorization'	=> sprintf('%s %s', static::AUTHORIZATION_HADER_BASIC, base64_encode(sprintf('%s:%s', $this->clientId, $this->secret))),
 		])->bodies([
 			'grant_type'		=> static::GRANT_TYPE_REFRESH_TOKEN,
