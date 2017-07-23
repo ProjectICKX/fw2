@@ -22,6 +22,7 @@ namespace ickx\fw2\io\file_system;
 
 use \ickx\fw2\core\exception\CoreException;
 use \ickx\fw2\other\misc\ConstUtility;
+use ickx\fw2\io\cache\Cache;
 
 /**
  * INI形式ファイルを扱います。
@@ -36,11 +37,11 @@ abstract class IniFile {
 	use traits\DirectoryTrait,
 		traits\FileTrait;
 
-	/** @var キャッシュファイルパス */
-	protected static $_iniCacheFilePathList = [];
+	protected static $_cachePathList	= [];
+	protected static $_cache			= null;
 
 	/**
-	 * 設定ファイルから設定を取得します。
+	 * 動的展開を行い設定ファイルから設定を取得します。
 	 *
 	 * @param	string	$ini_path				設定ファイルのパス
 	 * @param	array	$allow_parameter_list	許可する設定のリスト
@@ -48,31 +49,39 @@ abstract class IniFile {
 	 * @return	array	設定のリスト
 	 */
 	public static function GetConfig ($ini_path, $allow_parameter_list = [], $options = []) {
-		$static_cache = isset($options['static_cache']) && $options['static_cache'];
-		isset($options['cache_dir']) && static::$_iniCacheFilePathList[$ini_path] = static::GetCacheFilePath($ini_path, $options['cache_dir']);
-		$cache_file_path = isset(static::$_iniCacheFilePathList[$ini_path]) ? static::$_iniCacheFilePathList[$ini_path] : null;
+		//==============================================
+		// キャッシュ設定
+		//==============================================
+		$cache = static::$_cache ?? static::$_cache = Cache::init(static::class, $options['cache_storage_type'] ?? null, ...($options['cache_args'] ?? []));
+		$cache_path = static::$_cachePathList[$ini_path] ?? static::$_cachePathList[$ini_path] = static::GetCachePath($ini_path, $options['cache_dir'] ?? '');
 
-		if ($static_cache && $cache_file_path !== null) {
-			$ini_set = static::LoadCache($ini_path, $cache_file_path);
-			if ($ini_set !== null) {
-				return $ini_set;
+		//==============================================
+		// キャッシュリフレッシュ時の処理
+		//==============================================
+		if ($options['cache_refresh'] ?? false) {
+			$cache->remove($cache_path);
+		}
+
+		$static_cache = $options['static_cache'] ?? false;
+		if ($cache_path !== null) {
+			$ini_set = $cache->get($cache_path);
+			if ($cache->state()) {
+				return static::ReflectDynamicConfig($ini_set, $allow_parameter_list, $options, $static_cache ? ConstUtility::REPLACE_MODE_ONLY_CALLBACK : ConstUtility::REPLACE_MODE_ALL);
 			}
 		}
 
-		$ini_list = static::ReflectDynamicConfig(static::LoadConfig($ini_path, $allow_parameter_list, $options), $allow_parameter_list, $options);
+		$ini_set = static::ReflectDynamicConfig(static::LoadConfig($ini_path, $allow_parameter_list, $options), $allow_parameter_list, $options, $static_cache ? ConstUtility::REPLACE_MODE_STATIC : ConstUtility::REPLACE_MODE_ALL);
 
 		//キャッシュが有効な場合はキャッシュファイルを構築する
-		if ($static_cache && $cache_file_path !== null) {
-			$parent_cache_dir = dirname($cache_file_path);
-			!file_exists($parent_cache_dir) && mkdir($parent_cache_dir, 0755, true);
-			file_put_contents($cache_file_path, sprintf('<?php return %s;', var_export($ini_list, true)));
+		if ($cache_path !== null) {
+			$cache->set($cache_path, $ini_set);
 		}
 
-		return $ini_list;
+		return $static_cache ? static::ReflectDynamicConfig($ini_set, $allow_parameter_list, $options, ConstUtility::REPLACE_MODE_ONLY_CALLBACK) : $ini_set;
 	}
 
 	/**
-	 * 設定ファイルから設定を取得します。
+	 * 動的展開を行わず設定ファイルから設定を取得します。
 	 *
 	 * @param	string	$ini_path				設定ファイルのパス
 	 * @param	array	$allow_parameter_list	許可する設定のリスト
@@ -80,97 +89,25 @@ abstract class IniFile {
 	 * @return	array	設定のリスト
 	 */
 	public static function LoadConfig ($ini_path, $allow_parameter_list = [], $options = []) {
-		static $enable_apcu;
+		//==============================================
+		// 設定値の取得と展開
+		//==============================================
+		// 設定値の取得
+		$ini_set = parse_ini_file($ini_path, TRUE, INI_SCANNER_RAW);
 
-		if (!isset($enable_apcu)) {
-			$enable_apcu = function_exists('apc_store');
+		// 有意な値を取れない場合は空配列を返して終了
+		if (empty($ini_set)) {
+			return [];
 		}
 
-		if ($enable_apcu) {
-			//==============================================
-			//キャッシュリターン
-			//==============================================
-			isset($options['cache_dir']) && static::$_iniCacheFilePathList[$ini_path] = static::GetCacheFilePath($ini_path, $options['cache_dir']);
-			$cache_file_path = static::$_iniCacheFilePathList[$ini_path] ?? null;
+		// 設定名の確定
+		$key = $options['target'] ?? key($ini_set);
 
-			if ($options['clear'] ?? false) {
-				\apcu_delete($cache_file_path);
-			}
+		// 設定値配列の次元を下げる
+		$ini_set = $ini_set[$key];
 
-			if ($cache_file_path !== null) {
-				$hit = false;
-				$ini_set = apc_fetch($cache_file_path, $hit);
-				if ($hit === true) {
-					return $ini_set;
-				}
-			}
-
-			//==============================================
-			//設定値の調整
-			//==============================================
-			//設定値の取得
-			$ini_set = parse_ini_file($ini_path, TRUE, INI_SCANNER_RAW);
-
-			//設定名の確定
-			$key = (isset($options['target']) && isset($ini_list[$options['target']])) ? $options['target'] : key($ini_set);
-			if (empty($ini_set)) {
-				return [];
-			}
-
-			//設定値配列の次元を下げる
-			$ini_list = $ini_set[$key];
-
-			//キャッシュが有効な場合はキャッシュファイルを構築する
-			if ($cache_file_path !== null) {
-				apcu_store($cache_file_path, $ini_list);
-			}
-
-			//処理の終了
-			return $ini_list;
-		} else {
-			//==============================================
-			//ファイルパスの検証
-			//==============================================
-			static::IsReadableFile($ini_path, ['raise_exception' => true, 'name' => $options['name'] ?? null]);
-
-			//==============================================
-			//キャッシュリターン
-			//==============================================
-			isset($options['cache_dir']) && static::$_iniCacheFilePathList[$ini_path] = static::GetCacheFilePath($ini_path, $options['cache_dir']);
-			$cache_file_path = static::$_iniCacheFilePathList[$ini_path] ?? null;
-
-			if ($cache_file_path !== null) {
-				$ini_set = static::LoadCache($ini_path, $cache_file_path);
-				if ($ini_set !== null) {
-					return $ini_set;
-				}
-			}
-
-			//==============================================
-			//設定値の調整
-			//==============================================
-			//設定値の取得
-			$ini_set = parse_ini_file($ini_path, TRUE, INI_SCANNER_RAW);
-
-			//設定名の確定
-			$key = (isset($options['target']) && isset($ini_list[$options['target']])) ? $options['target'] : key($ini_set);
-			if (empty($ini_set)) {
-				return [];
-			}
-
-			//設定値配列の次元を下げる
-			$ini_list = $ini_set[$key];
-
-			//キャッシュが有効な場合はキャッシュファイルを構築する
-			if ($cache_file_path !== null) {
-				$parent_cache_dir = dirname($cache_file_path);
-				!file_exists($parent_cache_dir) && mkdir($parent_cache_dir, 0755, true);
-				file_put_contents($cache_file_path, sprintf('<?php return %s;', var_export($ini_list, true)));
-			}
-
-			//処理の終了
-			return $ini_list;
-		}
+		//処理の終了
+		return $ini_set;
 	}
 
 	/**
@@ -180,7 +117,7 @@ abstract class IniFile {
 	 * @param	string	$cache_dir	キャッシュルートディレクトリ
 	 * @return	string	INIキャッシュファイルパス
 	 */
-	public static function GetCacheFilePath ($ini_path, $cache_dir) {
+	public static function GetCachePath ($ini_path, $cache_dir) {
 		$round_dir_path	= md5(dirname($ini_path));
 
 		return sprintf(
@@ -194,49 +131,42 @@ abstract class IniFile {
 	}
 
 	/**
-	 * キャッシュファイルを読み込みます。
-	 *
-	 * @param	string	$ini_path			INIファイルパス
-	 * @param	string	$cache_file_path	キャッシュファイルパス
-	 * @return	array	キャッシュファイルから読み込んだINI
-	 */
-	public static function LoadCache ($ini_path, $cache_file_path) {
-		clearstatcache(false, $cache_file_path);
-		clearstatcache(false, $ini_path);
-		return file_exists($cache_file_path) && filemtime($cache_file_path) < filemtime($ini_path) ? include $cache_file_path : null;
-	}
-
-	/**
 	 * 設定配列内の動的設定を反映します。
 	 *
 	 * @param	array	$ini_list				設定配列
 	 * @param	array	$allow_parameter_list	許可する設定のリスト
+	 * @param	string	$replace_mode			定数展開器の動作モード
+	 * 											ConstUtility::REPLACE_MODE_ALL：全ての定数を展開する
+	 * 											ConstUtility::REPLACE_MODE_STATIC：STATIC：PHP_CALLBACK以外を展開する
+	 * 											ConstUtility::REPLACE_MODE_ONLY_CALLBACK：PHP_CALLBACKのみ展開する
 	 * @return	array	動的設定を反映した配列
 	 */
-	public static function ReflectDynamicConfig ($ini_list, $allow_parameter_list, $options = []) {
+	public static function ReflectDynamicConfig ($ini_list, $allow_parameter_list, $options = [], $replace_mode = ConstUtility::REPLACE_MODE_DEFAULT) {
 		//初期化
 		$config_list = [];
 
 		//許可する設定値のリスト
 		$enable_ini_name_list = array_flip($allow_parameter_list);
 
+		$replace_mode_only_callback = $replace_mode === ConstUtility::REPLACE_MODE_ONLY_CALLBACK;
+
 		foreach ($ini_list as $name => $value) {
 			if (!is_null($enable_ini_name_list) && !isset($enable_ini_name_list[$name])) {
 				throw CoreException::RaiseSystemError('許可されていない設定名が設定されています。name:%s, value:%s', [$name, $value]);
 			}
-			if (is_array($value)) {
+			if (!$replace_mode_only_callback && is_array($value)) {
 				foreach ($value as $option_name => $option_value) {
 					if ($options['use_option_name_key'] ?? false) {
-						$config_list[$name][ConstUtility::ReplacePhpConstValue($option_name)] = static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($option_value), $options);
+						$config_list[$name][ConstUtility::ReplacePhpConstValue($option_name)] = static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($option_value, $replace_mode), $options);
 					} else {
 						$config_list[$name][] = [
 							'name'	=> ConstUtility::ReplacePhpConstValue($option_name),
-							'value'	=> static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($option_value), $options),
+							'value'	=> static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($option_value, $replace_mode), $options),
 						];
 					}
 				}
 			} else {
-				$config_list[$name] = static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($value), $options);
+				$config_list[$name] = $replace_mode_only_callback ? ConstUtility::ReplacePhpConstValue($value, $replace_mode) : static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($value, $replace_mode), $options);
 			}
 		}
 
