@@ -211,6 +211,9 @@ class Twig_Extension_Filter extends \Twig_Extension {
 	}
 
 	public function adjust ($label, $condition, $default = null) {
+		if (is_array($label)) {
+			return $label[$condition] ?? $default;
+		}
 		return $condition ? $label : $default;
 	}
 
