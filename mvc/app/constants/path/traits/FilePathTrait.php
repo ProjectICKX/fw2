@@ -72,6 +72,8 @@ trait FilePathTrait {
 			'COMMONS_NS_PATH'		=> static::GetCommonsNsPath(),
 			'APP_NS_PATH'			=> static::GetAppNsPath(),
 
+			'APP_NS_CLASS_PATH'		=> static::GetAppNsClassPath(),
+
 			'SRC_DIR'				=> static::GetSrcDir(),
 			'CONF_DIR'				=> static::GetConfDir(),
 			'PASSWORD_DIR'			=> static::GetPasswordDir(),
@@ -107,6 +109,15 @@ trait FilePathTrait {
 
 	public static function GetAppNsPath () {
 		return implode('/', [
+			Flywheel::GetVendorName(),
+			Flywheel::GetPackageName(),
+			Flywheel::GetCallType(),
+			Flywheel::GetAppName(),
+		]);
+	}
+
+	public static function GetAppNsClassPath () {
+		return implode("\\", [
 			Flywheel::GetVendorName(),
 			Flywheel::GetPackageName(),
 			Flywheel::GetCallType(),

@@ -22,6 +22,7 @@ namespace ickx\fw2\mvc\app\controllers\traits;
 
 use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\mvc\app\builders\ActionBuilder;
+use ickx\fw2\mvc\app\builders\ValidationBuilder;
 
 /**
  * Flywheel2 Action特性です。
@@ -47,6 +48,10 @@ trait ActionTrait {
 
 	public static function ActionBuilder ($executer, $is_var = false) {
 		return (new ActionBuilder())->executer($executer, $is_var);
+	}
+
+	public static function ValidationBuilder ($executer, $is_var) {
+		return ValidationBuilder()::instance()->executer($executer, $is_var);
 	}
 
 	/**
