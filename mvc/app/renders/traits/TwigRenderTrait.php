@@ -75,16 +75,12 @@ trait TwigRenderTrait {
 
 		$this->templateExtList = $twig_config['extension_list'] ?? [];
 		foreach ($this->templateExtList as $templateExt) {
-			if (file_exists(ClassLoader::ClassPathToRealFilePath($templateExt['name']))) {
-				$twig->addExtension(new $templateExt['name']($templateExt['value']));
-			}
+			$twig->addExtension(new $templateExt['name']($templateExt['value']));
 		}
 
 		$this->templateFilterList = $twig_config['filter_list'] ?? [];
 		foreach ($this->templateFilterList as $templateFilter) {
-			if (file_exists(ClassLoader::ClassPathToRealFilePath($templateFilter['name']))) {
-				$twig->addExtension(new $templateFilter['name']($templateFilter['value']));
-			}
+			$twig->addExtension(new $templateFilter['name']($templateFilter['value']));
 		}
 
 		$this->layout = $this->layout ?: 'default';

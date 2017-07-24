@@ -117,6 +117,7 @@ class ActionBuilder {
 				return $data->$render_var_name;
 			};
 		}
+		ksort($params);
 		return $params;
 	}
 }
