@@ -57,11 +57,10 @@ trait AppTwigRenderTrait {
 
 		if (!file_exists($cache_dir_path)) {
 			$parent_dir = dirname($cache_dir_path);
-			if (is_writable($parent_dir)) {
-				if (!mkdir($cache_dir_path, 0777, true)) {
+			if (!mkdir($cache_dir_path, 0777, true)) {
+				if (is_writable($parent_dir)) {
 					throw CoreException::RaiseSystemError('Twig用キャッシュディレクトリを作成できません。親ディレクトリに書き込み権限がありません。dir path:%s', [$parent_dir]);
 				}
-			} else {
 				throw CoreException::RaiseSystemError('Twig用キャッシュディレクトリを作成できません。親ディレクトリに書き込み権限がありません。dir path:%s', [$parent_dir]);
 			}
 		}

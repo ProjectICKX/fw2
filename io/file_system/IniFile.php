@@ -64,9 +64,12 @@ abstract class IniFile {
 
 		$static_cache = $options['static_cache'] ?? false;
 		if ($cache_path !== null) {
-			$ini_set = $cache->get($cache_path);
+			$cache_data = $cache->get($cache_path);
 			if ($cache->state()) {
-				return static::ReflectDynamicConfig($ini_set, $allow_parameter_list, $options, $static_cache ? ConstUtility::REPLACE_MODE_ONLY_CALLBACK : ConstUtility::REPLACE_MODE_ALL);
+				clearstatcache(true, $cache_data['path']);
+				if ($cache_data['mtime'] === filemtime($cache_data['path'])) {
+					return static::ReflectDynamicConfig($cache_data['data'], $allow_parameter_list, $options, $static_cache ? ConstUtility::REPLACE_MODE_ONLY_CALLBACK : ConstUtility::REPLACE_MODE_ALL);
+				}
 			}
 		}
 
@@ -74,7 +77,12 @@ abstract class IniFile {
 
 		//キャッシュが有効な場合はキャッシュファイルを構築する
 		if ($cache_path !== null) {
-			$cache->set($cache_path, $ini_set);
+			clearstatcache(true, $ini_path);
+			$cache->set($cache_path, [
+				'data'	=> $ini_set,
+				'path'	=> $ini_path,
+				'mtime'	=> filemtime($ini_path),
+			]);
 		}
 
 		return $static_cache ? static::ReflectDynamicConfig($ini_set, $allow_parameter_list, $options, ConstUtility::REPLACE_MODE_ONLY_CALLBACK) : $ini_set;
