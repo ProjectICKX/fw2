@@ -151,12 +151,27 @@ class OAuth2 {
 	/**
 	 * @var	\ickx\fw2\auth\http\AuthSession	認証セッション管理用インスタンス
 	 */
-	protected $authSession	= null;
+	protected $authSession		= null;
 
 	/**
 	 * @var	bool		認証済み状態管理フラグ
 	 */
-	protected $isAuthed		= false;
+	protected $isAuthed			= false;
+
+	/**
+	 * @var	array		現在のトークン情報
+	 */
+	protected $token			= [];
+
+	/**
+	 * @var	mixed		現在の拡張データ情報
+	 */
+	protected $expandData		= [];
+
+	/**
+	 * @var	mixed		拡張データフィルタ
+	 */
+	protected $expandDataFilter	= [];
 
 	//----------------------------------------------
 	// エンドポイントパス
@@ -323,9 +338,10 @@ class OAuth2 {
 					$origin_url		= $tmpSession[static::PROPERTY_ORIGIN_REQUEST_URL];
 					$code_verifier	= $tmpSession[static::PROPERTY_CODE_VERIFIER];
 					$code_challenge	= $tmpSession[static::PROPERTY_CODE_CHALLENGE];
-					$access_token	= $this->getAccessToken($state, $code_verifier, $code_challenge);
+					$access_token	= $this->token		= $this->getAccessToken($state, $code_verifier, $code_challenge);
+					$expand_data	= $this->expandData	= is_callable($this->expandDataFilter) ? $this->expandDataFilter()($access_token, $tmpSession) : $this->expandData;
 
-					$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $access_token]);
+					$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $access_token, 'expand_data' => $expand_data]);
 					$this->authSession->tmpClose();
 
 					$this->redirectUrl($origin_url);
@@ -357,12 +373,13 @@ class OAuth2 {
 				// 認可クッキーが存在するので、有効期限を確認する
 				$extra_data		= $auth_session['raw_data']['extra_data'];
 				$access_token	= $extra_data['access_token'];
+				$expand_data	= $extra_data['expand_data'];
 
 				if (time() - $access_token['start_time'] > $access_token['expires_in']) {
 					//認可期限切れ
 					//トークンリフレッシュを試行する
 					try {
-						$access_token	= $this->refreshToken($access_token);
+						$access_token	= $this->tokenRefresh();
 					} catch (\ErrorException $ee) {
 						//トークンリフレッシュにも失敗した場合は認可ページへリダイレクト
 						// 認証前仮クッキーの発行
@@ -387,10 +404,42 @@ class OAuth2 {
 
 				// ここまで到達できている場合、有効な認可があると判断する
 				// forwordで遷移する場合でも一回のみupdateされるようにする
-				$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $this->token = $access_token]);
+				$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $this->token = $access_token, 'expand_data' => $this->expandData = $expand_data]);
 
 				$this->isAuthed(true);
 
+				return true;
+		}
+
+		throw new \ErrorException(sprintf('指定されたgrant typeに対応する認可フローが実装されていません。grant type:%s', $this->grantType));
+	}
+
+	/**
+	 * 現在の認可状態をリフレッシュします。
+	 *
+	 * @throws	\ErrorException
+	 * @return	bool	認可状態のrefreshに成功した場合はtrue、そうでない場合はfalse
+	 */
+	public function refresh () {
+		if (!$this->isAuthed()) {
+			return false;
+		}
+
+		switch ($this->grantType) {
+			//==============================================
+			// オーサライゼーションコード時の処理
+			//==============================================
+			case static::GRANT_TYPE_AUTHORIZATION_CODE:
+				//トークンリフレッシュを試行する
+				try {
+					$access_token	= $this->tokenRefresh();
+				} catch (\Throwable $e) {
+					throw $e;
+				}
+
+				$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $this->token = $access_token, 'expand_data' => $this->expandData = $expand_data]);
+
+				// ここまで到達できている場合、有効な認可があると判断する
 				return true;
 		}
 
@@ -524,18 +573,17 @@ class OAuth2 {
 	/**
 	 * トークンをリフレッシュします。
 	 *
-	 * @param	array	$access_token	アクセストークン
 	 * @throws	\ErrorException	トークンのリフレッシュに失敗した場合
 	 * @return	array	リフレッシュ済みのアクセストークン
 	 */
-	public function refreshToken ($access_token) {
+	public function tokenRefresh () {
 		$start_time	= time();
 
 		$result = Curl::url(sprintf('%s%s', is_callable($this->authApiHost) ? $this->authApiHost()() : $this->authApiHost, $this->accessTokenPath))->headers([
 			'Authorization'	=> sprintf('%s %s', static::AUTHORIZATION_HADER_BASIC, base64_encode(sprintf('%s:%s', $this->clientId, $this->secret))),
 		])->bodies([
 			'grant_type'		=> static::GRANT_TYPE_REFRESH_TOKEN,
-			'refresh_token'		=> $access_token['refresh_token'],
+			'refresh_token'		=> $this->token['refresh_token'],
 		])->exec();
 
 		$header = $result['header'];
