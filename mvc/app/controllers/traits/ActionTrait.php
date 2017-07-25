@@ -373,7 +373,7 @@ trait ActionTrait {
 			}
 
 			//
-			throw CoreException::RaiseSystemError('未定義のメソッドを指定されました。');
+			throw CoreException::RaiseSystemError('未定義のメソッドを指定されました。%s', [implode('::', (array) $action[0])]);
 		}
 
 		if ($key === null || empty($action_set)) {
