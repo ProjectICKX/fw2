@@ -131,6 +131,8 @@ trait AppTwigRenderTrait {
 
 		$render['layout_path']	= implode('.', [Strings::ToSnakeCase($this->layout), $this->mimeType, 'twig']);
 
+		$render['router']	= $options;
+
 		DI::Connect('render', $render);
 
 		return $render;
