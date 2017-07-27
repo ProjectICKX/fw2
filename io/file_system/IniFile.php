@@ -68,7 +68,7 @@ abstract class IniFile {
 			if ($cache->state()) {
 				clearstatcache(true, $cache_data['path']);
 				if ($cache_data['mtime'] === filemtime($cache_data['path'])) {
-					return static::ReflectDynamicConfig($cache_data['data'], $allow_parameter_list, $options, $static_cache ? ConstUtility::REPLACE_MODE_ONLY_CALLBACK : ConstUtility::REPLACE_MODE_ALL);
+					return static::ReflectDynamicConfig($cache_data['data'], $allow_parameter_list, $options, $static_cache ? ConstUtility::REPLACE_MODE_ONLY_CALLBACK : ConstUtility::REPLACE_MODE_ALL, true);
 				}
 			}
 		}
@@ -85,7 +85,7 @@ abstract class IniFile {
 			]);
 		}
 
-		return $static_cache ? static::ReflectDynamicConfig($ini_set, $allow_parameter_list, $options, ConstUtility::REPLACE_MODE_ONLY_CALLBACK) : $ini_set;
+		return $ini_set;
 	}
 
 	/**
@@ -147,9 +147,10 @@ abstract class IniFile {
 	 * 											ConstUtility::REPLACE_MODE_ALL：全ての定数を展開する
 	 * 											ConstUtility::REPLACE_MODE_STATIC：STATIC：PHP_CALLBACK以外を展開する
 	 * 											ConstUtility::REPLACE_MODE_ONLY_CALLBACK：PHP_CALLBACKのみ展開する
+	 * @param	bool	$redeploy				キャッシュから展開された場合など、再展開時フラグ
 	 * @return	array	動的設定を反映した配列
 	 */
-	public static function ReflectDynamicConfig ($ini_list, $allow_parameter_list, $options = [], $replace_mode = ConstUtility::REPLACE_MODE_DEFAULT) {
+	public static function ReflectDynamicConfig ($ini_list, $allow_parameter_list, $options = [], $replace_mode = ConstUtility::REPLACE_MODE_DEFAULT, $redeploy = false) {
 		//初期化
 		$config_list = [];
 
@@ -162,7 +163,7 @@ abstract class IniFile {
 			if (!is_null($enable_ini_name_list) && !isset($enable_ini_name_list[$name])) {
 				throw CoreException::RaiseSystemError('許可されていない設定名が設定されています。name:%s, value:%s', [$name, $value]);
 			}
-			if (!$replace_mode_only_callback && is_array($value)) {
+			if (!$replace_mode_only_callback && !$redeploy && is_array($value)) {
 				foreach ($value as $option_name => $option_value) {
 					if ($options['use_option_name_key'] ?? false) {
 						$config_list[$name][ConstUtility::ReplacePhpConstValue($option_name)] = static::ReflectOptions($name, ConstUtility::ReplacePhpConstValue($option_value, $replace_mode), $options);

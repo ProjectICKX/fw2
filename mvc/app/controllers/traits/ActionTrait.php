@@ -208,13 +208,10 @@ trait ActionTrait {
 					$end = false;
 					reset($result_part_list);
 					foreach ($result_alias as $alias) {
-						if (!$end) {
-							$tmp[$alias] = current($result_part_list);
-							$end = next($result_part_list);
-						} else {
-							$tmp[$alias] = null;
-						}
+						$tmp[$alias] = current($result_part_list);
+						$end = next($result_part_list);
 					}
+
 					$result_part_list = $tmp;
 				} else {
 					$result_part_list = [$result_alias => $result_part_list];
