@@ -23,6 +23,7 @@ namespace ickx\fw2\security\validators\traits;
 use \ickx\fw2\vartype\arrays\Arrays;
 use ickx\fw2\international\encoding\Encoding;
 use ickx\fw2\vartype\strings\Strings;
+use ickx\fw2\other\network\DomainUtility;
 
 /**
  * 検証特性です。
@@ -100,6 +101,9 @@ trait ValidateTrait {
 
 			//UUID
 			'uuid_v4'		=> ["/\A[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-4[0-9a-fA-F]{3}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\z/", '{:title}にはUUID v4を入力してください。'],
+
+			//url
+			'url'			=> [function ($value, $options, $meta = []) {return static::Url($value, $options, $meta);}, '{:title}にはURLを入力してください。例：https://example.com/ または http://example.com/'],
 
 			//e-mail
 			'email'			=> [function ($value, $options, $meta = []) {return is_string(filter_var($value, \FILTER_VALIDATE_EMAIL));}, '{:title}にはemailアドレスを入力してください。例：user@example.com'],
@@ -599,6 +603,45 @@ trait ValidateTrait {
 			$part[0] = substr($part[0], 0, -1) . 'a';
 		}
 		return is_string(filter_var(implode('@', $part), \FILTER_VALIDATE_EMAIL));
+	}
+
+	public static function Url ($value, $options, $meta = []) {
+		if (false === filter_var($value, \FILTER_VALIDATE_URL, \FILTER_FLAG_SCHEME_REQUIRED | \FILTER_FLAG_HOST_REQUIRED | ($options['filter'] ?? $options['0'] ?? 0))) {
+			return false;
+		}
+
+		$ret = parse_url($value);
+		$scheme = $ret['scheme'] ?? '';
+		if ($scheme !== 'http' && $scheme !== 'https') {
+			return false;
+		}
+
+		$host = $ret['host'] ?? '';
+		if (!static::Hostname($host) && filter_var($host, \FILTER_VALIDATE_IP) !== $host) {
+			return false;
+		}
+
+		$accept_host = (array) ($options['accept_host'] ?? $options[0] ?? ['localhost']);
+		if (in_array($host, $accept_host, true)) {
+			return true;
+		}
+
+		$accept_pattern_list = (array) ($options['accept_pattern'] ?? []);
+		foreach ($accept_pattern_list as $accept_pattern) {
+			if (preg_match(sprintf("@\A%s\z@", $accept_pattern), $host) === 1) {
+				return true;
+			}
+		}
+
+		if (false === $dot_pos = strrpos($host, '.')) {
+			return false;
+		}
+
+		if (!isset(DomainUtility::TOP_LEVEL_DOMAIN_LIST[substr($host, $dot_pos + 1)])) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**

@@ -67,6 +67,8 @@ class Twig_Extension_Filter extends \Twig_Extension {
 
 			new \Twig_Filter('gmdate',			[$this, 'gmdate']),
 
+			new \Twig_Filter('str_to_date',		[$this, 'strToDate']),
+
 			//error
 			new \Twig_Filter('adjust_error',	[$this, 'adjustError']),
 
@@ -287,5 +289,9 @@ class Twig_Extension_Filter extends \Twig_Extension {
 				return 'unknown type';
 				break;
 		}
+	}
+
+	public function strToDate ($value, $format) {
+		return date($format, strtotime($value));
 	}
 }
