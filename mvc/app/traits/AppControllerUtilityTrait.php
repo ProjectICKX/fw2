@@ -18,10 +18,10 @@
  * @varsion		2.0.0
  */
 
-namespace ickx\fw2\mvc\app;
+namespace ickx\fw2\mvc\app\traits;
 
 /**
- * Index
+ * AppControllerUtilityTrait
  *
  * @category	Flywheel2
  * @package		mvc
@@ -29,14 +29,30 @@ namespace ickx\fw2\mvc\app;
  * @license		http://opensource.org/licenses/MIT The MIT License MIT
  * @varsion		2.0.0
  */
-class AppController implements
-	controllers\interfaces\IController,
-	controllers\interfaces\IRule,
-	controllers\interfaces\IValidate {
-	use	controllers\traits\ControllerTrait,
-		controllers\traits\ConsoleTrait,
-		traits\AppControllerUtilityTrait,
-		traits\AppRouterTrait,
-		traits\AppControllerTrait,
-		traits\AppTwigRenderTrait;
+trait AppControllerUtilityTrait {
+	/**
+	 * 現在登録されているrender要素をdumpして終了します。
+	 *
+	 * @param	array	...$names
+	 */
+	public function dumpExit (...$names) {
+		$renders = $this->render->getArrayCopy();
+
+		if (empty($renders)) {
+			echo '現在のレンダーの中身は空です。';
+			exit;
+		}
+
+		if (empty($names)) {
+			$names = array_keys($renders);
+		}
+
+		foreach ($names as $name) {
+			echo '==============================================', \PHP_EOL, $name, \PHP_EOL, '==============================================', \PHP_EOL;
+			var_dump(array_key_exists($name, $renders) ? $renders[$name] : '未定義');
+			echo \PHP_EOL;
+		}
+
+		exit;
+	}
 }
