@@ -685,6 +685,12 @@ class Strings implements \ArrayAccess, \Iterator {
 		return $matches[0];
 	}
 
+	/**
+	 * 与えられた配列からCSV文字列を生成し返します。
+	 *
+	 * @param	array	$data	CSV化したい2次元配列
+	 * @return	string	CSV文字列
+	 */
 	public static function ToCsv ($data) {
 		$memory = 'php://memory';
 		$mp = fopen($memory, 'bw+');

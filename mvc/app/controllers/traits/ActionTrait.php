@@ -288,7 +288,7 @@ trait ActionTrait {
 				$action = $action->toArray();
 			}
 
-			$is_var = $action[4] ?? false;
+			$is_var = is_array($action) ? $action[4] ?? false : false;
 
 			if ($is_var) {
 				$result_alias = $action[2] ?? null;
@@ -369,7 +369,9 @@ trait ActionTrait {
 				}
 			}
 
-			//
+			if (is_null($action)) {
+				$action = ['NULL'];
+			}
 			throw CoreException::RaiseSystemError('未定義のメソッドを指定されました。%s', [implode('::', (array) $action[0])]);
 		}
 

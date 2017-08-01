@@ -85,7 +85,7 @@ abstract class IniFile {
 			]);
 		}
 
-		return $ini_set;
+		return $static_cache ? static::ReflectDynamicConfig($ini_set, $allow_parameter_list, $options, ConstUtility::REPLACE_MODE_ONLY_CALLBACK, true) : $ini_set;
 	}
 
 	/**
