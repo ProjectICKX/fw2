@@ -113,9 +113,17 @@ class ActionBuilder {
 	protected function _paramBind () {
 		$params = $this->_params;
 		foreach ($this->_binds ?? [] as $idx => $render_var_name) {
-			$params[$idx] = function ($data) use ($render_var_name) {
-				return $data->$render_var_name;
-			};
+			if (is_string($render_var_name) || is_int($render_var_name)) {
+				$params[$idx] = function ($data) use ($render_var_name) {
+					return $data->$render_var_name;
+				};
+			} elseif (is_object($render_var_name) && is_callable($render_var_name)) {
+				$params[$idx] = function ($data) use ($render_var_name) {
+					return $render_var_name($data);
+				};
+			} else {
+				$params[$idx] = $render_var_name;
+			}
 		}
 		ksort($params);
 		return $params;

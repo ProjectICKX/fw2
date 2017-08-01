@@ -54,7 +54,7 @@ trait Multiton {
 	 * @return	object	マルチトンとして管理されているオブジェクトインスタンス
 	 */
 	public static function init ($name = null, ...$args) {
-		$name = $name ?? static::$multitonDefaultName;
+		$name = implode('<>', (array) ($name ?? static::$multitonDefaultName));
 		$instance = static::$multitonInstances[static::class][$name] = new static(...$args);
 		$instance->multitonName = $name;
 		return $instance;

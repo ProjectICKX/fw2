@@ -122,7 +122,7 @@ trait RuleTrait {
 	 */
 	public function purseActionRule ($trigger = null) {
 		$action_rule_list = $this->currentRule ?? $this->getActionRule();
-		$trigger = $this->searchTrigger($action_rule_list);
+		$trigger = $trigger ?? $this->searchTrigger($action_rule_list);
 
 		if (substr($trigger, 0, 8) === ':router:') {
 			$url = substr($trigger, 8);
@@ -151,6 +151,10 @@ trait RuleTrait {
 		}
 
 		$action_rule = $action_rule_list[$trigger];
+		if (is_callable($action_rule)) {
+			$action_rule	= $action_rule();
+		}
+
 		if (!isset($action_rule['before_action'])) {
 			$action_rule['before_action'] = [];
 		}
