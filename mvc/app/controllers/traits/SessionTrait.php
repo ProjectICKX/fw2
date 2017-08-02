@@ -114,6 +114,19 @@ trait SessionTrait {
 	}
 
 	/**
+	 * SUIDセッション内で共有されるセッションに値があるか調べます。
+	 *
+	 * @param	string	$name	名前
+	 * @return	mixed	値
+	 */
+	public static function ExistsSuidSession ($name = null) {
+		if (!static::SeesionOnSu()) {
+			throw \ickx\fw2\core\exception\CoreException::RaiseSystemError('suidセッションが開始されていません。');
+		}
+		return Session::Exists(static::_GetSeesionLayerPath($name));
+	}
+
+	/**
 	 * SUIDセッション内で共有されるセッションから読み込みます。
 	 *
 	 * @param	string	$name	名前

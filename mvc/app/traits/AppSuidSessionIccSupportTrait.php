@@ -88,6 +88,7 @@ trait AppSuidSessionIccSupportTrait {
 	 *	[
 	 *		'action'			=> 画面初期表示時に実行する処理のリスト
 	 *		'validate'			=> バリデーションルール
+	 *		'target'
 	 *		'next_pre_action'	=> 次アクションへ移動する際にデータをセッションに詰める前に実行する処理のリスト
 	 *		'next_post_action'	=> 次アクションへ移動する際にデータをセッションに詰めた後に実行する処理のリスト
 	 *		'next_controller'	=> バリデーション成功時に遷移するコントローラ
@@ -109,9 +110,10 @@ trait AppSuidSessionIccSupportTrait {
 			static::MEAN_DEFAULT	=> function () use ($lazy_evals) {
 				$lazy_evals = $lazy_evals();
 				return [
+					'validate'	=> $lazy_evals['validate'] ?? [],
 					'action'	=> array_merge(
 						[
-							['suidSessionToAssignData', [function () use ($lazy_evals) {return array_keys(is_callable($lazy_evals['validate']) ? $lazy_evals['validate']() : $lazy_evals['validate']);}]],
+							['suidSessionToAssignData', [function () use ($lazy_evals) {return array_keys(is_callable($lazy_evals['target']) ? $lazy_evals['target']() : $lazy_evals['target']);}]],
 						],
 						$lazy_evals['action'] ?? []
 					),
@@ -131,7 +133,7 @@ trait AppSuidSessionIccSupportTrait {
 					'action'	=> array_merge(
 						$lazy_evals['next_pre_action'] ?? [],
 						[
-							['suidSessionToPostData', [function () use ($lazy_evals) {return array_keys(is_callable($lazy_evals['validate']) ? $lazy_evals['validate']() : $lazy_evals['validate']);}]],
+							['suidSessionToPostData', [function () use ($lazy_evals) {return array_keys(is_callable($lazy_evals['validate']) ? $lazy_evals['target']() : $lazy_evals['validate']);}]],
 							['overWritePostData', ['has_validator', true]],
 						],
 						$lazy_evals['next_post_action'] ?? []
@@ -149,6 +151,8 @@ trait AppSuidSessionIccSupportTrait {
 	 *
 	 * @param	array	$lazy_evals	遅延評価値のリスト
 	 *	[
+	 *		'validate'			=> バリデーションルール
+	 *		'target'
 	 *		'pre_action'	=> セーブ前に実行する処理のリスト
 	 *		'post_action'	=> セーブ後に実行する処理のリスト
 	 *		'save_filter'	=> セーブ対象のデータに対する最終フィルタ
@@ -163,10 +167,11 @@ trait AppSuidSessionIccSupportTrait {
 			static::MEAN_DEFAULT	=> function () use ($lazy_evals) {
 				$lazy_evals = $lazy_evals();
 				return [
+					'validate'	=> $lazy_evals['validate'] ?? [],
 					'action'	=> array_merge(
 						$lazy_evals['pre_action'] ?? [],
 						[
-							static::ActionBuilder('suidSessionToAssignData')->param(array_keys(is_callable($lazy_evals['validate']) ? $lazy_evals['validate']() : $lazy_evals['validate']))->alias('assign_data'),
+							static::ActionBuilder('suidSessionToAssignData')->param(array_keys(is_callable($lazy_evals['target']) ? $lazy_evals['target']() : $lazy_evals['target']))->alias('assign_data'),
 							$lazy_evals['save_filter'] ?? null,
 							static::ActionBuilder('saveSuidTransaction')->params([$lazy_evals['save_function'], null, $lazy_evals['suid_check'] ?? true, $lazy_evals['save_args'] ?? []])->bind('assign_data', 1)->alias('data'),
 						],

@@ -160,6 +160,10 @@ trait SuidTransactionTrait {
 				];
 			}
 
+			if (is_callable($validate_rule)) {
+				$validate_rule = $validate_rule();
+			}
+
 			return $consistent_validate_rule + $validate_rule;
 		};
 	}

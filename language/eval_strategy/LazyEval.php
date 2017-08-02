@@ -35,17 +35,33 @@ class LazyEval {
 	/**
 	 * @var	callable		遅延評価関数
 	 */
-	protected $callback	= null;
+	protected $callback		= null;
 
 	/**
 	 * @var	mixed			実行結果キャッシュ
 	 */
-	protected $result	= null;
+	protected $result		= null;
 
 	/**
 	 * @var	array			オプション
 	 */
-	protected $options	= [];
+	protected $options		= [];
+
+	/**
+	 * @var	bool			値が既に存在しているかどうか
+	 * 						null値に対応するために存在する
+	 */
+	protected $valueExist	= false;
+
+	/**
+	 * @var	bool			繰り返し最新値を取るかどうか
+	 */
+	protected $isRepeat		= false;
+
+	/**
+	 * @var	bool			永続化ストレージが有効かどうか
+	 */
+	protected $enableStrage	= false;
 
 	/**
 	 * コンストラクタ
@@ -53,10 +69,23 @@ class LazyEval {
 	 * @param	string|array	遅延評価名
 	 * @param	callable		遅延評価関数
 	 * @param	array			オプション
+	 *	[
+	 *		'repeat'	=> bool		常に最新値を取るかどうか trueの場合は常に最新値を取る、falseまたは未定義の場合は値を取るのは最初の一回のみ
+	 *		'storage'	=> callable	指定したコールバック関数から値を得られるかどうかを先に判断するようにする このオプションが有効な場合、storage > $this->result > $this->callbackの順に値を取得しにいく
+	 *								指定できるコールバック関数は次の引数を受け付けられる必要がある
+	 *								$name		マルチトンインスタンス名
+	 *								$is_repeat	常に最新値を取るかどうかのフラグ
+	 *								$callback	値取得用コールバック関数
+	 *								...$args	値取得用コールバック関数用引数 $callback(...$args) として実行する
+	 *								function (bool $is_repeat, callable $callback, ...$args);
+	 *	]
 	 */
 	protected function __construct ($callback, $options = []) {
-		$this->callback	= $callback;
-		$this->options	= $options;
+		$this->callback		= $callback;
+		$this->options		= $options;
+
+		$this->isRepeat		= $this->options['repeat'] ?? false;
+		$this->enableStrage	= isset($this->options['storage']) && is_callable($this->options['storage']);
 	}
 
 	/**
@@ -86,8 +115,16 @@ class LazyEval {
 	 * @return	mixed	評価結果。
 	 */
 	public function force (...$args) {
-		$callback = $this->callback;
-		return $this->options['repeat'] ?? false ? ($this->result ?? $this->result = $callback(...$args)) : $callback(...$args);
+		if (!$this->valueExist || $this->isRepeat) {
+			if ($this->enableStrage) {
+				$this->result	= $this->options['storage']($this->multitonName, $this->isRepeat, $this->callback, ...$args);
+			} else {
+				$callback = $this->callback;
+				$this->result	= $callback(...$args);
+			}
+			$this->valueExist = true;
+		}
+		return $this->result;
 	}
 
 	/**
@@ -99,7 +136,15 @@ class LazyEval {
 	 * @return	mixed	評価結果。
 	 */
 	public function __invoke (...$args) {
-		$callback = $this->callback;
-		return $this->options['repeat'] ?? false ? ($this->result ?? $this->result = $callback(...$args)) : $callback(...$args);
+		if (!$this->valueExist || $this->isRepeat) {
+			if ($this->enableStrage) {
+				$this->result	= $this->options['storage']($this->multitonName, $this->isRepeat, $this->callback, ...$args);
+			} else {
+				$callback = $this->callback;
+				$this->result	= $callback(...$args);
+			}
+			$this->valueExist = true;
+		}
+		return $this->result;
 	}
 }
