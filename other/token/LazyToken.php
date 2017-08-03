@@ -79,9 +79,24 @@ class LazyToken {
 	protected $seedFilter	= null;
 
 	/**
-	 * @var	callable	トークン発行後の処理
+	 * @var	string		トークン名
 	 */
-	protected $postProcess	= null;
+	protected $tokenName	= 'token';
+
+	/**
+	 * @var	callable	トークンの永続化処理
+	 */
+	protected $saveToken	= null;
+
+	/**
+	 * @var	callable	トークン除去処理
+	 */
+	protected $destroyToken	= null;
+
+	/**
+	 * @var	callable	トークンの存在確認処理
+	 */
+	protected $existsToken	= null;
 
 	/**
 	 * 簡易的な一時トークンを発行します。
@@ -90,21 +105,38 @@ class LazyToken {
 	 * @return	string	トークン
 	 */
 	public function issue ($seed = null) {
-		$token = Hash::CreateRandomHash(is_callable($this->seedFilter) ? $this->seedFilter()($seed ?? $this->seed) : $seed ?? $this->seed, $this->salt, $this->hmacKey, $this->secretKeyLength, $this->algo);
-		if (is_callable($this->postProcess)) {
-			$this->postProcess()($token);
+		$token_code = Hash::CreateRandomHash(is_callable($this->seedFilter) ? $this->seedFilter()($seed ?? $this->seed) : $seed ?? $this->seed, $this->salt, $this->hmacKey, $this->secretKeyLength, $this->algo);
+		if (is_callable($this->saveToken)) {
+			$this->saveToken()($this->tokenName, $token_code);
 		}
-		return $token;
+		return $token_code;
 	}
 
 	/**
 	 * 簡易的な一時トークンを検証します。
 	 *
-	 * @param	string	$token	トークン
-	 * @param	string	$seed	元になる文字列
+	 * @param	string	$token_code	トークン
+	 * @param	string	$seed		元になる文字列
 	 * @return	bool	トークンが正当な場合はtrue、不正な場合はfalse
 	 */
-	public function verify ($token, $seed = null) {
-		return Hash::ValidRandomHash($token, is_callable($this->seedFilter) ? $this->seedFilter()($seed ?? $this->seed) : $seed ?? $this->seed, $this->salt, $this->hmacKey, $this->secretKeyLength, $this->algo);
+	public function verify ($token_code, $seed = null) {
+		return Hash::ValidRandomHash($token_code, is_callable($this->seedFilter) ? $this->seedFilter()($seed ?? $this->seed) : $seed ?? $this->seed, $this->salt, $this->hmacKey, $this->secretKeyLength, $this->algo);
+	}
+
+	/**
+	 * 簡易的な一時トークンがあるかどうか調べます。
+	 *
+	 * @param	string	$token_code	トークン
+	 * @return	bool	トークンがある場合はtrue, そうでない場合はfalse
+	 */
+	public function exists ($token_code) {
+		return $this->existsToken()($this->tokenName, $token_code);
+	}
+
+	/**
+	 * トークン名に紐づく簡易的な一時トークンを破棄します。
+	 */
+	public function destroy () {
+		$this->destroyToken()($this->tokenName);
 	}
 }
