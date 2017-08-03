@@ -84,6 +84,11 @@ class LazyToken {
 	protected $tokenName	= 'token';
 
 	/**
+	 * @var	string		シード値のプリフィックス
+	 */
+	protected $seedPrefix	= null;
+
+	/**
 	 * @var	callable	トークンの永続化処理
 	 */
 	protected $saveToken	= null;
@@ -105,7 +110,8 @@ class LazyToken {
 	 * @return	string	トークン
 	 */
 	public function issue ($seed = null) {
-		$token_code = Hash::CreateRandomHash(is_callable($this->seedFilter) ? $this->seedFilter()($seed ?? $this->seed) : $seed ?? $this->seed, $this->salt, $this->hmacKey, $this->secretKeyLength, $this->algo);
+		$seed	= array_merge((array) $this->seedPrefix, (array) ($seed ?? $this->seed));
+		$token_code = Hash::CreateRandomHash(is_callable($this->seedFilter) ? $this->seedFilter()($seed) : $seed, $this->salt, $this->hmacKey, $this->secretKeyLength, $this->algo);
 		if (is_callable($this->saveToken)) {
 			$this->saveToken()($this->tokenName, $token_code);
 		}
@@ -120,7 +126,8 @@ class LazyToken {
 	 * @return	bool	トークンが正当な場合はtrue、不正な場合はfalse
 	 */
 	public function verify ($token_code, $seed = null) {
-		return Hash::ValidRandomHash($token_code, is_callable($this->seedFilter) ? $this->seedFilter()($seed ?? $this->seed) : $seed ?? $this->seed, $this->salt, $this->hmacKey, $this->secretKeyLength, $this->algo);
+		$seed	= array_merge((array) $this->seedPrefix, (array) ($seed ?? $this->seed));
+		return Hash::ValidRandomHash($token_code, is_callable($this->seedFilter) ? $this->seedFilter()($seed) : $seed, $this->salt, $this->hmacKey, $this->secretKeyLength, $this->algo);
 	}
 
 	/**

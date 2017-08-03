@@ -43,18 +43,20 @@ trait RuleTrait {
 	 * @return	string	アクションルールトリガ
 	 */
 	public function searchTrigger ($action_rule_list = null) {
-		if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
-			foreach (array_keys($action_rule_list ?: $this->getActionRule()) as $trigger) {
+		if ('POST' === $_SERVER['REQUEST_METHOD'] ?? '') {
+			$post_data = Request::GetPostData();
+			foreach (array_keys($action_rule_list ?? $this->getActionRule()) as $trigger) {
 				if (substr($trigger, 0, 8) === ':router:') {
 					$url = substr($trigger, 8);
 					list($regex_url, $parameter_list) = Router::PursePathRegex($url);
 					$match_pattern = sprintf('@^%s$@u', str_replace('@', '\@', $regex_url));
-					if (array_filter(array_keys(Request::GetPostData()->getArrayCopy()), function ($value) use ($match_pattern) {return preg_match($match_pattern, $value) === 1;})) {
+					if (array_filter(array_keys($post_data->getArrayCopy()), function ($value) use ($match_pattern) {return preg_match($match_pattern, $value) === 1;})) {
 						return $trigger;
 					}
 					continue;
-				} else if (preg_match("/^:method:(.+)/", $trigger, $matches)) {
-					foreach (explode('&', ($matches[1])) as $method_name) {
+				} else if (substr($trigger, 0, 8) === ':method:') {
+					$method_names = substr($trigger, 8);
+					foreach (explode('&', ($method_names)) as $method_name) {
 						if (($ret = $this->$method_name()) === false) {
 							continue 2;
 						}
@@ -63,7 +65,7 @@ trait RuleTrait {
 					return $trigger;
 				} else {
 					foreach (explode('&', $trigger) as $post_data_name) {
-						if (Request::GetPostData()->$post_data_name === null) {
+						if (false === (isset($post_data[$post_data_name]) ?: array_key_exists($post_data_name, $post_data))) {
 							continue 2;
 						}
 					}
@@ -72,17 +74,19 @@ trait RuleTrait {
 			}
 			return static::MEAN_DEFAULT;
 		} else {
-			foreach (array_keys($action_rule_list ?: $this->getActionRule()) as $trigger) {
+			$parameters = Request::GetParameters();
+			foreach (array_keys($action_rule_list ?? $this->getActionRule()) as $trigger) {
 				if (substr($trigger, 0, 8) === ':router:') {
 					$url = substr($trigger, 8);
 					list($regex_url, $parameter_list) = Router::PursePathRegex($url);
 					$match_pattern = sprintf('@^%s$@u', str_replace('@', '\@', $regex_url));
-					if (array_filter(array_keys(Request::GetParameters()->getArrayCopy()), function ($value) use ($match_pattern) {return preg_match($match_pattern, $value) === 1;})) {
+					if (array_filter(array_keys($parameters->getArrayCopy()), function ($value) use ($match_pattern) {return preg_match($match_pattern, $value) === 1;})) {
 						return $trigger;
 					}
 					continue;
-				} else if (preg_match("/^:callback:(.+)/", $trigger, $matches)) {
-					foreach (explode('&', ($matches[1])) as $method_name) {
+				} else if (substr($trigger, 0, 8) === ':method:') {
+					$method_names = substr($trigger, 8);
+					foreach (explode('&', ($method_names)) as $method_name) {
 						if (($ret = $this->$method_name()) === false) {
 							continue 2;
 						}
@@ -91,7 +95,7 @@ trait RuleTrait {
 					return $trigger;
 				} else {
 					foreach (explode('&', $trigger) as $parameter_name) {
-						if (!isset(Request::GetParameters()[$parameter_name])) {
+						if (!isset($parameters[$parameter_name])) {
 							continue 2;
 						}
 					}
