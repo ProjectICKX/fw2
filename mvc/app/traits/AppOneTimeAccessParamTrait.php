@@ -55,8 +55,8 @@ trait AppOneTimeAccessParamTrait {
 			$trigger ?? static::MEAN_DEFAULT	=> function () use ($token, $lazy_evals, $token_name) {
 				$token_name = $token_name ?? $token->tokenName() ?? 'token';
 
-				$lazy_evals		= $lazy_evals();
-				$verify_options	= $lazy_evals['verify_options'];
+				$lazy_evals	= $lazy_evals();
+				$seed		= $lazy_evals['seed'];
 
 				$rule = [
 					'validate'	=> [
@@ -72,8 +72,8 @@ trait AppOneTimeAccessParamTrait {
 							['callback', function ($value, $args, $options, $meta) use ($token) {
 								return $token->exists($value);
 							}, 'message' => '存在しない{:title}を渡されました。', 'raise_exception'],
-							['callback', function ($value, $args, $options, $meta) use ($token, $verify_options) {
-								return $token->verify($value, $verify_options);
+							['callback', function ($value, $args, $options, $meta) use ($token, $seed) {
+								return $token->verify($value, $seed);
 							}, 'message' => '不正な{:title}を渡されました。', 'raise_exception'],
 						],
 					],
