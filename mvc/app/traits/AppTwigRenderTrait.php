@@ -120,19 +120,18 @@ trait AppTwigRenderTrait {
 		$render['warn'] = $this->warn;
 		$render['info'] = $this->info;
 
-		$render['this']	= $this;
-
 		$options = $this->options->getArrayCopy();
 		foreach ($options as $key => $value) {
 			$options[$key] = preg_replace_callback("/\{:(.+?)\}/", function (array $matches) use ($render, $options) {$replace = isset($render[$matches[1]]) ? $render[$matches[1]] : (isset($options[$matches[1]]) ? $options[$matches[1]] : $matches[0]);return is_callable($replace) ? $replace($render, $options) : $replace;}, is_callable($value) ? $value($render, $options) : $value);
 		}
 		$render += $render + $options;
-		$render['this']->options	= $options;
 
 		$request_uri = Environment::IsCli() ? (Cli::GetRequestParameterList()[0] ?? '') : $_SERVER['REQUEST_URI'];
 		$render['canonical_url']	= isset($render['canonical_url']) ? $render['canonical_url'] : parse_url(''.$request_uri, \PHP_URL_PATH);
 
 		$render['layout_path']	= implode('.', [Strings::ToSnakeCase($this->layout), $this->mimeType, 'twig']);
+
+		$render['this']	= $this;
 
 		DI::Connect('render', $render);
 

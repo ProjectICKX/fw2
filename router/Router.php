@@ -474,20 +474,8 @@ abstract class Router {
 			$stack[] = $char;
 		}
 
-		// サブパターンが存在する場合再帰確認を行う
-		$path = implode('', $stack);
-		if (false !== mb_strpos($path, '{:')) {
-			$before_length	= mb_strlen($path);
-			do {
-				$sub_result		= static::PursePathRegex($path, 1);
-				$path			= $sub_result[0];
-				$parameter_list	= array_merge($parameter_list, $sub_result[1]);
-				$pattern_list	= array_merge($pattern_list, $sub_result[2]);
-			} while ($before_length !== $before_length = $current_length);
-		}
-
 		//処理の終了
-		return [$path, $parameter_list, $pattern_list];
+		return [implode('', $stack), $parameter_list, $pattern_list];
 	}
 
 	/**
