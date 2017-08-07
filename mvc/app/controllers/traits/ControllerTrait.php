@@ -129,7 +129,11 @@ trait ControllerTrait {
 		$instance->controller	= str_replace('/', '_', $params->controller ?? 'index');
 		$instance->action		= str_replace('/', '_', $params->action ?? 'index');
 
-		$instance->layout		= $instance->options->layout ?: 'default';
+		foreach ($instance->options->getArrayCopy() as $key => $value) {
+			if (mb_strpos($value, '{:') !== false) {
+				$instance->options->$key = preg_replace_callback("/\{:(.+?)\}/", function (array $matches) use ($render, $options) {$replace = isset($render[$matches[1]]) ? $render[$matches[1]] : (isset($options[$matches[1]]) ? $options[$matches[1]] : $matches[0]);return is_callable($replace) ? $replace($render, $options) : $replace;}, is_callable($value) ? $value($render, $options) : $value);
+			}
+		}
 
 		$instance->templateDir	= $instance->options->template_dir ?: $instance->controller;
 		$instance->templateExtDirList	= $instance->options->template_ext_dir_list ? $instance->options->template_ext_dir_list->getArrayCopy() : [];

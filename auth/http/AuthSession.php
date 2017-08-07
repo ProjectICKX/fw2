@@ -195,6 +195,11 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	// 認証セッション
 	//==============================================
 	/**
+	 * @var	bool	認証セッション：セッション自体の検証を厳密に行うかどうか
+	 */
+	protected $strict				= false;
+
+	/**
 	 * @var	string	認証セッション：クライアントクッキー暗号化キー
 	 */
 	protected $clientKey			= null;
@@ -387,7 +392,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			++$old_server_data[$this->digestAuth::PROPERTY_NC];
 
 			$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . $old_server_data[$this->digestAuth::PROPERTY_NC], $this->tmpClientSalt, $this->tmpClientKey, $this->tmpSeparatorLength))
-			->nc($old_server_data[$this->digestAuth::PROPERTY_NC])
+			->nc($this->strict ? $old_server_data[$this->digestAuth::PROPERTY_NC] : 1)
 			->cnonce(Hash::CreateRandomHash($cnonce_seed . $old_server_data[$this->digestAuth::PROPERTY_NC], $this->tmpClientKey, $this->tmpClientSalt, $this->tmpSeparatorLength));
 		} else {
 			$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . 1, $this->tmpClientSalt, $this->tmpClientKey, $this->tmpSeparatorLength))
@@ -697,7 +702,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		if ($this->getCookieName() && !empty($old_server_data = $this->get())) {
 			$old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC]++;
 			$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . $old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC], $this->clientSalt, $this->clientKey, $this->separatorLength))
-			->nc($old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC])
+			->nc($this->strict ? $old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC] : 1)
 			->cnonce(Hash::CreateRandomHash($cnonce_seed . $old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC], $this->clientKey, $this->clientSalt, $this->separatorLength));
 		} else {
 			$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . 1, $this->clientSalt, $this->clientKey, $this->separatorLength))
