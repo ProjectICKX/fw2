@@ -389,11 +389,16 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		$cnonce_seed		= Hash::CreateRandomHash($dummy_user_name . random_int(0, 1000) . $dummy_realm, $this->tmpClientSalt, $this->tmpClientKey, $this->tmpSeparatorLength);
 
 		if ($this->getTmpCookieName() && !empty($old_server_data = $this->tmpGet())) {
-			++$old_server_data[$this->digestAuth::PROPERTY_NC];
-
-			$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . $old_server_data[$this->digestAuth::PROPERTY_NC], $this->tmpClientSalt, $this->tmpClientKey, $this->tmpSeparatorLength))
-			->nc($this->strict ? $old_server_data[$this->digestAuth::PROPERTY_NC] : 1)
-			->cnonce(Hash::CreateRandomHash($cnonce_seed . $old_server_data[$this->digestAuth::PROPERTY_NC], $this->tmpClientKey, $this->tmpClientSalt, $this->tmpSeparatorLength));
+			if ($this->strict) {
+				++$old_server_data[$this->digestAuth::PROPERTY_NC];
+				$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . $old_server_data[$this->digestAuth::PROPERTY_NC], $this->tmpClientSalt, $this->tmpClientKey, $this->tmpSeparatorLength))
+				->nc($old_server_data[$this->digestAuth::PROPERTY_NC])
+				->cnonce(Hash::CreateRandomHash($cnonce_seed . $old_server_data[$this->digestAuth::PROPERTY_NC], $this->tmpClientKey, $this->tmpClientSalt, $this->tmpSeparatorLength));
+			} else {
+				$this->digestAuth->nonce($old_server_data[$this->digestAuth::PROPERTY_NONCE])
+				->nc(1)
+				->cnonce($old_server_data[$this->digestAuth::PROPERTY_CNONCE]);
+			}
 		} else {
 			$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . 1, $this->tmpClientSalt, $this->tmpClientKey, $this->tmpSeparatorLength))
 			->nc(1)
@@ -700,10 +705,16 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		$cnonce_seed		= Hash::CreateRandomHash($dummy_user_name . random_int(0, 1000) . $dummy_realm, $this->clientSalt, $this->clientKey, $this->separatorLength);
 
 		if ($this->getCookieName() && !empty($old_server_data = $this->get())) {
-			$old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC]++;
-			$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . $old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC], $this->clientSalt, $this->clientKey, $this->separatorLength))
-			->nc($this->strict ? $old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC] : 1)
-			->cnonce(Hash::CreateRandomHash($cnonce_seed . $old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC], $this->clientKey, $this->clientSalt, $this->separatorLength));
+			if ($this->strict) {
+				++$old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC];
+				$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . $old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC], $this->clientSalt, $this->clientKey, $this->separatorLength))
+				->nc($old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC])
+				->cnonce(Hash::CreateRandomHash($cnonce_seed . $old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC], $this->clientKey, $this->clientSalt, $this->separatorLength));
+			} else {
+				$this->digestAuth->nonce($old_server_data['raw_data'][$this->digestAuth::PROPERTY_NONCE])
+				->nc(1)
+				->cnonce($old_server_data['raw_data'][$this->digestAuth::PROPERTY_CNONCE]);
+			}
 		} else {
 			$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . 1, $this->clientSalt, $this->clientKey, $this->separatorLength))
 			->nc(1)
@@ -816,7 +827,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		$client_data = $this->getOnCookie($server_data['raw_data']['shadow'], $server_data['dummy_password']);
 
 		if ($this->valid($server_data, $client_data)) {
-			$this->digestAuth->nc($server_data['raw_data']['nc']);
+			$this->digestAuth->nc($this->strict ? $server_data['raw_data']['nc'] : 1);
 			return $server_data;
 		} else {
 			$this->digestAuth->nc(null);
@@ -947,8 +958,14 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			}
 		}
 
-		if (!Hash::ValidRandomHash($client_data[$this->digestAuth::PROPERTY_CNONCE], $server_data['cnonce_seed'] . $server_data[$this->digestAuth::PROPERTY_NC], $this->clientKey, $this->clientSalt, $this->separatorLength)) {
-			throw new \ErrorException(sprintf('認証セッションに齟齬があります。ランダムハッシュの検証に失敗しました。'));
+		if ($this->strict) {
+			if (!Hash::ValidRandomHash($client_data[$this->digestAuth::PROPERTY_CNONCE], $server_cnonce = $server_data['cnonce_seed'] . $server_data[$this->digestAuth::PROPERTY_NC], $this->clientKey, $this->clientSalt, $this->separatorLength)) {
+				throw new \ErrorException(sprintf('認証セッションに齟齬があります。ランダムハッシュの検証に失敗しました。'));
+			}
+		} else {
+			if (!hash_equals($client_data[$this->digestAuth::PROPERTY_CNONCE], $server_cnonce = $server_data[$this->digestAuth::PROPERTY_CNONCE])) {
+				throw new \ErrorException(sprintf('認証セッションに齟齬があります。ランダムハッシュの検証に失敗しました。'));
+			}
 		}
 
 		return true;
