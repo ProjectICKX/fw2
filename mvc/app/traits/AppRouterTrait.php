@@ -30,7 +30,17 @@ namespace ickx\fw2\mvc\app\traits;
  * @varsion		2.0.0
  */
 trait AppRouterTrait {
-	public static function MakeUrl ($controller_name, $action_name = 'index', $parameters = [], $var_parameters = [], $encoding = null) {
-		return \ickx\fw2\router\Router::GetUrl((is_string($controller_name) ? $controller_name : $controller_name->controller), $action_name, $parameters, $var_parameters, $encoding);
+	/**
+	 * utility：Routerに登録されている情報からURLを作成します。
+	 *
+	 * @param	string|ickx\fw2\mvc\app\AppController	$controller		コントローラ名またはコントローラ
+	 * @param	string									$action_name	アクション名
+	 * @param	array									$parameters		パラメータ
+	 * @param	array									$var_parameters	遅延評価用パラメータ
+	 * @param	string									$encoding		エンコーディング
+	 * @return	string|bool								URL マッチするURLが無い場合はfalse
+	 */
+	public static function MakeUrl ($controller, $action_name = 'index', $parameters = [], $var_parameters = [], $encoding = null) {
+		return Flywheel::MakeUrl ($controller, $action_name, $parameters, $var_parameters , $encoding);
 	}
 }

@@ -188,7 +188,13 @@ class Request extends \ickx\fw2\core\net\http\Http {
 	 * @return	\ickx\fw2\vartype\arrays\LazyArrayObject	HTTPポストデータ
 	 */
 	public static function GetUploadFileData () {
-		return LazyArrayObject::RecursiveCreate($_FILES['data'] ?? []);
+		$upload_files = [];
+		foreach ($_FILES['data'] ?? [] as $key => $list) {
+			foreach ($list as $name => $value) {
+				$upload_files[$name][$key] = $value;
+			}
+		}
+		return LazyArrayObject::RecursiveCreate($upload_files);
 	}
 
 	/**

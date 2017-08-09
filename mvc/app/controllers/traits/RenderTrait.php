@@ -20,6 +20,8 @@
 
 namespace ickx\fw2\mvc\app\controllers\traits;
 
+use ickx\fw2\core\net\http\Response;
+
 /**
  * Flywheel2 Controller向けRender特性です。
  *
@@ -125,5 +127,21 @@ trait RenderTrait {
 	 */
 	public function isRendering () {
 		return $this->renderTemplate === null;
+	}
+
+	public function renderJson ($data, $options = []) {
+		$cancel_render_mode = $options['download'] ?? false;
+		if ($cancel_render_mode) {
+			$this->cancelRender();
+		}
+
+		$json = json_encode($data, \JSON_HEX_TAG | \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT | $options['options'] ?? 0, $options['depth'] ?? 512);
+		if ($cancel_render_mode) {
+			header(sprintf('Content-Type: %s', Response::GetMimeTypeByExt('json')));
+			echo $json;
+			return null;
+		}
+
+		return $json;
 	}
 }
