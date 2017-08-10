@@ -194,9 +194,12 @@ trait SessionTrait {
 	 * SUIDセッションを開始します。
 	 */
 	public static function StartSuidSession () {
-		$new_suid = static::GenerateSuid();
-		Request::OverWritePostData('__suid', $new_suid);
-		static::CreateSuidLayer($new_suid);
+		$suid = static::SeesionSuid();
+		if ($suid === false) {
+			$suid = static::GenerateSuid();
+			static::CreateSuidLayer($suid);
+		}
+		Request::OverWritePostData('__suid', $suid);
 	}
 
 	/**
@@ -219,13 +222,13 @@ trait SessionTrait {
 	 * SUIDを取得します。
 	 */
 	public static function SeesionSuid () {
-		if (Request::GetPostData()->__suid) {
+		if ($suid = Request::GetPostData()->__suid) {
 			if (!static::EnableSuidSession()) {
 				throw CoreException::RaiseSystemError('存在しない__suidを指定されました。__suid:%s', [Request::GetPostData()->__suid]);
 			}
-			return Request::GetPostData()->__suid;
+			return $suid;
 		}
-		return static::GenerateSuid();
+		return false;
 	}
 
 	/**
@@ -293,7 +296,7 @@ trait SessionTrait {
 	protected static function _GetSeesionSuidLayerPath ($suid = null) {
 		return array_merge(
 			static::_GetSeesionTransactionLayerPath(),
-			[$suid ?: static::SeesionSuid()]
+			[$suid ?: static::SeesionSuid() ?? static::GenerateSuid()]
 		);
 	}
 

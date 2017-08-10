@@ -129,12 +129,12 @@ trait AppSuidSessionIccSupportTrait {
 				$lazy_evals = $lazy_evals();
 				return [
 					'action'	=> array_merge(
-						$lazy_evals['next_pre_action'] ?? [],
+						$lazy_evals['back_pre_action'] ?? [],
 						[
 							['suidSessionToPostData', [function () use ($lazy_evals) {return array_keys(is_callable($lazy_evals['target']) ? $lazy_evals['target']() : $lazy_evals['target']);}]],
 							['overWritePostData', ['has_validator', true]],
 						],
-						$lazy_evals['next_post_action'] ?? []
+						$lazy_evals['back_post_action'] ?? []
 					),
 					'next'	=> [
 						[static::MakeUrl($lazy_evals['back_controller'] ?? $this, $lazy_evals['back_action'], $lazy_evals['back_path_params'] ?? [], $lazy_evals['back_params'] ?? [])],
@@ -170,7 +170,7 @@ trait AppSuidSessionIccSupportTrait {
 						$lazy_evals['pre_action'] ?? [],
 						[
 							static::ActionBuilder('suidSessionToAssignData')->param(array_keys(is_callable($lazy_evals['target']) ? $lazy_evals['target']() : $lazy_evals['target']))->alias('assign_data'),
-							$lazy_evals['save_filter'] ?? function () {},
+							isset($lazy_evals['save_filter']) && is_callable($lazy_evals['save_filter']) ? static::ActionBuilder($lazy_evals['save_filter'])->bind('assign_data') : function () {},
 							static::ActionBuilder('saveSuidTransaction')->params([$lazy_evals['save_function'], null, $lazy_evals['suid_check'] ?? true, $lazy_evals['save_args'] ?? []])->bind('assign_data', 1)->alias('data'),
 						],
 						$lazy_evals['post_action'] ?? []
