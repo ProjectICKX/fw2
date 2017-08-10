@@ -31,14 +31,14 @@ namespace ickx\fw2\mvc\app\traits;
  */
 trait AppRouterTrait {
 	/**
-	 * utilityFRouter‚É“o˜^‚³‚ê‚Ä‚¢‚éî•ñ‚©‚çURL‚ğì¬‚µ‚Ü‚·B
+	 * utilityï¼šRouterã«ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹æƒ…å ±ã‹ã‚‰URLã‚’ä½œæˆã—ã¾ã™ã€‚
 	 *
-	 * @param	string|ickx\fw2\mvc\app\AppController	$controller		ƒRƒ“ƒgƒ[ƒ‰–¼‚Ü‚½‚ÍƒRƒ“ƒgƒ[ƒ‰
-	 * @param	string									$action_name	ƒAƒNƒVƒ‡ƒ“–¼
-	 * @param	array									$parameters		ƒpƒ‰ƒ[ƒ^
-	 * @param	array									$var_parameters	’x‰„•]‰¿—pƒpƒ‰ƒ[ƒ^
-	 * @param	string									$encoding		ƒGƒ“ƒR[ƒfƒBƒ“ƒO
-	 * @return	string|bool								URL ƒ}ƒbƒ`‚·‚éURL‚ª–³‚¢ê‡‚Ífalse
+	 * @param	string|ickx\fw2\mvc\app\AppController	$controller		ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ©åã¾ãŸã¯ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ©
+	 * @param	string									$action_name	ã‚¢ã‚¯ã‚·ãƒ§ãƒ³å
+	 * @param	array									$parameters		ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param	array									$var_parameters	é…å»¶è©•ä¾¡ç”¨ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param	string									$encoding		ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‡ã‚£ãƒ³ã‚°
+	 * @return	string|bool								URL ãƒãƒƒãƒã™ã‚‹URLãŒç„¡ã„å ´åˆã¯false
 	 */
 	public static function MakeUrl ($controller, $action_name = 'index', $parameters = [], $var_parameters = [], $encoding = null) {
 		return Flywheel::MakeUrl ($controller, $action_name, $parameters, $var_parameters , $encoding);
