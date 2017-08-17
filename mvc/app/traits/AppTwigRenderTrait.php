@@ -122,7 +122,7 @@ trait AppTwigRenderTrait {
 
 		$render['this']	= $this;
 
-		$options = $this->options->getArrayCopy();
+		$options = is_array($this->options) ? $this->options : $this->options->getArrayCopy();
 		foreach ($options as $key => $value) {
 			$options[$key] = preg_replace_callback("/\{:(.+?)\}/", function (array $matches) use ($render, $options) {$replace = isset($render[$matches[1]]) ? $render[$matches[1]] : (isset($options[$matches[1]]) ? $options[$matches[1]] : $matches[0]);return is_callable($replace) ? $replace($render, $options) : $replace;}, is_callable($value) ? $value($render, $options) : $value);
 		}

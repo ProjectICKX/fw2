@@ -111,7 +111,7 @@ class ActionBuilder {
 	}
 
 	protected function _paramBind () {
-		$params = $this->_params;
+		$params = $this->_params ?? [];
 		foreach ($this->_binds ?? [] as $idx => $render_var_name) {
 			if (is_string($render_var_name) || is_int($render_var_name)) {
 				$params[$idx] = function ($data) use ($render_var_name) {

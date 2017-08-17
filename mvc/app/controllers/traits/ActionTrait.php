@@ -371,7 +371,12 @@ trait ActionTrait {
 
 			if (is_null($action)) {
 				$action = ['NULL'];
+			} else if (is_array($action[0])) {
+				if (!method_exists($action[0][0], $action[0][1])) {
+					$action[0][0]	= is_object($action[0][0]) ? get_class($action[0][0]) : $action[0][0];
+				}
 			}
+
 			throw CoreException::RaiseSystemError('未定義のメソッドを指定されました。%s', [implode('::', (array) $action[0])]);
 		}
 
