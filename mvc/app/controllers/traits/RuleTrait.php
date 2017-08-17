@@ -43,7 +43,7 @@ trait RuleTrait {
 	 * @return	string	アクションルールトリガ
 	 */
 	public function searchTrigger ($action_rule_list = null) {
-		if ('POST' === $_SERVER['REQUEST_METHOD'] ?? '') {
+		if ('POST' === ($_SERVER['REQUEST_METHOD'] ?? '')) {
 			$post_data = Request::GetPostData();
 			foreach (array_keys($action_rule_list ?? $this->getActionRule()) as $trigger) {
 				if (substr($trigger, 0, 8) === ':router:') {

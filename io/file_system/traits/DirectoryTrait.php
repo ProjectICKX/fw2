@@ -88,17 +88,17 @@ trait DirectoryTrait {
 
 		//ディレクトリの作成
 		if (!mkdir($dir_path, $mode, $parents)) {
-			return CoreException::ScrubbedThrow(Status::SystemError('ディレクトリの作成に失敗しました。dir_path:%s, mode:%s, parents:%s'. [$dir_path, $mode ,$parents]), $raise_exception);
+			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ディレクトリの作成に失敗しました。dir_path:%s, mode:%s, parents:%s', [$dir_path, $mode ,$parents]), $raise_exception);
 		}
 
 		//持ち主の変更
 		if ($owner !== null && !chown($dir_path, $owner)) {
-			return CoreException::ScrubbedThrow(Status::SystemError('ディレクトリのオーナー変更に失敗しました。dir_path:%s, owner:%s'. [$dir_path, $owner]), $raise_exception);
+			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ディレクトリのオーナー変更に失敗しました。dir_path:%s, owner:%s', [$dir_path, $owner]), $raise_exception);
 		}
 
 		//グループの変更
 		if ($group !== null && !chgrp($dir_path, $group)) {
-			return CoreException::ScrubbedThrow(Status::SystemError('ディレクトリのグループ変更に失敗しました。dir_path:%s, group:%s'. [$dir_path, $group]), $raise_exception);
+			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ディレクトリのグループ変更に失敗しました。dir_path:%s, group:%s', [$dir_path, $group]), $raise_exception);
 		}
 
 		//==============================================
@@ -133,7 +133,7 @@ trait DirectoryTrait {
 		//==============================================
 		//ディレクトリ存在確認
 		if (!file_exists($dir_path)) {
-			return CoreException::ScrubbedThrow(DirectoryStatus::Found('%sディレクトリが存在しません。dir_path:%s', [$name, $dir_path]), $raise_exception);
+			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('%sディレクトリが存在しません。dir_path:%s', [$name, $dir_path]), $raise_exception);
 		}
 
 		//親ディレクトリ権限確認
