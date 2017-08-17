@@ -75,6 +75,15 @@ trait RenderTrait {
 	public $skipRender			= false;
 
 	/**
+	 * レイアウトを設定します。
+	 *
+	 * @param	string	$layout	レイアウト名
+	 */
+	public function setLayout ($layout) {
+		$this->layout = $layout;
+	}
+
+	/**
 	 * テンプレートを設定します。
 	 *
 	 * @param	string	$template	テンプレート名
