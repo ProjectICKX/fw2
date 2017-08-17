@@ -21,10 +21,7 @@
 namespace ickx\fw2\io\file_system\traits;
 
 use ickx\fw2\core\exception\CoreException;
-use ickx\fw2\core\status\MultiStatus;
 use ickx\fw2\io\file_system\status\DirectoryStatus;
-use ickx\fw2\vartype\arrays\Arrays;
-use ickx\fw2\vartype\strings\Strings;
 
 /**
  * ファイル特性。
@@ -212,7 +209,7 @@ trait FileTrait {
 		//==============================================
 		//ファイル存在確認
 		if (file_exists($file_path)) {
-			return CoreException::ScrubbedThrow(DirectoryStatus::Found('既にファイルが存在します。dir_path:%s'. [$file_path]), $raise_exception);
+			return CoreException::ScrubbedThrow(DirectoryStatus::Found('既にファイルが存在します。dir_path:%s', [$file_path]), $raise_exception);
 		}
 
 		//親ディレクトリ権限確認
@@ -232,17 +229,17 @@ trait FileTrait {
 
 		//ファイルの作成
 		if (!mkdir($file_path, $mode, $parents)) {
-			return CoreException::ScrubbedThrow(Status::SystemError('ファイルの作成に失敗しました。dir_path:%s, mode:%s, parents:%s'. [$file_path, $mode ,$parents]), $raise_exception);
+			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ファイルの作成に失敗しました。dir_path:%s, mode:%s, parents:%s', [$file_path, $mode ,$parents]), $raise_exception);
 		}
 
 		//持ち主の変更
 		if ($owner !== null && !chown($file_path, $owner)) {
-			return CoreException::ScrubbedThrow(Status::SystemError('ファイルのオーナー変更に失敗しました。dir_path:%s, owner:%s'. [$file_path, $owner]), $raise_exception);
+			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ファイルのオーナー変更に失敗しました。dir_path:%s, owner:%s', [$file_path, $owner]), $raise_exception);
 		}
 
 		//グループの変更
 		if ($group !== null && !chgrp($file_path, $group)) {
-			return CoreException::ScrubbedThrow(Status::SystemError('ファイルのグループ変更に失敗しました。dir_path:%s, group:%s'. [$file_path, $group]), $raise_exception);
+			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ファイルのグループ変更に失敗しました。dir_path:%s, group:%s', [$file_path, $group]), $raise_exception);
 		}
 
 		//==============================================
