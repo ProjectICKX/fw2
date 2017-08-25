@@ -121,8 +121,36 @@ abstract class ClassLoader {
 		}
 
 		//クラスファイルが存在するか確認
-		if (!static::$_UseComposerLoader && !file_exists($real_file_path)) {
-			throw new \Exception(sprintf('class file not found:%s, file path:%s', $class_path, $real_file_path));
+		if (!file_exists($real_file_path)) {
+			//ファイルが見つからなかったので候補を探す
+			$target_list	= explode('/', str_replace("\\", '/', $real_file_path));
+			if (isset($target_list[0])) {
+				$target_list[0] = '/';
+			}
+
+			$perhaps = [$target_list[0]];
+
+			foreach ($target_list as $target) {
+				$shortest	= -1;
+				$closet		= null;
+
+				foreach (new \DirectoryIterator(implode('/', $perhaps)) as $fileInfo) {
+					$part	= $fileInfo->getFilename();
+					if (0 === $lev = levenshtein($part, $target)) {
+						$closet	= $part;
+						break;
+					}
+
+					if ($lev <= $shortest || $shortest === -1) {
+						$shortest	= $lev;
+						$closet		= $part;
+					}
+				}
+
+				$perhaps[] = $closet;
+			}
+
+			throw new \Exception(sprintf('class file not found:%s, file path:%s, perhaps:%s', $class_path, $real_file_path, implode('/', $perhaps)));
 		}
 
 		//クラスファイルのロード
