@@ -276,7 +276,7 @@ class Flywheel {
 	 * @return	string	SystemRootへのフルパス
 	 */
 	public static function GetSrcPath () {
-		return static::GetSystemRootPath() . 'src';
+		return static::GetSystemRootPath() . '/src';
 	}
 
 	/**
@@ -315,7 +315,7 @@ class Flywheel {
 	 * @return	string	package full path
 	 */
 	public static function GetPackageFullPath () {
-		return static::GetVendorPath() .'/'. static::GetPackagePath();
+		return static::GetSrcPath() .'/'. static::GetPackagePath();
 	}
 
 	/**
