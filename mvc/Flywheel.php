@@ -111,8 +111,8 @@ class Flywheel {
 
 		//リクエストログ（この段階でログを取得する）
 		if (!Environment::IsCli()) {
-		StaticLog::SetRequestLog(FilePath::APP_LOG_DIR(), static::_RequestLogOptions());
-	}
+			StaticLog::SetRequestLog(FilePath::APP_LOG_DIR(), static::_RequestLogOptions());
+		}
 	}
 
 	/**
