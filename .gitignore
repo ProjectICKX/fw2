@@ -1,6 +1,7 @@
 .buildpath
 .project
 .vagrant
+.settings
 vendor/
 composer.lock
 composer.phar
