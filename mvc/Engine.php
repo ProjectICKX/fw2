@@ -51,12 +51,16 @@ class Engine {
 		//------------------------------------------------------
 		Stopwatch::Start();
 
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+
 		//------------------------------------------------------
 		//主処理の実行
 		//------------------------------------------------------
 		//var_dump対策のため、最上層でアウトプットバッファリングする
 		//cliの場合はデフォルトで無効化とする
 		Environment::IsCli() ?: OutputBuffer::Start(OutputBuffer::HANDLER_DEFAULT);
+
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 
 		//主処理の実行
 		try {
@@ -68,6 +72,8 @@ class Engine {
 			StaticLog::WriteErrorLog($e->getMessage() ."\n". CoreException::ConvertToStringMultiLine($e));
 			throw $e;
 		}
+
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 
 		//実行結果の出力
 		Environment::IsCli() ?: OutputBuffer::EndFlush();
@@ -96,6 +102,8 @@ class Engine {
 		//------------------------------------------------------
 		//処理の終了
 		//------------------------------------------------------
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+
 		return $ret;
 	}
 
@@ -107,6 +115,7 @@ class Engine {
 	 * @return	boolean	実行後ステータス 正常終了：true 異常終了：false
 	 */
 	protected static function _Dispatch ($url, $namespace, $call_type = null) {
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 		//------------------------------------------------------
 		//実行対象URLの解析
 		//------------------------------------------------------
@@ -160,16 +169,21 @@ class Engine {
 					continue;
 				case IController::NEXT_RENDERING:
 					if (!in_array($call_type, ['call', 'caller'], true)) {
-						return $controller_instance->rendering();
+						assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+						$ret = $controller_instance->rendering();
+						assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('rendering'));
 					}
 					break;
 				case IController::NEXT_CALLER:
-					return $controller_instance->render;
+					$ret = $controller_instance->render;
 				default:
 					throw CoreException::RaiseSystemError('適切な次処理が設定されていません。next:%s', [$controller_instance->next]);
 					break;
 			}
 		}
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log(''));
+
+		return $ret;
 	}
 
 	/**

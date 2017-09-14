@@ -59,11 +59,14 @@ trait ValidateTrait {
 			'positive_int'	=> [function ($value, $options, $meta = []) {return filter_var($value, \FILTER_VALIDATE_INT) > -1;}, '{:title}には正の整数を入力してください。'],
 			'negative_int'	=> [function ($value, $options, $meta = []) {return filter_var($value, \FILTER_VALIDATE_INT) < 1;}, '{:title}には負の整数を入力してください。'],
 			'int_length'	=> [function ($value, $options, $meta = []) {return static::Length($value, ['length' => $options[0] ?? $options['length'] ?? null], $options);}, '{:title}は{:length:0}桁入力してください。'],
-			'int_range'		=> [function ($value, $options, $meta = []) {return is_int(filter_var($value, \FILTER_VALIDATE_INT, $options));}, '{:title}には{:min_range:0}から{:max_range:1}までの間の半角数値を入力してください。'],
-			'int_min_range'	=> [function ($value, $options, $meta = []) {return is_int(filter_var($value, \FILTER_VALIDATE_INT, ['min_range' => $options['min_range']]));}, '{:title}には{:min_range:0}以上の半角数値を入力してください。'],
-			'int_max_range'	=> [function ($value, $options, $meta = []) {return is_int(filter_var($value, \FILTER_VALIDATE_INT, ['max_range' => $options['max_range']]));}, '{:title}には{:max_range:0}以下の半角数値を入力してください。'],
+			'int_range'		=> [function ($value, $options, $meta = []) {return is_int(filter_var($value, \FILTER_VALIDATE_INT, ['options' => $options]));}, '{:title}には{:min_range:0}から{:max_range:1}までの間の半角数値を入力してください。'],
+			'int_min_range'	=> [function ($value, $options, $meta = []) {return is_int(filter_var($value, \FILTER_VALIDATE_INT, ['options' => ['min_range' => $options['min_range']]]));}, '{:title}には{:min_range:0}以上の半角数値を入力してください。'],
+			'int_max_range'	=> [function ($value, $options, $meta = []) {return is_int(filter_var($value, \FILTER_VALIDATE_INT, ['options' => ['max_range' => $options['max_range']]]));}, '{:title}には{:max_range:0}以下の半角数値を入力してください。'],
 
-			'float'			=> [function ($value, $options, $meta = []) {return is_float(filter_var($value, \FILTER_VALIDATE_FLOAT)) && 0 === preg_match("/\A[^0-9\-\+eEx\.]\z/", $value);}, '{:title}には実数を入力してください。'],
+			'float'				=> [function ($value, $options, $meta = []) {return is_float(filter_var($value, \FILTER_VALIDATE_FLOAT)) && 0 === preg_match("/\A[^0-9\-\+eEx\.]\z/", $value);}, '{:title}には実数を入力してください。'],
+			'float_range'		=> [function ($value, $options, $meta = []) {return is_float(filter_var($value, \FILTER_VALIDATE_FLOAT, ['options' => $options])) && 0 === preg_match("/\A[^0-9\-\+eEx\.]\z/", $value);}, '{:title}には{:min_range:0}から{:max_range:1}までの間の実数を入力してください。'],
+			'float_min_range'	=> [function ($value, $options, $meta = []) {return is_float(filter_var($value, \FILTER_VALIDATE_FLOAT, ['options' => ['min_range' => $options['min_range']]])) && 0 === preg_match("/\A[^0-9\-\+eEx\.]\z/", $value);}, '{:title}には{:min_range:0}以上の実数を入力してください。'],
+			'float_max_range'	=> [function ($value, $options, $meta = []) {return is_float(filter_var($value, \FILTER_VALIDATE_FLOAT, ['options' => ['max_range' => $options['max_range']]])) && 0 === preg_match("/\A[^0-9\-\+eEx\.]\z/", $value);}, '{:title}には{:max_range:0}以下の実数を入力してください。'],
 
 			//bit演算
 			'bit_any'		=> [function  ($value, $options, $meta = []) {$value = (int) $value;return $value !== 0 && $value === ($value & $options[0] ?? $options['bit'] ?? 0);}, '{:title}には有効なbit値を入力してください。'],
@@ -205,10 +208,14 @@ trait ValidateTrait {
 			'upload_check_status'	=> [function ($value, $options, $meta = []) {return static::CheckUploadStatus($value, $options, $meta);}, '{:title}{:adjust}でエラーが発生しました。error code:{:error_code} {:validator_message}'],
 			'upload_range_filesize'	=> [function ($value, $options, $meta = []) {return static::Range($value['size'], $options, $options['format'] ?? null, $options);}, '{:title}はファイルサイズを{:min_range:0}バイトから{:max_range:1}バイトまでの間にしてください。'],
 			'upload_min_filesize'	=> [function ($value, $options, $meta = []) {return static::Range($value['size'], ['min_range' => $options[0] ?? $options['min_range'] ?? null], $options['format'] ?? null, $options);}, '{:title}はファイルサイズが{:min_range:0}バイト以上必要です。'],
-			'upload_max_filesize'	=> [function ($value, $options, $meta = []) {return static::Range($value['size'], ['max_range' => $options[1] ?? $options['max_range'] ?? $options[0] ?? null], $options['format'] ?? null, $options);}, '{:title}はファイルサイズが{:max_range:0}バイト以下である必要があります。'],
-			'upload_mimetype'		=> [function ($value, $options, $meta = []) {return $value['type'] > $options[0] ?? $options['max'] ?? null;} ,'{:title}は{:max:0}バイト以上にしてください。'],
-			'upload_ext'			=> [function ($value, $options, $meta = []) {return $value['type'] > $options[0] ?? $options['max'] ?? null;} ,'{:title}は{:max:0}バイト以上にしてください。'],
-			'upload_name'			=> [function ($value, $options, $meta = []) {return $value['type'] > $options[0] ?? $options['max'] ?? null;} ,'{:title}は{:max:0}バイト以上にしてください。'],
+			'upload_max_filesize'	=> [function ($value, $options, $meta = []) {return static::Range($value['size'], ['max_range' => $options[0] ?? $options['max_range'] ?? null], $options['format'] ?? null, $options);}, '{:title}はファイルサイズが{:max_range:0}バイト以下である必要があります。'],
+			'upload_mimetype'		=> [function ($value, $options, $meta = []) {return in_array($value['type'], $options['mimetype'] ?? $options[0] ?? [], true);} ,'{:title}はMIME-Typeが{:mimetype:0}のファイルのみ扱えます。'],
+			'upload_ext'			=> [function ($value, $options, $meta = []) {return in_array(pathinfo($value['name'], \PATHINFO_EXTENSION), $options['ext'] ?? $options[0] ?? [], true);} ,'{:title}は拡張子が{:ext:0}のファイルのみ扱えます。'],
+//			'upload_name_regex'		=> [function ($value, $options, $meta = []) {return $value['type'] > $options[0] ?? $options['max'] ?? null;} ,'{:title}は{:max:0}バイト以上にしてください。'],
+
+			'upload_csv_header_length_range'	=> [function ($value, $options, $meta = []) {return is_int(filter_var(count(static::createCsvGenerator($value['tmp_name'], $options['encoding'] ?? null, $options['bit_flag'] ?? null)()->current()), \FILTER_VALIDATE_INT, ['options' => $options]));}, '{:title}は{:min_range:0}列以上{:max_range:1}列以下の列数が必要です。'],
+			'upload_csv_header_not_empty_cell'	=> [function ($value, $options, $meta = []) {$error_cols = [];foreach (static::createCsvGenerator($value['tmp_name'], $options['encoding'] ?? null, $options['bit_flag'] ?? null)()->current() as $idx => $element) {if ($element === '') {$error_cols[] = $idx + 1;};};return empty($error_cols) ? true : ['error_cols' => implode(', ', $error_cols)];}, '{:title}の{:error_cols}列目に空の列名があります。'],
+			'upload_csv_header_not_overlap'		=> [function ($value, $options, $meta = []) {$value = static::createCsvGenerator($value['tmp_name'], $options['encoding'] ?? null, $options['bit_flag'] ?? null)()->current();$ret = [];foreach (array_unique($duplicate_values = array_diff_assoc($value, array_unique($value, \SORT_REGULAR)), \SORT_REGULAR) as $duplicate_value) {$ret[] = sprintf('%s:%s列目', $duplicate_value, implode(', ', array_keys($duplicate_values, $duplicate_value, true)));};return empty($ret) ? true : ['error_cols' => implode(', ', $ret)];}, '{:title}に重複した列名があります。{:error_cols}'],
 
 			//文字セット
 			'charset_email'			=> [function ($value, $options, $meta = []) {$filterd_length = strlen(filter_var($value, \FILTER_SANITIZE_EMAIL));return $filterd_length !== 0 && $filterd_length === strlen($value);}, '{:title}にはemailに利用できる文字を入力してください。'],
@@ -791,8 +798,30 @@ trait ValidateTrait {
 
 		return [
 			'adjust'			=> $options['is_array'] ?? false ? 'の{:loop_index}個目のファイル' : '',
-			'error_code'		=> $error_code,
+			'error_code'		=> $error_code ?? 'NULL',
 			'validator_message'	=> $upload_error_list[$error_code] ?? '不明なエラーが発生しました。',
 		];
+	}
+
+	public static function createCsvGenerator ($file_path, $encoding = [], $options = null) {
+		return function () use ($file_path, $encoding, $options) {
+			$csv_file = new \SplFileObject(sprintf('php://filter/read=convert.iconv.%s%%2F%s/resource=%s', $encoding['from'] ?? 'cp932', $encoding['to'] ?? 'utf-8', $file_path), 'rb');
+
+			$bit_flag = \SplFileObject::READ_CSV;
+			foreach ($options ?? [
+				\SplFileObject::SKIP_EMPTY,
+				\SplFileObject::READ_AHEAD,
+				\SplFileObject::DROP_NEW_LINE
+			] as $bit) {
+				$bit_flag |= $bit;
+			}
+			$csv_file->setFlags($bit_flag);
+
+			foreach ($csv_file as $idx => $row) {
+				yield $id => $row;
+			}
+
+			return null;
+		};
 	}
 }

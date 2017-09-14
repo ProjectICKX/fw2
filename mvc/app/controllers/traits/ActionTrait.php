@@ -106,13 +106,17 @@ trait ActionTrait {
 	 * @return	array	描画用データ
 	 */
 	public function action ($render = []) {
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+
 		if ($this->isError()) {
 			if ($this->rule->error === false) {
+				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('isError'));
 				return $this->render;
 			}
 			$action_list = $this->rule->error ?: [];
 		} else {
 			if ($this->rule->action === false) {
+				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('isActionRuleError'));
 				return $this->render;
 			}
 			$action_list = $this->rule->action ?: [];
@@ -120,10 +124,13 @@ trait ActionTrait {
 
 		$action_set = static::GetExecuteAction($this, $action_list);
 		if (empty($action_set) || current($action_set) === null) {
+			assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('isEmptyAction'));
 			return [];
 		}
 
 		while (($action = current($action_set)) !== false) {
+			assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('actionStart'));
+
 			$key	= key($action_set);
 			$action = [
 				1		=> $action,
@@ -134,6 +141,7 @@ trait ActionTrait {
 			next($action_set);
 
 			if ($this->isPurgeActionChain()) {
+				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('PurgeActionChain'));
 				return $this->render;
 			}
 
@@ -148,6 +156,8 @@ trait ActionTrait {
 				$post_action_filter = $action[3] ?? null;
 
 				$result_part_list = $action[0];
+
+				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('is_var'));
 			} else {
 				if (!is_callable($action[0])) {
 					if ($action[0] === null) {
@@ -196,6 +206,7 @@ trait ActionTrait {
 
 				//action本体の実行
 				$result_part_list = $action[0](...$params);
+				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log(static::getActionMethodName($action)));
 			}
 
 			if ($post_action_filter !== null && is_callable($post_action_filter)) {
@@ -249,7 +260,9 @@ trait ActionTrait {
 				prev($action_set);
 				$this->setNextAction(null);
 			}
+			assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('actionEnd'));
 		}
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('isActionLoopExecuted'));
 
 		return $current_render;
 	}
@@ -369,15 +382,9 @@ trait ActionTrait {
 				}
 			}
 
-			if (is_null($action)) {
-				$action = ['NULL'];
-			} else if (is_array($action[0])) {
-				if (!method_exists($action[0][0], $action[0][1])) {
-					$action[0][0]	= is_object($action[0][0]) ? get_class($action[0][0]) : $action[0][0];
-				}
-			}
+			$action_method_name = static::getActionMethodName($action);
 
-			throw CoreException::RaiseSystemError('未定義のメソッドを指定されました。%s', [implode('::', (array) $action[0])]);
+			throw CoreException::RaiseSystemError('未定義のメソッドを指定されました。%s', [$action_method_name]);
 		}
 
 		if ($key === null || empty($action_set)) {
@@ -393,5 +400,18 @@ trait ActionTrait {
 		}
 
 		return $action_set;
+	}
+
+	public static function getActionMethodName ($action) {
+		if (is_null($action)) {
+			return NULL;
+		} else if (is_array($action[0])) {
+			if (is_object($action[0][0])) {
+				return get_class($action[0][0]) .'->'. $action[0][1];
+			} else {
+				return implode('::', $action[0]);
+			}
+		}
+		return $action[0];
 	}
 }

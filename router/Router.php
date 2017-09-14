@@ -20,6 +20,8 @@
 
 namespace ickx\fw2\router;
 
+use ickx\fw2\io\cache\Cache;
+
 /**
  * URLルーティング処理を行うクラスです。
  *
@@ -57,14 +59,33 @@ abstract class Router {
 	/** @var	array	ルールベースオプション */
 	protected static $_ruleBaseOptions = [];
 
+	protected static $_cache = null;
+
+	public static function enableCache () {
+		if (!(static::$_commonOptions['cache_key'] ?? false)) {
+			return false;
+		}
+
+		return !((static::$_cache ?? static::$_cache = Cache::init(static::$_commonOptions['cache_key'] ?? static::class))->get('connect') == false);
+	}
+
+	public static function getConnectCache () {
+		return (static::$_cache ?? static::$_cache = Cache::init(static::$_commonOptions['cache_key'] ?? static::class))->get('connect');
+	}
+
+	public static function updateConnectCache () {
+		(static::$_cache ?? static::$_cache = Cache::init(static::$_commonOptions['cache_key'] ?? static::class))->set('connect', static::$_connectionList);
+	}
+
 	/**
 	 * 接続パスを登録します。
 	 *
 	 * @param	string	$path		パス
 	 * @param	array	$options	オプション
 	 */
-	public static function Connect ($path, array $options = []) {
+	public static function Connect ($path, $options = []) {
 		static::$_connectionList[$path] = compact('path', 'options');
+		!(static::$_commonOptions['use_cache'] ?? false) ?: static::updateConnectCache();
 	}
 
 	/**
@@ -72,7 +93,7 @@ abstract class Router {
 	 *
 	 * @param	array	$options	共通設定オプション
 	 */
-	public static function SetCommonOptions (array $options) {
+	public static function SetCommonOptions ($options) {
 		static::$_commonOptions = $options;
 	}
 
@@ -81,7 +102,7 @@ abstract class Router {
 	 *
 	 * @param	array	$options	共通設定オプション
 	 */
-	public static function SetRuleBaseOption ($rule, array $options) {
+	public static function SetRuleBaseOption ($rule, $options) {
 		static::$_ruleBaseOptions[$rule] = $options;
 	}
 
@@ -133,6 +154,9 @@ abstract class Router {
 			$is_cache = true;
 			$connection_list	= [$connection];
 		} else {
+			if (static::enableCache()) {
+				static::$_connectionList = static::getConnectCache();
+			}
 			$connection_list = static::$_connectionList;
 		}
 
@@ -286,6 +310,10 @@ abstract class Router {
 			} else if (isset($error_options[1])) {
 				$action = $error_options[1];
 			}
+		}
+
+		if (static::enableCache()) {
+			static::$_connectionList = static::getConnectCache();
 		}
 
 		//Connection単位で処理

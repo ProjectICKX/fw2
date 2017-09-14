@@ -87,6 +87,8 @@ trait ControllerTrait {
 	 * @return	Controller	インスタンス
 	 */
 	public static function Execute ($params, $instance = null) {
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+
 		$instance = new static;
 		if ($instance !== null) {
 			$class_name = static::class;
@@ -96,6 +98,8 @@ trait ControllerTrait {
 		} else {
 			$instance = new static;
 		}
+
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('create_instance'));
 
 		$params = LazyArrayObject::Create($params);
 		$instance->options		= LazyArrayObject::RecursiveCreate($params->options ?: []);
@@ -135,6 +139,8 @@ trait ControllerTrait {
 			}
 		}
 
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('route_and_options_setup'));
+
 		$instance->templateDir	= $instance->options->template_dir ?: $instance->controller;
 		$instance->templateExtDirList	= $instance->options->template_ext_dir_list ? $instance->options->template_ext_dir_list->getArrayCopy() : [];
 
@@ -151,6 +157,8 @@ trait ControllerTrait {
 			}
 		}
 
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('template_setup'));
+
 		if (!$instance->canKeepTrigger() && $instance->trigger === null) {
 			$instance->trigger = $instance->searchTrigger($instance->currentRule = $instance->getActionRule());
 		}
@@ -166,12 +174,18 @@ trait ControllerTrait {
 		$setup_action_events = [$instance, Strings::ToLowerCamelCase($instance->action.'_setup_events')];
 		!is_callable($setup_action_events) ?: $setup_action_events();
 
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('setup_action_events'));
+
 		$instance->dispatchEvents();
+
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('dispatchEvents'));
 
 		if (!$instance->canKeepTrigger()) {
 			$instance->releaseTrigger($instance->trigger);
 		}
 		$instance->keepTrigger = false;
+
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 
 		return $instance;
 	}

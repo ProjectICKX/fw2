@@ -45,11 +45,13 @@ trait StaticLogTrait {
 	 * @param	string	$file_path	ログファイルパス
 	 * @param	string	$lf_code	行の末尾に付与する改行コード 空文字を指定すると改行されなくなる
 	 */
-	public static function SetLogFilePath ($name, $file_path, $lf_code = Strings::LF) {
-		$parent_dir = dirname($file_path);
-		if ($parent_dir !== '' && !file_exists($parent_dir)) {
-			if (!mkdir($parent_dir, 0777, true)) {
-				throw new \Exception('ログ出力ディレクトリを作成できません。親ディレクトリに書き込み権限がありません。dir path:'. dirname($parent_dir));
+	public static function SetLogFilePath ($name, $file_path, $lf_code = Strings::LF, $created = false) {
+		if (!$created) {
+			$parent_dir = dirname($file_path);
+			if ($parent_dir !== '' && !file_exists($parent_dir)) {
+				if (!mkdir($parent_dir, 0777, true)) {
+					throw new \Exception('ログ出力ディレクトリを作成できません。親ディレクトリに書き込み権限がありません。dir path:'. dirname($parent_dir));
+				}
 			}
 		}
 		static::SetClassVar($name .'_log_file_path', $file_path);

@@ -135,30 +135,36 @@ class TimeProfiler {
 		//==============================================
 		// スタックツリー構築
 		//==============================================
-		$stack_tree = [];
-		foreach (array_slice(debug_backtrace(\DEBUG_BACKTRACE_PROVIDE_OBJECT), 1) as $backtrace) {
-			$stack_tree[] = isset($backtrace['class']) ? sprintf('%s%s%s', $backtrace['class'], $backtrace['type'], $backtrace['function']) : $backtrace['function'];
+		$befor_backtrace = null;
+		foreach (debug_backtrace(\DEBUG_BACKTRACE_PROVIDE_OBJECT) as $backtrace) {
+			if (!is_null($befor_backtrace)) {
+				$stack_tree[]	= sprintf('%s(%s): %s', $befor_backtrace['file'], $befor_backtrace['line'] ?? 'NULL', isset($backtrace['class']) ? sprintf('%s%s%s', $backtrace['class'], $backtrace['type'], $backtrace['function']) : $backtrace['function']);
+			}
+			$befor_backtrace = $backtrace;
 		}
-		$stack_tree[]	= 'main';
+		$stack_tree[]	= sprintf('%s(%s): main', $befor_backtrace['file'], $befor_backtrace['line'] ?? 'NULL');
 		$node_name		= reset($stack_tree);
 		$stack_tree		= array_reverse($stack_tree);
 
 		$instance = static::$instance[$name] ?? static::$instance[$name] = new static($name, $stack_tree);
 
+		$current_parent_tree	= array_slice($instance->stackTree, 0, -1);
+		$parent_tree			= array_slice($stack_tree, 0, -1);
+
 		//==============================================
 		// スタックツリーの深さが変わらない場合はインスタンスを返して終わる
 		//==============================================
-		if ($instance->stackTree === $stack_tree) {
+		if ($current_parent_tree === $parent_tree) {
 			return $instance;
 		}
 
 		//==============================================
 		// スタックツリー変化時の処理
 		//==============================================
-		$same_parent		= true;
+		$same_parent		= count($instance->stackTree) === count($stack_tree);
 		$stack_tree_node	= null;
-		foreach ($instance->stackTree as $idx => $signature) {
-			if ($signature !== ($stack_tree_node = $stack_tree[$idx] ?? false)) {
+		foreach ($current_parent_tree as $idx => $signature) {
+			if ($signature !== ($stack_tree_node = $parent_tree[$idx] ?? false)) {
 				$same_parent	= false;
 				break;
 			}
@@ -178,8 +184,8 @@ class TimeProfiler {
 		//----------------------------------------------
 		// 複雑な遷移があった場合
 		//----------------------------------------------
-		$up_count = count($instance->stackTree) - $idx;
-		for ($i = 0;$i < $up_count;$i++) {
+		$up_count = count($current_parent_tree) - $idx;
+		for ($i = 0;$i < $up_count && !is_null($instance->parentNode);$i++) {
 			$instance = $instance->parentNode;
 		}
 		$parentNode = $instance;
@@ -198,7 +204,53 @@ class TimeProfiler {
 		$instance->parentNode		= $parentNode;
 		$parentNode->logs[]			= ['child' => $instance];
 		static::$instance[$name]	= $instance;
+
 		return $instance;
+	}
+
+	/**
+	 * 1行分のログデータを1行の文字列にして返します。
+	 *
+	 * @param	array	$log
+	 * @param	\ickx\fw2\basic\log\TimeProfiler	プロファイラノード
+	 * @return	string	ログデータ
+	 */
+	public static function format ($log, $instance, $point, $depth, $time_format = null, $format = null) {
+		$time_format	= constant(static::class .'::'. ($time_format ?? 'TIME_FORMAT_MICRO'));
+		$format			= $format ?? '[%s] log:%s.%-4s total:[split:'. $time_format[0] .', lap:'. $time_format[0] .'] part:[split:'. $time_format[0] .', rap:'. $time_format[0] .'] [%-5s:%s] comment:[%s]';
+
+		return sprintf(
+			$format,
+			$instance->name(),
+			date('Y-m-d H:i:s', (int) $log['log']),
+			explode('.', $log['log'])[1] ?? 0,
+			sprintf($time_format[1], $log['total_split']),
+			sprintf($time_format[1], $log['total_lap']),
+			sprintf($time_format[1], $log['split']),
+			sprintf($time_format[1], $log['rap']),
+			$point,
+			implode("() => ", $instance->stackTree()) . '()',
+			implode('::', (array) $log['comment'])
+			);
+	}
+
+	public static function minimalFormat ($log, $instance, $point, $depth, $time_format = null, $format = null) {
+		$time_format	= constant(static::class .'::'. ($time_format ?? 'TIME_FORMAT_MICRO'));
+		$format			= $format ?? '[%s] [t_split:'. $time_format[0] .'] [split:'. $time_format[0] .', rap:'. $time_format[0] .'] %s [%-5s:%s] [%s]';
+
+		$stack_trace = $instance->stackTree() ?? [];
+
+		return sprintf(
+			$format,
+			$instance->name(),
+			sprintf($time_format[1], $log['total_split']),
+			sprintf($time_format[1], $log['split']),
+			sprintf($time_format[1], $log['rap']),
+			str_repeat(' ', $depth * 2),
+			$point,
+			end($stack_trace),
+			implode('::', (array) $log['comment'])
+			);
 	}
 
 	//==============================================
@@ -238,6 +290,8 @@ class TimeProfiler {
 		if (!is_null(static::$logCallback[$this->name] ?? null)) {
 			static::$logCallback[$this->name]($log, $this);
 		}
+
+		return $this;
 	}
 
 	/**
@@ -246,14 +300,20 @@ class TimeProfiler {
 	 * @param	array	$filter	指定したスタックツリーの箇所のみをダンプします。
 	 * @return	array	取得した実行時間の配列
 	 */
-	public function dump ($filter = []) {
+	public function dump ($filter = [], $depth = 0) {
+		end($this->logs);
+		$last_key = key($this->logs);
+		reset($this->logs);
+
+		$point = null;
+
 		$result = [];
-		foreach ($this->logs as $log) {
+		foreach ($this->logs as $idx => $log) {
 			if (isset($log['child'])) {
-				$result = array_merge($result, $log['child']->dump($filter));
+				$result = array_merge($result, $log['child']->dump($filter, $depth + 1));
 			} else {
 				if (empty($target) || $target === $this->stackTree) {
-					$result[] = static::format($log, $this);
+					$result[] = static::minimalFormat($log, $this, $last_key !== 0 && $last_key === $idx ? 'end' : (is_null($point) ? $point = 'start' : 'cp'), $depth);
 				}
 			}
 		}
@@ -266,7 +326,7 @@ class TimeProfiler {
 	 * @return	\ickx\fw2\basic\log\TimeProfiler	計測スタックのルートノード
 	 */
 	public function rootNode () {
-		for ($instance = $this;!is_null($parentNode = $instance->parentNode);$instance = $parentNode);
+		for ($instance = $this;!is_null($instance->parentNode);$instance = $instance->parentNode);
 		return $instance;
 	}
 
@@ -298,27 +358,15 @@ class TimeProfiler {
 	}
 
 	/**
-	 * 1行分のログデータを1行の文字列にして返します。
+	 * 現在までに取得した内容をファイルに出力します。
 	 *
-	 * @param	array	$log
-	 * @param	\ickx\fw2\basic\log\TimeProfiler	プロファイラノード
-	 * @return	string	ログデータ
+	 * @param	string	$file_path	ファイルパス
+	 * @return	bool	出力に成功した場合はtrue、そうでない場合はfalse
 	 */
-	public static function format ($log, $instance, $time_format = null, $format = null) {
-		$time_format	= constant(static::class .'::'. ($time_format ?? 'TIME_FORMAT_MICRO'));
-		$format			= $format ?? '[%s.%-4s] [%s] total:[split:'. $time_format[0] .', lap:'. $time_format[0] .'] part:[split:'. $time_format[0] .', rap:'. $time_format[0] .'] calltree:[%s] comment:[%s]';
-
-		return sprintf(
-			$format,
-			date('Y-m-d H:i:s', (int) $log['log']),
-			explode('.', $log['log'])[1] ?? 0,
-			$instance->name(),
-			sprintf($time_format[1], $log['total_split']),
-			sprintf($time_format[1], $log['total_lap']),
-			sprintf($time_format[1], $log['split']),
-			sprintf($time_format[1], $log['rap']),
-			implode("() => ", $instance->stackTree()) . '()',
-			implode('::', (array) $log['comment'])
-		);
+	public function outputDump ($file_path, $filter = []) {
+		$group		= sprintf('[%s.%-4s] ', date('Y-m-d H:i:s', (int) $_SERVER['REQUEST_TIME_FLOAT']), explode('.', $_SERVER['REQUEST_TIME_FLOAT'])[1] ?? 0);
+		$separator	= \PHP_EOL . $group;
+		$instance	= $this->rootNode();
+		return error_log($group . implode($separator, $instance->dump($filter)) . \PHP_EOL, 3, $file_path);
 	}
 }

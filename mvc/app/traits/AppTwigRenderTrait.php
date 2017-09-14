@@ -39,6 +39,8 @@ trait AppTwigRenderTrait {
 	 * レンダー初期化設定
 	 */
 	public function renderSetting () {
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+
 		$this->templateDirList = array_merge([
 			FilePath::TEMPLATES_PATH(),
 			FilePath::CreateDirPath([FilePath::TEMPLATES_PATH(), 'layouts']),
@@ -136,6 +138,8 @@ trait AppTwigRenderTrait {
 
 		DI::Connect('render', $render);
 
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+
 		return $render;
 	}
 
@@ -143,10 +147,16 @@ trait AppTwigRenderTrait {
 	 * レンダリング
 	 */
 	public function render ($template_file = null, $render = null, $template_dir = []) {
-		return $this->twigRender($template_file, $render, $template_dir);
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+		$ret = $this->twigRender($template_file, $render, $template_dir);
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+		return $ret;
 	}
 
 	public function textRender ($template_text, $render = null, $template_dir = []) {
-		return $this->twigTextRender($template_text, $render, $template_dir);
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+		$ret = $this->twigTextRender($template_text, $render, $template_dir);
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+		return $ret;
 	}
 }

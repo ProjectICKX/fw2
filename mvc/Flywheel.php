@@ -22,6 +22,7 @@ namespace ickx\fw2\mvc;
 
 use ickx\fw2\core\environment\Environment;
 use ickx\fw2\core\cli\Cli;
+use ickx\fw2\io\cache\Cache;
 
 /**
  * Flywheel Freamwork spin-up class
@@ -31,7 +32,41 @@ use ickx\fw2\core\cli\Cli;
 class Flywheel {
 	use \ickx\fw2\traits\data_store\ClassVariableTrait;
 
-	const URL_PARAM_NAME	= 'routing_url';
+	/**
+	 * @var	string	routing uriを保持するパラメータ名
+	 */
+	public const URL_PARAM_NAME	= 'routing_url';
+
+	/**
+	 * @var	int	レポーティングレベル：とりうるすべてのレポートの取得
+	 */
+	public const REPORTING_LEVEL_ALL		= 32767;
+
+	/**
+	 * @var	int	レポーティングレベル：プロファイルレポートを取得する
+	 */
+	public const REPORTING_LEVEL_PROFILE	= 8;
+
+	/**
+	 * @var	int	レポーティングレベル：デバッグレポートを取得する
+	 */
+	public const REPORTING_LEVEL_DEBUG		= 4;
+
+	/**
+	 * @var	int	レポーティングレベル：インフォレポートを取得する
+	 */
+	public const REPORTING_LEVEL_INFO		= 2;
+
+	/**
+	 * @var	int	レポーティングレベル：本番用レポートを取得する
+	 */
+	public const REPORTING_LEVEL_PROD		= 1;
+
+	/**
+	 * @var	int	現在のレポーティングレベル
+	 * @static
+	 */
+	public static $reportingLevel			= self::REPORTING_LEVEL_PROD | self::REPORTING_LEVEL_INFO;
 
 	/**
 	 * phase0:Built-in server support
@@ -55,7 +90,10 @@ class Flywheel {
 	 * phase1:Checking
 	 */
 	public static function Checking () {
+		ClassLoader::Connect('TimeProfiler',	'ickx\fw2\basic\log\TimeProfiler');
 		ClassLoader::Connect('Flywheel',		static::class);
+
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 
 		ClassLoader::Connect('DI',				'ickx\fw2\container\DI');
 		ClassLoader::Connect('Queue',			'ickx\fw2\container\Queue');
@@ -87,40 +125,54 @@ class Flywheel {
 		ClassLoader::Connect('Strings',			'ickx\fw2\vartype\strings\Strings');
 
 		ClassLoader::Connect('ErrorController',	'ickx\fw2\mvc\app\controllers\error\ErrorController');
+
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 	}
 
 	/**
 	 * phase2:Startup
 	 */
 	public static function Startup () {
-		FileSystem::CreateDirectory(FilePath::VAR_DIR(), ['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'ファイル展開']);
-		FileSystem::CreateDirectory(FilePath::CACHE_DIR(), ['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'キャッシュ']);
-		FileSystem::CreateDirectory(FilePath::LOG_DIR(), ['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'ログ']);
-		FileSystem::CreateDirectory(FilePath::SESSION_DIR(), ['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'セッション']);
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+
+		$cache = Cache::init([static::class, __FUNCTION__]);
+		if (false === $path = $cache->get('path')) {
+			$cache->set('path', $path = [
+				'var_dir'				=> FilePath::VAR_DIR(),
+				'cache_dir'				=> FilePath::CACHE_DIR(),
+				'log_dir'				=> FilePath::LOG_DIR(),
+				'session_dir'			=> FilePath::SESSION_DIR(),
+			]);
+		}
+
+		if (false !== $cache->get('created')) {
+			FileSystem::CreateDirectory($path['var_dir'],		['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'ファイル展開', 'state_cache' => true]);
+			FileSystem::CreateDirectory($path['cache_dir'],		['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'キャッシュ', 'state_cache' => true]);
+			FileSystem::CreateDirectory($path['log_dir'],		['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'ログ', 'state_cache' => true]);
+			FileSystem::CreateDirectory($path['session_dir'],	['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'セッション', 'state_cache' => true]);
+		}
+
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('CreateDirectorys'));
 
 		static::_IniSetup();
 
-		//タイマーログファイルディレクトリの設定
-		StaticLog::SetLogFilePath('timer', FilePath::APP_TIMER_LOG_PATH());
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('IniSetup'));
 
-		//SQLエラーログディレクトリ
-		StaticLog::SetLogFilePath('sql_error', FilePath::SQL_ERROR_LOG_PATH());
+		static::_LogSetup();
 
-		//PHPエラーログディレクトリ
-		StaticLog::SetErrorLogFilePath(FilePath::PHP_ERROR_LOG_PATH());
-
-		//リクエストログ（この段階でログを取得する）
-		if (!Environment::IsCli()) {
-			StaticLog::SetRequestLog(FilePath::APP_LOG_DIR(), static::_RequestLogOptions());
-		}
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('LogSetup'));
 	}
 
 	/**
 	 * phase3:Connection
 	 */
 	public static function Connection () {
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+
 		\ickx\fw2\router\Router::Connect('/{:controller}/{:action}/{:args}');
 		\ickx\fw2\router\Router::Connect('/{:args}');
+
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 	}
 
 	/**
@@ -176,11 +228,21 @@ class Flywheel {
 		}
 
 		static::Checking();
-		static::Startup();
-		static::Connection();
-		static::Clutch();
 
-		return \ickx\fw2\mvc\Engine::Ignition(static::GetClassVar(static::URL_PARAM_NAME), static::GetClassVar('app_namespace'), static::GetCallType());
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
+		static::Startup();
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('start up'));
+		static::Connection();
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('connection'));
+		static::Clutch();
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('clutch'));
+
+		$ret = \ickx\fw2\mvc\Engine::Ignition(static::GetClassVar(static::URL_PARAM_NAME), static::GetClassVar('app_namespace'), static::GetCallType());
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('ignition'));
+
+		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->outputDump(FilePath::APP_PROFILE_LOG_PATH()));
+
+		return $ret;
 	}
 
 	/**
@@ -188,30 +250,32 @@ class Flywheel {
 	 */
 	public static function DirectIgnition ($url = null, $app_namespace = null) {
 		try {
-			return static::Ignition($url, $app_namespace);
-		} catch (\ickx\fw2\core\exception\CoreException $core_e) {
-			$message = $core_e->getStatusMessage();
-			$trace = $core_e->getTraceAsString();
+			$ret = static::Ignition($url, $app_namespace);
+		} catch (\ickx\fw2\core\exception\CoreException $e) {
+			$message = $e->getStatusMessage();
+			$trace = $e->getTraceAsString();
 		} catch (\Exception $e) {
 			$message = \ickx\fw2\core\exception\CoreException::ConvertinternalEncoding($e->getMessage());
 			$trace = \ickx\fw2\core\exception\CoreException::ConvertToStringMultiLine($e);
 		}
 
 		//システムエラー画面探索と表示
-		foreach ([
-			sprintf('%s/%s/app/system_error/system_error.php', static::GetVendorPath(), static::GetAppPath()),
-			sprintf('%s/%s/system_error/system_error.php', static::GetVendorPath(), static::GetAppPath()),
-			sprintf('%s/app/system_error/system_error.php', __DIR__),
-		] as $path) {
-			if (file_exists($path)) {
-				require $path;
-				break;
+		if (isset($e)) {
+			foreach ([
+				sprintf('%s/%s/app/system_error/system_error.php', static::GetVendorPath(), static::GetAppPath()),
+				sprintf('%s/%s/system_error/system_error.php', static::GetVendorPath(), static::GetAppPath()),
+				sprintf('%s/app/system_error/system_error.php', __DIR__),
+			] as $path) {
+				if (file_exists($path)) {
+					require $path;
+					break;
+				}
 			}
 		}
 
 		Environment::IsCli() ?: \ickx\fw2\basic\outcontrol\OutputBuffer::EndFlush();
 
-		return true;
+		return $ret;
 	}
 
 	/**
@@ -511,11 +575,11 @@ class Flywheel {
 		$allow_parameter_list = ['ini_path'];
 
 		foreach ($target_ini_list as $target_ini) {
-			$app_session_ini = IniFile::GetConfig($target_ini, $allow_parameter_list, $options);
-			if (!isset($app_session_ini['ini_path'])) {
+			$app_ini = IniFile::GetConfig($target_ini, $allow_parameter_list, $options);
+			if (!isset($app_ini['ini_path'])) {
 				throw CoreException::RaiseSystemError('iniファイルパスが設定されていません。');
 			}
-			PhpIni::ReflectFromIniFile($app_session_ini['ini_path'], null, $options);
+			PhpIni::ReflectFromIniFile($app_ini['ini_path'], null, $options);
 		}
 
 		if (!Environment::IsCli()) {
@@ -528,6 +592,42 @@ class Flywheel {
 				throw CoreException::RaiseSystemError('セッション用iniファイルパスが設定されていません。');
 			}
 			PhpIni::ReflectFromIniFile($app_session_ini['ini_path'], PhpIni::SESSION, $options);
+		}
+	}
+
+	protected static function _LogSetup () {
+		$cache = Cache::init([static::class, __FUNCTION__]);
+		if (false === $path = $cache->get('path')) {
+			$cache->set('path', $path = [
+				'app_timer_log_path'	=> FilePath::APP_TIMER_LOG_PATH(),
+				'sql_error_log_path'	=> FilePath::SQL_ERROR_LOG_PATH(),
+				'php_error_log_path'	=> FilePath::PHP_ERROR_LOG_PATH(),
+				'app_log_dir'			=> FilePath::APP_LOG_DIR(),
+			]);
+		}
+
+		if (false !== $cache->get('created')) {
+			FileSystem::CreateFile($path['app_timer_log_path'],	['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'タイマーログ', 'state_cache' => true]);
+			FileSystem::CreateFile($path['sql_error_log_path'],	['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'SQLエラー', 'state_cache' => true]);
+			FileSystem::CreateFile($path['php_error_log_path'],	['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'PHPエラー', 'state_cache' => true]);
+
+			FileSystem::CreateDirectory($path['app_log_dir'],	['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'リクエスト', 'state_cache' => true]);
+
+			$cache->set('created', true);
+		}
+
+		//タイマーログファイルディレクトリの設定
+		StaticLog::SetLogFilePath('timer', $path['app_timer_log_path'], Strings::LF, true);
+
+		//SQLエラーログディレクトリ
+		StaticLog::SetLogFilePath('sql_error', $path['sql_error_log_path'], Strings::LF, true);
+
+		//PHPエラーログディレクトリ
+		StaticLog::SetErrorLogFilePath($path['php_error_log_path'], Strings::LF, true);
+
+		//リクエストログ（この段階でログを取得する）
+		if (!Environment::IsCli()) {
+			StaticLog::SetRequestLog($path['app_log_dir'], static::_RequestLogOptions(), Strings::LF, true);
 		}
 	}
 

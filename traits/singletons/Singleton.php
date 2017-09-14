@@ -44,4 +44,46 @@ trait Singleton {
 	public static function getInstance(...$args) {
 		return static::$singletonInstance[static::class] ?? static::$singletonInstance[static::class] = new static(...$args);
 	}
+
+	/**
+	 * 入眠
+	 *
+	 * @return	array	シリアライズ対象となるプロパティ名の配列
+	 */
+	public function __sleep () {
+		$this->__seleep_temp	= static::$singletonInstance[static::class];
+		return array_keys(get_object_vars($this));
+	}
+
+	/**
+	 * 起床
+	 */
+	public function __wakeup () {
+		static::$singletonInstance[static::class]	= $this->__seleep_temp;
+		unset($this->__seleep_temp);
+	}
+
+	/**
+	 * シングルトン全体のシリアライザ
+	 *
+	 * @return	string	シリアル化されたシングルトン
+	 */
+	public static function serialize () {
+		$data = [];
+		foreach (static::$singletonInstance as $name => $instance) {
+			$data[$name] = serialize($instance);
+		}
+		return serialize($data);
+	}
+
+	/**
+	 * シングルトン全体のアンシリアライザ
+	 *
+	 * @param	string	$data	シリアル化されたシングルトン
+	 */
+	public static function unserialize ($data) {
+		foreach (unserialize($data) ?? [] as $name => $datum) {
+			static::$singletonInstance[$name] = unserialize($datum);
+		}
+	}
 }

@@ -38,7 +38,13 @@ trait FilePathTrait {
 	 * @return	array	上書き設定
 	 */
 	public static function PathConfig () {
-		return static::LasyClassVarAccessCallback('path', [static::class, 'PathConfigList']);
+		if (($path = (static::$_cache ?? static::$_cache = Cache::init(static::class))->get('path')) !== false) {
+			return $path;
+		}
+
+		$path = static::PathConfigList();
+		static::$_cache->set('path', $path);
+		return $path;
 	}
 
 	/**
@@ -47,12 +53,16 @@ trait FilePathTrait {
 	 * @return	array	パス情報上書き設定用データ
 	 */
 	public static function PathConfigList () {
-		return [
+		if (($path_config_list = (static::$_cache ?? static::$_cache = Cache::init(static::class))->get('path_config_list')) !== false) {
+			return $path_config_list;
+		}
+
+		$path_config_list = [
 			//==============================================
 			//一般設定
 			//==============================================
-			'PHP_BINDIR'		=> PHP_BINDIR,
-			'BOOT_MODE'			=> Environment::IsCli() ? 'cli' : 'web',
+			'PHP_BINDIR'			=> PHP_BINDIR,
+			'BOOT_MODE'				=> Environment::IsCli() ? 'cli' : 'web',
 
 			//==============================================
 			//アプリ設定
@@ -90,17 +100,22 @@ trait FilePathTrait {
 
 			'FW2_DEFAULTS_DIR'		=> Flywheel::GetVendorPath() . '/ickx/fw2/mvc/defaults',
 		];
+
+		static::$_cache->set('path_config_list', $path_config_list);
+		return $path_config_list;
 	}
 
 	public static function GetPackageNsPath () {
-		return implode('/', [
+		static $path;
+		return $path ?? $path = implode('/', [
 			Flywheel::GetVendorName(),
 			Flywheel::GetPackageName(),
 		]);
 	}
 
 	public static function GetCommonsNsPath () {
-		return implode('/', [
+		static $path;
+		return $path ?? $path = implode('/', [
 			Flywheel::GetVendorName(),
 			Flywheel::GetPackageName(),
 			'commons',
@@ -108,7 +123,8 @@ trait FilePathTrait {
 	}
 
 	public static function GetAppNsPath () {
-		return implode('/', [
+		static $path;
+		return $path ?? $path = implode('/', [
 			Flywheel::GetVendorName(),
 			Flywheel::GetPackageName(),
 			Flywheel::GetCallType(),
@@ -117,7 +133,8 @@ trait FilePathTrait {
 	}
 
 	public static function GetAppNsClassPath () {
-		return implode("\\", [
+		static $path;
+		return $path ?? $path = implode("\\", [
 			Flywheel::GetVendorName(),
 			Flywheel::GetPackageName(),
 			Flywheel::GetCallType(),
@@ -126,42 +143,52 @@ trait FilePathTrait {
 	}
 
 	public static function GetSrcDir () {
-		return Flywheel::GetSystemRootPath() . '/src/';
+		static $path;
+		return $path ?? $path = Flywheel::GetSystemRootPath() . '/src/';
 	}
 
 	public static function GetConfDir () {
-		return Flywheel::GetSystemRootPath() . '/config/';
+		static $path;
+		return $path ?? $path = Flywheel::GetSystemRootPath() . '/config/';
 	}
 
 	public static function GetPasswordDir () {
-		return Flywheel::GetSystemRootPath() . '/password/';
+		static $path;
+		return $path ?? $path = Flywheel::GetSystemRootPath() . '/password/';
 	}
 
 	public static function GetVarDir () {
-		return Flywheel::GetSystemRootPath() . '/var/';
+		static $path;
+		return $path ?? $path = Flywheel::GetSystemRootPath() . '/var/';
 	}
 
 	public static function GetAuthDir () {
-		return static::GetVarDir() . 'auth/';
+		static $path;
+		return $path ?? $path = static::GetVarDir() . 'auth/';
 	}
 
 	public static function GetCacheDir () {
-		return static::GetVarDir() . 'cache/';
+		static $path;
+		return $path ?? $path = static::GetVarDir() . 'cache/';
 	}
 
 	public static function GetLogDir () {
-		return static::GetVarDir() . 'log/';
+		static $path;
+		return $path ?? $path = static::GetVarDir() . 'log/';
 	}
 
 	public static function GetSessionDir () {
-		return static::GetVarDir() . 'session/';
+		static $path;
+		return $path ?? $path = static::GetVarDir() . 'session/';
 	}
 
 	public static function GetTmpDir () {
-		return static::GetVarDir() . 'tmp/';
+		static $path;
+		return $path ?? $path = static::GetVarDir() . 'tmp/';
 	}
 
 	public static function GetAppCacheDir () {
-		return static::GetCacheDir() . static::GetAppNsPath();
+		static $path;
+		return $path ?? $path = static::GetCacheDir() . static::GetAppNsPath();
 	}
 }

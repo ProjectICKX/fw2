@@ -180,7 +180,8 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 			//==============================================
 			// 特殊系対応
 			//==============================================
-			$is_upload_file = ($rule_list['source'] ?? null) === 'upload';
+			$is_files = ($rule_list['source'] ?? null) === 'files';
+			$is_upaload = ($rule_list['source'] ?? null) === 'upload';
 
 			//==============================================
 			//ルールごとの初期化
@@ -195,7 +196,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 			$config_force_use_value = $rule_list[static::CONFIG_FORCE_USE_VALUE] ?? false;
 
 			//対象データの取得：フォースバリューが設定されている場合は強制上書き
-			$target_value = $is_upload_file ? static::AdjustUploadFile($data, $data_name) : ($data[$data_name] ?? null);
+			$target_value = $is_files ? static::AdjustUploadFile($data, $data_name) : $is_upaload ? $data :  $data[$data_name] ?? null;
 
 			if (isset($rule_list[static::CONFIG_USE_CURRENT_DATA]) && static::CONFIG_USE_CURRENT_DATA) {
 				$target_value = [$data_name => $data];

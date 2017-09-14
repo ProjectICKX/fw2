@@ -45,7 +45,7 @@ class ApcuCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	 * @see		\ickx\fw2\io\cache\interfaces\ICache::get()
 	 */
 	public function get ($name) {
-		return apcu_fetch($name, $this->state);
+		return apcu_fetch($this->groupName .'<>'. $name, $this->state);
 	}
 
 	/**
@@ -56,8 +56,11 @@ class ApcuCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	 */
 	public function gets () {
 		$result = [];
+		$group_name_length = mb_strlen($this->groupName . '<>');
 		foreach (apcu_cache_info()['cache_list'] ?? [] as $cache_info) {
-			$result = apcu_fetch($cache_info['info'], $this->state);
+			if (mb_substr($cache_info['info'], 0, $group_name_length) === $this->groupName. '<>') {
+				$result[mb_substr($cache_info['info'], $group_name_length)] = apcu_fetch($cache_info['info'], $this->state);
+			}
 		}
 		return $result;
 	}
@@ -72,7 +75,7 @@ class ApcuCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	 * @see		\ickx\fw2\io\cache\interfaces\ICache::set()
 	 */
 	public function set ($name, $value, $ttl = self::DEFAULT_TTL) {
-		$this->state = apcu_store($name, $value, $ttl);
+		$this->state = apcu_store($this->groupName .'<>'. $name, $value, $ttl);
 		return $this;
 	}
 
@@ -85,7 +88,11 @@ class ApcuCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	 * @see		\ickx\fw2\io\cache\interfaces\ICache::sets()
 	 */
 	public function sets ($sets, $ttl = self::DEFAULT_TTL) {
-		$this->state = apcu_store($sets, null, $ttl);
+		$tmp = [];
+		foreach ($sets as $key => $value) {
+			$tmp[$this->groupName .'<>'. $key] = $value;
+		}
+		$this->state = apcu_store($tmp, null, $ttl);
 		return $this;
 	}
 
@@ -97,7 +104,7 @@ class ApcuCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	 * @see		\ickx\fw2\io\cache\interfaces\ICache::remove()
 	 */
 	public function remove ($name) {
-		$this->state = apcu_delete($cache_path);
+		$this->state = apcu_delete($this->groupName .'<>'. $name);
 		return $this;
 	}
 

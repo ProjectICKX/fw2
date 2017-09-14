@@ -89,6 +89,7 @@ class Cache {
 	 * @return	\ickx\fw2\io\cache\abstracts\AbstractCache	AbstractCacheを継承したクラスのインスタンス
 	 */
 	public static function init ($name = self::DEFAULT_NAME, $type = null, ...$args) {
+		!is_array($name) ?: $name = implode('<>', $name);
 		$cacheClass = static::STORAGE_CLASS_LIST[$type ?? static::getLazyStorageType()];
 		return static::$cacheList[$name] = $cacheClass::init($name, ...$args);
 	}

@@ -48,6 +48,11 @@ class LazyEval {
 	protected $options		= [];
 
 	/**
+	 * @var	array			デフォルト引数
+	 */
+	protected $defaultArgs	= [];
+
+	/**
 	 * @var	bool			値が既に存在しているかどうか
 	 * 						null値に対応するために存在する
 	 */
@@ -80,9 +85,10 @@ class LazyEval {
 	 *								function (bool $is_repeat, callable $callback, ...$args);
 	 *	]
 	 */
-	protected function __construct ($callback, $options = []) {
+	protected function __construct ($callback, $options = [], $default_args = []) {
 		$this->callback		= $callback;
 		$this->options		= $options;
+		$this->defaultArgs	= $default_args;
 
 		$this->isRepeat		= $this->options['repeat'] ?? false;
 		$this->enableStrage	= isset($this->options['storage']) && is_callable($this->options['storage']);
@@ -116,6 +122,10 @@ class LazyEval {
 	 */
 	public function force (...$args) {
 		if (!$this->valueExist || $this->isRepeat) {
+			if (!empty($this->defaultArgs)) {
+				$args = array_merge($this->defaultArgs, $args);
+			}
+
 			if ($this->enableStrage) {
 				$this->result	= $this->options['storage']($this->multitonName, $this->isRepeat, $this->callback, ...$args);
 			} else {
@@ -137,6 +147,10 @@ class LazyEval {
 	 */
 	public function __invoke (...$args) {
 		if (!$this->valueExist || $this->isRepeat) {
+			if (!empty($this->defaultArgs)) {
+				$args = array_merge($this->defaultArgs, $args);
+			}
+
 			if ($this->enableStrage) {
 				$this->result	= $this->options['storage']($this->multitonName, $this->isRepeat, $this->callback, ...$args);
 			} else {

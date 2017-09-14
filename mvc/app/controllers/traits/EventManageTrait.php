@@ -43,12 +43,15 @@ trait EventManageTrait {
 	 * イベントを実行します。
 	 */
 	public function dispatchEvents () {
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 		foreach ($this->_events as $event_name => $event_method) {
 			if (isset($this->_skipEvents[$event_name])) {
+				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log($event_name));
 				continue;
 			}
 
 			if (!is_callable($event_method)) {
+				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log($event_name));
 				continue;
 			}
 
@@ -61,9 +64,12 @@ trait EventManageTrait {
 			}
 
 			if ($this->cancelEvents) {
+				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log($event_name));
 				break;
 			}
+			assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log($event_name));
 		}
+		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 	}
 
 	/**
