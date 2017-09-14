@@ -55,7 +55,7 @@ trait Multiton {
 	 */
 	public static function init ($name = null, ...$args) {
 		$name = implode('<>', (array) ($name ?? static::$multitonDefaultName));
-		$instance = static::$multitonInstances[static::class][$name] = new static(...$args);
+		$instance = (static::$multitonInstances[static::class][$name] ?? static::$multitonInstances[static::class][$name] = new static(...$args));
 		$instance->multitonName = $name;
 		return $instance;
 	}
@@ -68,5 +68,47 @@ trait Multiton {
 	 */
 	public static function getInstance ($name = null) {
 		return static::$multitonInstances[static::class][$name ?? static::$multitonDefaultName];
+	}
+
+	/**
+	 * インスタンス単位での入眠処理
+	 *
+	 * @return	array	シリアライズ対象となるプロパティ名の配列
+	 */
+	public function __sleep () {
+		$this->__seleep_temp	= static::$multitonInstances[static::class];
+		return array_keys(get_object_vars($this));
+	}
+
+	/**
+	 * インスタンス単位での起床処理
+	 */
+	public function __wakeup () {
+		static::$multitonInstances[static::class]	= $this->__seleep_temp;
+		unset($this->__seleep_temp);
+	}
+
+	/**
+	 * マルチトン全体のシリアライザ
+	 *
+	 * @return	string	シリアル化されたマルチトン
+	 */
+	public static function serialize () {
+		$data = [];
+		foreach (static::$multitonInstances as $name => $instance) {
+			$data[$name] = serialize($instance);
+		}
+		return serialize($data);
+	}
+
+	/**
+	 * マルチトン全体のアンシリアライザ
+	 *
+	 * @param	string	$data	シリアル化されたマルチトン
+	 */
+	public static function unserialize ($data) {
+		foreach (unserialize($data) ?? [] as $name => $datum) {
+			static::$multitonInstances[$name] = unserialize($datum);
+		}
 	}
 }

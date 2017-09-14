@@ -231,7 +231,7 @@ class Twig_Extension_Filter extends \Twig_Extension {
 		return $switch ? $text : $default;
 	}
 
-	public function routeToggle ($text, $route = null, $default = '') {
+	public function routeToggle ($text, $route = null, $path_param = [], $default = '') {
 		$render = DI::GetClassVar('render');
 
 		$controller_status = $render['controller'] === str_replace('/', '_', $route[0] ?? $route['controller'] ?? 'index');
@@ -244,7 +244,15 @@ class Twig_Extension_Filter extends \Twig_Extension {
 			}
 		}
 
-		return $controller_status && $action_status ? $text : $default;
+		$route_status = true;
+		foreach ($path_param as $path_param_key => $path_param_data) {
+			if (!isset($render['route'][$path_param_key]) || $render['route'][$path_param_key] != $path_param_data) {
+				$route_status = false;
+				break;
+			}
+		}
+
+		return $controller_status && $action_status && $route_status ? $text : $default;
 	}
 
 	public function vsprintf ($format, $values) {

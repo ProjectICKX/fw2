@@ -50,10 +50,18 @@ abstract class IniFile {
 	 */
 	public static function GetConfig ($ini_path, $allow_parameter_list = [], $options = []) {
 		//==============================================
+		// キャッシュせず展開ずみの値を返す場合
+		//==============================================
+		$static = $options['static'] ?? false;
+		if ($options['disable_cache'] ?? false) {
+			return static::ReflectDynamicConfig(static::LoadConfig($ini_path, $allow_parameter_list, $options), $allow_parameter_list, $options, $static ? ConstUtility::REPLACE_MODE_STATIC : ConstUtility::REPLACE_MODE_ALL);
+		}
+
+		//==============================================
 		// キャッシュ設定
 		//==============================================
-		$cache = static::$_cache ?? static::$_cache = Cache::init(static::class, $options['cache_storage_type'] ?? null, ...($options['cache_args'] ?? []));
 		$cache_path = static::$_cachePathList[$ini_path] ?? static::$_cachePathList[$ini_path] = static::GetCachePath($ini_path, $options['cache_dir'] ?? '');
+		$cache = static::$_cache ?? static::$_cache = Cache::init($ini_path, $options['cache_storage_type'] ?? null, ...($options['cache_args'] ?? []));
 
 		//==============================================
 		// キャッシュリフレッシュ時の処理
@@ -201,5 +209,30 @@ abstract class IniFile {
 			$value .= $options['options'][$name]['safix'];
 		}
 		return $value;
+	}
+
+	public static function ConvByte ($value) {
+		if (!in_array($last = (string) substr($value, -1), ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], true)) {
+			$value = substr($value, 0, -1);
+			switch(strtolower($last)) {
+				case 'p':
+					$value *= 1024;
+				case 't':
+					$value *= 1024;
+				case 'g':
+					$value *= 1024;
+				case 'm':
+					$value *= 1024;
+				case 'k':
+					$value *= 1024;
+			}
+		}
+		return $value;
+	}
+
+	public static function ConvUnitByte ($value) {
+		$unit = ['', 'K', 'M', 'G', 'T', 'P'];
+		$factor = floor((strlen($value) - 1) / 3);
+		return $value / pow(1024, $factor) . $unit[$factor] ?? 'P';
 	}
 }

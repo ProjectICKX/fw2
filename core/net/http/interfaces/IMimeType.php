@@ -66,6 +66,16 @@ interface IMimeType {
 	/** @var	string	MIME TYPE：CSV */
 	const MIME_TYPE_COMMA_SEPARATED_VALUES	= 'text/comma-separated-values';
 
+	/** @var	string	MIME TYPE：CSV */
+	const MIME_TYPE_CSV_EXCEL				= 'application/vnd.ms-excel';
+
+	/** @var	array	MIME TYPE GROUP:CSV */
+	const MIME_TYPE_GROUP_CSV				= [
+		self::MIME_TYPE_CSV,
+		self::MIME_TYPE_COMMA_SEPARATED_VALUES,
+		self::MIME_TYPE_CSV_EXCEL,
+	];
+
 	//==============================================
 	//イメージ
 	//==============================================

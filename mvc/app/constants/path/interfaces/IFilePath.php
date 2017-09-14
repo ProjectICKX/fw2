@@ -72,9 +72,11 @@ interface IFilePath {
 
 	const APP_LOG_DIR							= '{:LOG_DIR}/{:APP_NS_PATH}';
 	const APP_TIMER_LOG_PATH					= '{:LOG_DIR}/{:APP_NS_PATH}/{:APP_NAME}_timer.log';
+	const APP_PROFILE_LOG_PATH					= '{:LOG_DIR}/{:APP_NS_PATH}/{:APP_NAME}_profile.log';
 	const SQL_TIMER_LOG_PATH					= '{:LOG_DIR}/{:APP_NS_PATH}/{:APP_NAME}_sql_timer.log';
 	const SQL_ERROR_LOG_PATH					= '{:LOG_DIR}/{:APP_NS_PATH}/{:APP_NAME}_sql_error.log';
 	const PHP_ERROR_LOG_PATH					= '{:LOG_DIR}/{:APP_NS_PATH}/{:APP_NAME}_php_error.log';
+	const ANY_LOG_FORMAT_PATH					= '{:LOG_DIR}/{:APP_NS_PATH}/{:APP_NAME}_%s.log';
 
 	const SESSION_INI_PATH						= '{:CONF_DIR}/{:PACKAGE_NS_PATH}/{:CALL_TYPE}/{:APP_NAME}/session/session.ini';
 	const SESSION_PHP_INI_PATH					= '{:CONF_DIR}/{:PACKAGE_NS_PATH}/{:CALL_TYPE}/{:APP_NAME}/php_ini/session.php.ini';

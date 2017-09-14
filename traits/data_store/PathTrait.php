@@ -20,6 +20,8 @@
 
 namespace ickx\fw2\traits\data_store;
 
+use ickx\fw2\io\cache\Cache;
+
 /**
  * パス管理特性です。
  *
@@ -30,7 +32,7 @@ namespace ickx\fw2\traits\data_store;
  * @varsion		2.0.0
  */
 trait PathTrait {
-	use \ickx\fw2\traits\data_store\ClassVariableTrait;
+	public static $_cache = null;
 
 	/**
 	 * パス設定を返します。
@@ -47,7 +49,7 @@ trait PathTrait {
 	 * @return	string	クラス定数値
 	 */
 	public static function __callStatic($name, $args = []) {
-		$path = static::GetClassVar($name);
+		$path = (static::$_cache ?? static::$_cache = Cache::init(static::class))->get($name);
 		if (!$path || (isset($args[0]) && !empty($args[0]))) {
 			return static::MakePath(...array_merge([$name], $args));
 		}
@@ -62,23 +64,32 @@ trait PathTrait {
 	 * @return	string	パス
 	 */
 	public static function MakePath ($name, $node_list = [], $path_config = null) {
-		$class_const = static::class.'::'.$name;
-		if (!defined($class_const)) {
-			throw new \Exception(sprintf('未定義のパス定数を設定されました。%s', $class_const));
-		}
-		if (static::HasClassVar($name)) {
-			return static::GetClassVar($name);
+		if (($path = (static::$_cache ?? static::$_cache = Cache::init(static::class))->get($name)) !== false) {
+			return $path;
 		}
 
-		$path = constant($class_const);
+		$class_const = static::class.'::'.$name;
+		if (($path = static::$_cache->get($class_const)) === false) {
+			if (!defined($class_const)) {
+				throw new \Exception(sprintf('未定義のパス定数を設定されました。%s', $class_const));
+			}
+			$path = constant($class_const);
+			static::$_cache ?: static::$_cache->set($class_const, $path);
+		}
+
+		if (is_null($path_config) && ($path_config = static::$_cache->get('path_config')) === false) {
+			static::$_cache->set('path_config', $path_config = static::PathConfig());
+		}
+
 		$add_node_flag = !empty($node_list);
 		!$add_node_flag ?: $path .= '/'. implode('/', (array) $node_list);
-		foreach ($path_config ?: static::PathConfig() as $name => $value) {
+
+		foreach ($path_config as $name => $value) {
 			$path = str_replace('{:'.$name.'}', $value, $path);
 		}
 		$path = str_replace('//', '/', $path);
 
-		$add_node_flag ?: static::SetClassVar($name, $path);
+		$add_node_flag ?: static::$_cache->set($name, $path);
 
 		return $path;
 	}

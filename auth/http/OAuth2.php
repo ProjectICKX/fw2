@@ -200,6 +200,11 @@ class OAuth2 {
 	protected $authApiHost			= null;
 
 	/**
+	 * @var	string	API接続先SSL証明書検証
+	 */
+	protected $authApiHostSslVerify	= true;
+
+	/**
 	 * @var	string	クライアントID
 	 */
 	protected $clientId				= null;
@@ -332,8 +337,7 @@ class OAuth2 {
 				}
 
 				// コード受け取り時の処理
-				if ($this->isCodeUrl()) {
-					$tmpSession		= $this->authSession->tmpGet();
+				if ($this->isCodeUrl() && !empty($tmpSession = $this->authSession->tmpGet())) {
 					$state			= $tmpSession[$this->stateParamName];
 					$origin_url		= $tmpSession[static::PROPERTY_ORIGIN_REQUEST_URL];
 					$code_verifier	= $tmpSession[static::PROPERTY_CODE_VERIFIER];
@@ -539,9 +543,9 @@ class OAuth2 {
 
 		$start_time	= time();
 
-		$result = Curl::url(sprintf('%s%s', is_callable($this->authApiHost) ? $this->authApiHost()() : $this->authApiHost, $this->accessTokenPath))->headers([
+		$result = Curl::url($curl_url = sprintf('%s%s', is_callable($this->authApiHost) ? $this->authApiHost()() : $this->authApiHost, $this->accessTokenPath))->headers($curl_headers = [
 			'Authorization'	=> sprintf('%s %s', static::AUTHORIZATION_HADER_BASIC, base64_encode(sprintf('%s:%s', $this->clientId, $this->secret))),
-		])->parameters([
+		])->parameters($curl_parameters = [
 			'response_type'			=> static::RESPONSE_TYPE_CODE,
 			'client_id'				=> $this->clientId,
 			'redirect_uri'			=> is_callable($this->codeUri) ? $this->codeUri()() : $this->codeUri,
@@ -549,13 +553,13 @@ class OAuth2 {
 			'state'					=> $state,
 			'code_challenge_method'	=> $this->codeChallengeMethod,
 			'code_challenge'		=> $code_challenge,
-		])->bodies([
+		])->bodies($curl_bodies = [
 			'grant_type'		=> $this->grantType ?? static::GRANT_TYPE_AUTHORIZATION_CODE,
 			'code'				=> $parameters[$this->codeParamName],
 			'redirect_uri'		=> is_callable($this->codeUri) ? $this->codeUri()() : $this->codeUri,
 			'client_id'			=> $this->clientId,
 			'code_verifier'		=> $code_verifier,
-		])->exec();
+		])->sslVerify($this->authApiHostSslVerify)->exec();
 
 		$header = $result['header'];
 		switch ($header['http_code']) {
@@ -564,6 +568,9 @@ class OAuth2 {
 				$access_token['start_time']	= $start_time;
 				return $access_token;
 			case 403:
+				break;
+			case 0:
+				throw new \ErrorException(sprintf('access token取得時にエラーが発生しました。http status code:%s, url:%s', $header['http_code'], $header['url']));
 				break;
 		}
 

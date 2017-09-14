@@ -187,11 +187,11 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function file ($current_rule = [], $multiple = false) {
+	public function upload ($current_rule = [], $multiple = false) {
 		return array_merge([
 			'source'	=> 'upload',
-			['require', 'raise_exception' => true],
-			['upload_check_status', 'is_array'	=> $multiple, 'is_last' => true],
+			['require',				'raise_exception' => true],
+			['upload_check_status',	'is_array'	=> $multiple, 'is_last' => true],
 		], $multiple ? $this->adjustOption($current_rule, 'is_array', $multiple) : $current_rule);
 	}
 

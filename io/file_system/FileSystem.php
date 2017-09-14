@@ -33,6 +33,8 @@ abstract class FileSystem implements interfaces\IExtension {
 	use traits\DirectoryTrait,
 		traits\FileTrait;
 
-	const DEFAULT_DIR_MODE	= 0775;
-	const DEFAULT_FILE_MODE	= 0644;
+	public const DEFAULT_DIR_MODE	= 0775;
+	public const DEFAULT_FILE_MODE	= 0644;
+
+	protected static $_cache	= null;
 }

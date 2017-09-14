@@ -22,6 +22,7 @@ namespace ickx\fw2\io\file_system\traits;
 
 use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\io\file_system\status\DirectoryStatus;
+use ickx\fw2\io\cache\Cache;
 
 /**
  * ディレクトリ特性。
@@ -47,6 +48,7 @@ trait DirectoryTrait {
 	 *     'mode'              => (oct) ディレクトリのモード
 	 *     'owner'             => (string) ディレクトリのオーナー
 	 *     'group'             => (string) ディレクトリのグループ
+	 *     'state_cache'       => (bool) 存在ステータスキャッシュ
 	 * ]
 	 * @return	mixed	ディレクトリが利用可能な場合はtrue そうでない場合はStatusインスタンス
 	 * @throws	raise_exceptionオプションがtrueとして設定され、ディレクトリが利用可能ではない場合
@@ -59,13 +61,23 @@ trait DirectoryTrait {
 		$name				= $options['name']				?? '';
 		$parents			= $options['parents'] ?? $options['p']	?? false;
 		$skip				= $options['skip']				??  false;
+		$state_cache		= $options['state_cache']		??  false;
 
 		//==============================================
 		//ディレクトリ検証
 		//==============================================
 		//ディレクトリ存在確認
+		if ($state_cache) {
+			if ((static::$_cache ?? static::$_cache = Cache::init(static::class))->get($dir_path) !== false) {
+				return true;
+			}
+		}
+
 		if (file_exists($dir_path)) {
 			if ($skip) {
+				if ($state_cache) {
+					static::$_cache->set($dir_path, true);
+				}
 				return true;
 			}
 			return CoreException::ScrubbedThrow(DirectoryStatus::Found('既に%sディレクトリが存在します。dir_path:%s', [$name, $dir_path]), $raise_exception);
@@ -99,6 +111,10 @@ trait DirectoryTrait {
 		//グループの変更
 		if ($group !== null && !chgrp($dir_path, $group)) {
 			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ディレクトリのグループ変更に失敗しました。dir_path:%s, group:%s', [$dir_path, $group]), $raise_exception);
+		}
+
+		if ($state_cache) {
+			static::$_cache->set($dir_path, true);
 		}
 
 		//==============================================

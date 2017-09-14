@@ -195,9 +195,9 @@ trait FileTrait {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$raise_exception	= isset($options['raise_exception']) ? $options['raise_exception'] : true;
-		$name				= isset($options['name']) ? $options['name'] : '';
-		$parents			= isset($options['parents']) ? $options['parents'] : isset($options['p']) ? $options['p'] : false;
+		$raise_exception	= $options['raise_exception'] ?? true;
+		$name				= $options['name'] ?? '';
+		$parents			= $options['parents'] ?? $options['p'] ?? false;
 
 		//==============================================
 		//インスタンス構築
