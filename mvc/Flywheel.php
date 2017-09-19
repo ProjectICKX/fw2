@@ -249,6 +249,8 @@ class Flywheel {
 	 * DirectIgnition
 	 */
 	public static function DirectIgnition ($url = null, $app_namespace = null) {
+		$ret = null;
+
 		try {
 			$ret = static::Ignition($url, $app_namespace);
 		} catch (\ickx\fw2\core\exception\CoreException $e) {

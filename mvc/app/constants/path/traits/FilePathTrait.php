@@ -38,7 +38,7 @@ trait FilePathTrait {
 	 * @return	array	上書き設定
 	 */
 	public static function PathConfig () {
-		if (($path = (static::$_cache ?? static::$_cache = Cache::init(static::class))->get('path')) !== false) {
+		if (false !== $path = (static::$_cache ?? static::$_cache = Cache::init(static::class))->get('path')) {
 			return $path;
 		}
 

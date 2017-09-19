@@ -133,9 +133,19 @@ trait ControllerTrait {
 		$instance->controller	= str_replace('/', '_', $params->controller ?? 'index');
 		$instance->action		= str_replace('/', '_', $params->action ?? 'index');
 
+		$render		= $instance->render;
+		$options	= $instance->options;
+
 		foreach ($instance->options->getArrayCopy() as $key => $value) {
 			if (mb_strpos($value, '{:') !== false) {
-				$instance->options->$key = preg_replace_callback("/\{:(.+?)\}/", function (array $matches) use ($render, $options) {$replace = isset($render[$matches[1]]) ? $render[$matches[1]] : (isset($options[$matches[1]]) ? $options[$matches[1]] : $matches[0]);return is_callable($replace) ? $replace($render, $options) : $replace;}, is_callable($value) ? $value($render, $options) : $value);
+				$instance->options->$key = preg_replace_callback(
+					"/\{:(.+?)\}/",
+					function ($matches) use ($render, $options) {
+						$replace = isset($render[$matches[1]]) ? $render[$matches[1]] : (isset($options[$matches[1]]) ? $options[$matches[1]] : $matches[0]);
+						return is_callable($replace) ? $replace($render, $options) : $replace;
+					},
+					is_callable($value) ? $value($render, $options) : $value
+				);
 			}
 		}
 

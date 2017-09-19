@@ -372,8 +372,8 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	 * @param	array	$data	セッションに登録したい値
 	 */
 	public function tmpUpdate ($data) {
-		$user_name	= Hash::String($data);
-		$password	= Hash::String($password);
+		$user_name	= Hash::String(serialize($data));
+		$password	= '';
 
 		$uri		= $this->digestAuth->uri() ?? static::getDefaultUri();
 		$method		= $this->digestAuth->method() ?? Request::GetMethod();
@@ -445,7 +445,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 
 		$data	= OpenSSL::EncryptRandom(CompressionGz::CompressVariable($data), $this->tmpCookieName, $this->tmpServerSalt, $this->tmpServerKey, $this->tmpSeparatorLength);
 
-		$this->tmpSessionSaveHandler->save($data, $this->tmpSeesionExpire);
+		$this->tmpSessionSaveHandler->save($data, $this->tmpSessionExpire);
 	}
 
 	/**
@@ -463,8 +463,10 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 
 		$value				= OpenSSL::EncryptRandom(CompressionGz::CompressVariable($client_data), $dummy_password, $dummy_client_salt, $hmac_key, $this->tmpSeparatorLength);
 
+		$tmp_cookie_name	= $this->tmpCookieName ?? $this->tmpCookieName = $this->currentTmpCookieName();
+
 		if (!$this->enableTmpSessionSaveHandler()) {
-			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($this->tmpCookieName ?? $this->tmpCookieName = $this->currentTmpCookieName());
+			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($tmp_cookie_name);
 		}
 
 		$cookie_path		= $this->tmpCookiePath;;
@@ -472,7 +474,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		$cookie_secure		= $this->cookieSecure;
 		$expire				= $this->tmpCookieLifetime > 0 ? time() + $this->tmpCookieLifetime : $this->tmpCookieLifetime;
 
-		$set_cookie_data = [$this->tmpCookieName, $value, $expire, $cookie_path, $cookie_domain, $cookie_secure, static::COOKIE_HTTP_ONLY];
+		$set_cookie_data = [$tmp_cookie_name, $value, $expire, $cookie_path, $cookie_domain, $cookie_secure, static::COOKIE_HTTP_ONLY];
 		if (!setcookie(...$set_cookie_data)) {
 			if (headers_sent($file, $line)) {
 				throw new \ErrorException(sprintf('クッキーの発行に失敗しました。%s (%s) にて既にHTTP Response Headerの出力が行われています。%s', $file, $line, implode(', ', $set_cookie_data)));
@@ -487,9 +489,9 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	 */
 	public function tmpGc () {
 		if (!$this->enableTmpSessionSaveHandler()) {
-			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($this->tmpCookieName ?? $this->tmpCookieName = $this->currentTmpCookieName());
+			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($this->tmpCookieName ?? ($this->tmpCookieName = $this->currentTmpCookieName()));
 		}
-		$this->tmpSessionSaveHandler->gc($this->tmpSeesionExpire, $this->tmpCookieNamePrefix);
+		$this->tmpSessionSaveHandler->gc($this->tmpSessionExpire, $this->tmpCookieNamePrefix);
 	}
 
 	/**
@@ -503,9 +505,16 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		}
 
 		$server_data = $this->tmpGetOnServer();
-		$client_data = $this->tmpGetOnCookie($server_data['raw_data']['shadow'], $server_data['dummy_password']);
+		if (empty($server_data) || $server_data === ['raw_data' => false]) {
+			return [];
+		}
 
-		return $this->tmpValid($server_data, $client_data) ? ($server_data['raw_data']['extra_data'] ?? []) : [];
+		$client_data = $this->tmpGetOnCookie($server_data['raw_data']['shadow'], $server_data['dummy_password']);
+		if ($client_data === false) {
+			return [];
+		}
+
+		return $this->tmpValid($server_data, $client_data) ? ($server_data['raw_data'] ?? []) : [];
 	}
 
 	/**
@@ -515,7 +524,11 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	 */
 	public function tmpGetOnServer () {
 		if (!$this->enableTmpSessionSaveHandler()) {
-			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($this->tmpCookieName ?? $this->tmpCookieName = $this->getTmpCookieName());
+			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($this->tmpCookieName ?? ($this->tmpCookieName = $this->getTmpCookieName()));
+		}
+
+		if ($this->tmpCookieName === null) {
+			return [];
 		}
 
 		$data				= CompressionGz::UnCompressVariable(OpenSSL::DecryptRandom($this->tmpSessionSaveHandler->load(), $this->tmpCookieName, $this->tmpServerSalt, $this->tmpServerKey, $this->tmpSeparatorLength));
@@ -536,7 +549,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	 */
 	public function tmpGetOnCookie ($dummy_user_name, $dummy_password) {
 		if (!$this->enableTmpSessionSaveHandler()) {
-			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($this->tmpCookieName ?? $this->tmpCookieName = $this->getTmpCookieName());
+			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($this->tmpCookieName ?? ($this->tmpCookieName = $this->getTmpCookieName()));
 		}
 
 		$cookie_value		= $_COOKIE[$this->tmpCookieName];
@@ -553,7 +566,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	 */
 	public function tmpClose () {
 		if (!$this->enableTmpSessionSaveHandler()) {
-			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($this->tmpCookieName ?? $this->tmpCookieName = $this->getTmpCookieName());
+			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($this->tmpCookieName ?? ($this->tmpCookieName = $this->getTmpCookieName()));
 		}
 
 		//認証前セッション情報の削除
@@ -643,7 +656,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		}
 
 		for ($i = 0;$i < 100;$i++) {
-			if (!$this->tmpSessionSaveHandler->exists($cookie_name = sprintf('%s%s', $this->tmpCookieNamePrefix, bin2hex(random_bytes(32))))) {
+			if (!$this->tmpSessionSaveHandler->exists($cookie_name = sprintf('%s%s', $this->tmpCookieNamePrefix, bin2hex(random_bytes(32)))) && !is_null($cookie_name)) {
 				return $cookie_name;
 			}
 		}
@@ -673,6 +686,8 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			case static::SAVE_HANDLER_TYPE_MEMCACHED:
 				$this->tmpSessionSaveHandler	= new Memcached($this->tmpSavePath);
 				break;
+			default:
+				throw new \ErrorException('認証前セッションハンドラのタイプに有効な値が指定されていません。', 0, \E_USER_ERROR);
 		}
 
 		return $this;
@@ -824,6 +839,9 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		}
 
 		$server_data = $this->getOnServer();
+		if (!isset($server_data['dummy_password'])) {
+			return [];
+		}
 		$client_data = $this->getOnCookie($server_data['raw_data']['shadow'], $server_data['dummy_password']);
 
 		if ($this->valid($server_data, $client_data)) {
@@ -845,7 +863,11 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			$this->setupSessionSaveHandler()->sessionSaveHandler->cookieName($this->cookieName ?? $this->cookieName = $this->getCookieName());
 		}
 
-		$data				= CompressionGz::UnCompressVariable(OpenSSL::DecryptRandom($this->sessionSaveHandler->load(), $this->cookieName, $this->serverSalt, $this->serverKey, $this->separatorLength));
+		if (false === $encoded_message = $this->sessionSaveHandler->load()) {
+			return [];
+		}
+
+		$data				= CompressionGz::UnCompressVariable(OpenSSL::DecryptRandom($encoded_message, $this->cookieName, $this->serverSalt, $this->serverKey, $this->separatorLength));
 
 		$dummy_password		= $data['dummy_password'];
 		$hmac_key			= Hash::HmacStringStretching($this->stretcher[0], $this->serverSalt, $dummy_password);
@@ -881,6 +903,10 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	public function close () {
 		if (!$this->enableSessionSaveHandler()) {
 			$this->setupSessionSaveHandler()->sessionSaveHandler->cookieName($this->cookieName ?? $this->cookieName = $this->getCookieName());
+		}
+
+		if (is_null($this->cookieName)) {
+			return false;
 		}
 
 		//認証セッション情報の削除
@@ -1036,6 +1062,8 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			case static::SAVE_HANDLER_TYPE_MEMCACHED:
 				$this->sessionSaveHandler	= new Memcached($this->savePath);
 				break;
+			default:
+				throw new \ErrorException('認証セッションハンドラのタイプに有効な値が指定されていません。', 0, \E_USER_ERROR);
 		}
 
 		return $this;

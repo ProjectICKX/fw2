@@ -197,10 +197,13 @@ trait ActionTrait {
 					);
 				}
 
-				$params = $action[1];
-				foreach ($params as $idx => $value) {
-					if (is_object($value) && is_callable($value)) {
-						$params[$idx] = $value($this->render);
+				$params = [];
+				if (is_array($action[1])) {
+					$params = $action[1];
+					foreach ($params as $idx => $value) {
+						if (is_object($value) && is_callable($value)) {
+							$params[$idx] = $value($this->render);
+						}
 					}
 				}
 
@@ -404,13 +407,15 @@ trait ActionTrait {
 
 	public static function getActionMethodName ($action) {
 		if (is_null($action)) {
-			return NULL;
+			return 'NULL';
 		} else if (is_array($action[0])) {
 			if (is_object($action[0][0])) {
 				return get_class($action[0][0]) .'->'. $action[0][1];
 			} else {
 				return implode('::', $action[0]);
 			}
+		} else if (is_object($action[0])) {
+			return get_class($action[0]);
 		}
 		return $action[0];
 	}

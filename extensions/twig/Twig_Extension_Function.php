@@ -444,10 +444,10 @@ class Twig_Extension_Function extends \Twig_Extension {
 		$render = DI::GetClassVar('render');
 
 		foreach ($target_list as $key => $target) {
-			if (is_callable($target)) {
-				$target_list[$key] = $target($render);
-			} else if (is_array($target)){
+			if (is_array($target)) {
 				$target_list[$key] = Arrays::GetLowest($render, $target);
+			} else if (is_callable($target)) {
+				$target_list[$key] = $target($render);
 			} else {
 				$target_list[$key] = $render[$target];
 			}

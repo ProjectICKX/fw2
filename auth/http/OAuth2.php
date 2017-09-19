@@ -329,7 +329,7 @@ class OAuth2 {
 			//==============================================
 			case static::GRANT_TYPE_AUTHORIZATION_CODE:
 				// 認証迂回パス判定
-				$request_path	= $pos = strpos($_SERVER['REQUEST_URI'], '?') ? substr($_SERVER['REQUEST_URI'], 0, $pos - 1) : $_SERVER['REQUEST_URI'];
+				$request_path	= ($pos = strpos($_SERVER['REQUEST_URI'], '?')) ? substr($_SERVER['REQUEST_URI'], 0, $pos - 1) : $_SERVER['REQUEST_URI'];
 				foreach ($this->disableAuthPath ?? [] as $disable_auth_path) {
 					if ($request_path === $disable_auth_path) {
 						return true;
@@ -338,15 +338,21 @@ class OAuth2 {
 
 				// コード受け取り時の処理
 				if ($this->isCodeUrl() && !empty($tmpSession = $this->authSession->tmpGet())) {
-					$state			= $tmpSession[$this->stateParamName];
-					$origin_url		= $tmpSession[static::PROPERTY_ORIGIN_REQUEST_URL];
-					$code_verifier	= $tmpSession[static::PROPERTY_CODE_VERIFIER];
-					$code_challenge	= $tmpSession[static::PROPERTY_CODE_CHALLENGE];
-					$access_token	= $this->token		= $this->getAccessToken($state, $code_verifier, $code_challenge);
-					$expand_data	= $this->expandData	= is_callable($this->expandDataFilter) ? $this->expandDataFilter()($access_token, $tmpSession) : $this->expandData;
+					try {
+						$tmp_session_extra_data	= $tmpSession['extra_data'];
+						$state					= $tmp_session_extra_data[$this->stateParamName];
+						$origin_url				= $tmp_session_extra_data[static::PROPERTY_ORIGIN_REQUEST_URL];
+						$code_verifier			= $tmp_session_extra_data[static::PROPERTY_CODE_VERIFIER];
+						$code_challenge			= $tmp_session_extra_data[static::PROPERTY_CODE_CHALLENGE];
+						$access_token			= $this->token		= $this->getAccessToken($state, $code_verifier, $code_challenge);
+						$expand_data			= $this->expandData	= is_callable($this->expandDataFilter) ? $this->expandDataFilter()($access_token, $tmpSession) : $this->expandData;
 
-					$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $access_token, 'expand_data' => $expand_data]);
-					$this->authSession->tmpClose();
+						$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $access_token, 'expand_data' => $expand_data]);
+					} catch (\Throwable $e) {
+						throw $e;
+					} finally {
+						$this->authSession->tmpClose();
+					}
 
 					$this->redirectUrl($origin_url);
 
@@ -670,7 +676,7 @@ class OAuth2 {
 	 * @return	string	code verifier
 	 */
 	protected function generateCodeVerifier () {
-		$sp		= ['-'. '/', '_',  '~'];
+		$sp		= ['-', '/', '_',  '~'];
 		$length	= random_int(43, 128);
 		$stack	= [];
 

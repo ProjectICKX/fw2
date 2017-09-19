@@ -163,7 +163,11 @@ abstract class IniFile {
 		$config_list = [];
 
 		//許可する設定値のリスト
-		$enable_ini_name_list = array_flip($allow_parameter_list);
+		if (is_null($allow_parameter_list)) {
+			$enable_ini_name_list = null;
+		} else {
+			$enable_ini_name_list = array_flip($allow_parameter_list);
+		}
 
 		$replace_mode_only_callback = $replace_mode === ConstUtility::REPLACE_MODE_ONLY_CALLBACK;
 
