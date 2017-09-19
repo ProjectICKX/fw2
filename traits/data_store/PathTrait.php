@@ -64,7 +64,7 @@ trait PathTrait {
 	 * @return	string	パス
 	 */
 	public static function MakePath ($name, $node_list = [], $path_config = null) {
-		if (($path = (static::$_cache ?? static::$_cache = Cache::init(static::class))->get($name)) !== false) {
+		if (false !== $path = (static::$_cache ?? static::$_cache = Cache::init(static::class))->get($name)) {
 			return $path;
 		}
 

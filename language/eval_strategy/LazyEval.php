@@ -64,6 +64,11 @@ class LazyEval {
 	protected $isRepeat		= false;
 
 	/**
+	 * @var	bool			次の一回のみ強制的に最新値を取る
+	 */
+	protected $flashRepeat	= false;
+
+	/**
 	 * @var	bool			永続化ストレージが有効かどうか
 	 */
 	protected $enableStrage	= false;
@@ -95,6 +100,14 @@ class LazyEval {
 	}
 
 	/**
+	 * 次の一回の実行時のみ、強制的に最新値を取るようにします。
+	 */
+	public function repeat () {
+		$this->flashRepeat = true;
+		return $this;
+	}
+
+	/**
 	 * 中間状態を返します。
 	 *
 	 * @return	\ickx\fw2\language\eval_strategy\LazyEval	現在のインスタンス
@@ -121,7 +134,7 @@ class LazyEval {
 	 * @return	mixed	評価結果。
 	 */
 	public function force (...$args) {
-		if (!$this->valueExist || $this->isRepeat) {
+		if (!$this->valueExist || $this->isRepeat || $this->flashRepeat) {
 			if (!empty($this->defaultArgs)) {
 				$args = array_merge($this->defaultArgs, $args);
 			}
@@ -146,7 +159,7 @@ class LazyEval {
 	 * @return	mixed	評価結果。
 	 */
 	public function __invoke (...$args) {
-		if (!$this->valueExist || $this->isRepeat) {
+		if (!$this->valueExist || $this->isRepeat || $this->flashRepeat) {
 			if (!empty($this->defaultArgs)) {
 				$args = array_merge($this->defaultArgs, $args);
 			}

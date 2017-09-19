@@ -112,7 +112,7 @@ trait TwigRenderTrait {
 
 		if ($template_file === null) {
 			if (!isset($this->templateFile) || $this->templateFile === null) {
-				$this->templateFile = PathTrait::CreateFilePath([implode('.', [Strings::ToSnakeCase($this->template), $this->mimeType, 'twig'])]);
+				$this->templateFile = str_replace('//', '/', implode('.', [Strings::ToSnakeCase($this->template), $this->mimeType, 'twig']));
 			}
 			$template_file = $this->templateFile;
 		}

@@ -250,7 +250,7 @@ class TimeProfiler {
 			$point,
 			end($stack_trace),
 			implode('::', (array) $log['comment'])
-			);
+		);
 	}
 
 	//==============================================
