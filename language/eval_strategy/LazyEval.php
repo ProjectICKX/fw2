@@ -145,6 +145,7 @@ class LazyEval {
 				$callback = $this->callback;
 				$this->result	= $callback(...$args);
 			}
+			$this->flashRepeat = false;
 			$this->valueExist = true;
 		}
 		return $this->result;
@@ -170,6 +171,7 @@ class LazyEval {
 				$callback = $this->callback;
 				$this->result	= $callback(...$args);
 			}
+			$this->flashRepeat = false;
 			$this->valueExist = true;
 		}
 		return $this->result;
