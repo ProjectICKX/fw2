@@ -61,6 +61,20 @@ trait Multiton {
 	}
 
 	/**
+	 * マルチトンとしてインスタンスを再作成し、保持します。
+	 *
+	 * @param	string	$name		インスタンス名
+	 * @param	array	...$args	コンストラクタ引数
+	 * @return	object	マルチトンとして管理されているオブジェクトインスタンス
+	 */
+	public static function rebuild ($name = null, ...$args) {
+		$name = implode('<>', (array) ($name ?? static::$multitonDefaultName));
+		$instance = static::$multitonInstances[static::class][$name] = new static(...$args);
+		$instance->multitonName = $name;
+		return $instance;
+	}
+
+	/**
 	 * マルチトンとして管理されているオブジェクトインスタンスを返します。
 	 *
 	 * @param	array	...$args	任意個数の引数
@@ -68,6 +82,15 @@ trait Multiton {
 	 */
 	public static function getInstance ($name = null) {
 		return static::$multitonInstances[static::class][$name ?? static::$multitonDefaultName];
+	}
+
+	/**
+	 * 現在保持するマルチトンインスタンスを返します。
+	 *
+	 * @return	array	現在保持するマルチトンインスタンス
+	 */
+	public static function getInstances () {
+		return static::$multitonInstances[static::class];
 	}
 
 	/**
