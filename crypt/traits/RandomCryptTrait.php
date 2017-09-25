@@ -106,6 +106,10 @@ trait RandomCryptTrait {
 	 * @return	string	複合化した文字列
 	 */
 	public static function DecryptRandom ($encoded_message, $password, $salt, $hmac_key, $secret_key_length = self::SECRET_KEY_LENGTH, $algo = self::DEFAULT_HASH_ALGORITHM) {
+		if (!is_string($encoded_message)) {
+			throw new \ErrorException('暗号化された文字列が無効です。');
+		}
+
 		//passwrod1
 		$password1 = static::CreateForwardPassword($encoded_message, $password, $salt, $hmac_key, $secret_key_length, $algo);
 		if (strlen($password1) > 56) {
@@ -137,7 +141,12 @@ trait RandomCryptTrait {
 		//ダミー
 		$encoded_message_length = strlen($encoded_message);
 		$encoded_message = str_pad($encoded_message, $encoded_message_length + $encoded_message_length % 4,  '=');
-		$encoded_message = CompressionGz::UnCompress(static::DecryptMessage(base64_decode($encoded_message), $password2, static::GetRandomEncryptOptions($binary_passwrod_2)));
+		$encoded_message = static::DecryptMessage(base64_decode($encoded_message), $password2, static::GetRandomEncryptOptions($binary_passwrod_2));
+		if ($encoded_message === false) {
+			throw new \ErrorException('有効な文字列を得られませんでした。');
+		}
+
+		$encoded_message = CompressionGz::UnCompress($encoded_message);
 
 		//マスタ
 		return static::DecryptMessage(base64_decode($encoded_message), $password1, static::GetRandomEncryptOptions($binary_passwrod_1));

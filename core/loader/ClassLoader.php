@@ -122,6 +122,8 @@ abstract class ClassLoader {
 
 		//クラスファイルが存在するか確認
 		if (!file_exists($real_file_path)) {
+			return ;
+
 			//ファイルが見つからなかったので候補を探す
 			$target_list	= explode('/', str_replace("\\", '/', $real_file_path));
 			if (isset($target_list[0])) {

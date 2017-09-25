@@ -24,6 +24,7 @@ use ickx\fw2\auth\data_store\{Files, Memcached};
 use ickx\fw2\compression\CompressionGz;
 use ickx\fw2\core\net\http\Request;
 use ickx\fw2\crypt\{Hash, OpenSSL};
+use ickx\fw2\other\json\Json;
 
 /**
  * 認証セッションを管理します。
@@ -372,7 +373,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	 * @param	array	$data	セッションに登録したい値
 	 */
 	public function tmpUpdate ($data) {
-		$user_name	= Hash::String(serialize($data));
+		$user_name	= Hash::String(Json::encode($data));
 		$password	= '';
 
 		$uri		= $this->digestAuth->uri() ?? static::getDefaultUri();
@@ -440,10 +441,10 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			'name'				=> $this->name,
 			'user_name'			=> $user_name,
 			'dummy_password'	=> $dummy_password,
-			'raw_data'			=> OpenSSL::EncryptRandom(CompressionGz::CompressVariable($server_data), $dummy_password, $this->tmpServerSalt, $hmac_key, $this->tmpSeparatorLength),
+			'raw_data'			=> OpenSSL::EncryptRandom(CompressionGz::CompressSerializedVariable($server_data), $dummy_password, $this->tmpServerSalt, $hmac_key, $this->tmpSeparatorLength),
 		];
 
-		$data	= OpenSSL::EncryptRandom(CompressionGz::CompressVariable($data), $this->tmpCookieName, $this->tmpServerSalt, $this->tmpServerKey, $this->tmpSeparatorLength);
+		$data	= OpenSSL::EncryptRandom(CompressionGz::CompressSerializedVariable($data), $this->tmpCookieName, $this->tmpServerSalt, $this->tmpServerKey, $this->tmpSeparatorLength);
 
 		$this->tmpSessionSaveHandler->save($data, $this->tmpSessionExpire);
 	}
@@ -531,11 +532,16 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			return [];
 		}
 
-		$data				= CompressionGz::UnCompressVariable(OpenSSL::DecryptRandom($this->tmpSessionSaveHandler->load(), $this->tmpCookieName, $this->tmpServerSalt, $this->tmpServerKey, $this->tmpSeparatorLength));
+		if (false === $value = $this->tmpSessionSaveHandler->load()) {
+			$this->tmpClose();
+			throw new \ErrorException('検証前セッションデータの取得に失敗しました。');
+		}
+
+		$data				= CompressionGz::UnCompressSerializedVariable(OpenSSL::DecryptRandom($value, $this->tmpCookieName, $this->tmpServerSalt, $this->tmpServerKey, $this->tmpSeparatorLength));
 
 		$dummy_password		= $data['dummy_password'];
 		$hmac_key			= Hash::HmacStringStretching($this->tmpStretcher[0], $this->tmpServerSalt, $dummy_password);
-		$data['raw_data']	= CompressionGz::UnCompressVariable(OpenSSL::DecryptRandom($data['raw_data'], $dummy_password, $this->tmpServerSalt, $hmac_key, $this->tmpSeparatorLength));
+		$data['raw_data']	= CompressionGz::UnCompressSerializedVariable(OpenSSL::DecryptRandom($data['raw_data'], $dummy_password, $this->tmpServerSalt, $hmac_key, $this->tmpSeparatorLength));
 
 		return $data;
 	}
@@ -567,6 +573,10 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 	public function tmpClose () {
 		if (!$this->enableTmpSessionSaveHandler()) {
 			$this->setupTmpSessionSaveHandler()->tmpSessionSaveHandler->cookieName($this->tmpCookieName ?? ($this->tmpCookieName = $this->getTmpCookieName()));
+		}
+
+		if (is_null($this->tmpCookieName)) {
+			return null;
 		}
 
 		//認証前セッション情報の削除
@@ -775,10 +785,10 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			'name'				=> $this->name,
 			'user_name'			=> $user_name,
 			'dummy_password'	=> $dummy_password,
-			'raw_data'			=> OpenSSL::EncryptRandom(CompressionGz::CompressVariable($server_data), $dummy_password, $this->serverSalt, $hmac_key, $this->separatorLength),
+			'raw_data'			=> OpenSSL::EncryptRandom(CompressionGz::CompressSerializedVariable($server_data), $dummy_password, $this->serverSalt, $hmac_key, $this->separatorLength),
 		];
 
-		$data	= OpenSSL::EncryptRandom(CompressionGz::CompressVariable($data), $this->cookieName, $this->serverSalt, $this->serverKey, $this->separatorLength);
+		$data	= OpenSSL::EncryptRandom(CompressionGz::CompressSerializedVariable($data), $this->cookieName, $this->serverSalt, $this->serverKey, $this->separatorLength);
 
 		$this->sessionSaveHandler->save($data, $this->sessionExpire);
 	}
@@ -867,11 +877,11 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			return [];
 		}
 
-		$data				= CompressionGz::UnCompressVariable(OpenSSL::DecryptRandom($encoded_message, $this->cookieName, $this->serverSalt, $this->serverKey, $this->separatorLength));
+		$data				= CompressionGz::UnCompressSerializedVariable(OpenSSL::DecryptRandom($encoded_message, $this->cookieName, $this->serverSalt, $this->serverKey, $this->separatorLength));
 
 		$dummy_password		= $data['dummy_password'];
 		$hmac_key			= Hash::HmacStringStretching($this->stretcher[0], $this->serverSalt, $dummy_password);
-		$data['raw_data']	= CompressionGz::UnCompressVariable(OpenSSL::DecryptRandom($data['raw_data'], $dummy_password, $this->serverSalt, $hmac_key, $this->separatorLength));
+		$data['raw_data']	= CompressionGz::UnCompressSerializedVariable(OpenSSL::DecryptRandom($data['raw_data'], $dummy_password, $this->serverSalt, $hmac_key, $this->separatorLength));
 
 		return $data;
 	}
