@@ -20,6 +20,8 @@
 
 namespace ickx\fw2\compression\traits;
 
+use ickx\fw2\other\json\Json;
+
 /**
  * 圧縮クラス特性
  *
@@ -52,13 +54,24 @@ trait CompressionTrait {
 	}
 
 	/**
-	 * PHPの変数をシリアライズして圧縮します。
+	 * PHPの変数をJSON化して圧縮します。
 	 *
 	 * @param	mixed			$var	PHPの変数
 	 * @param	string/callable	$encode	圧縮後に掛けるエンコード名 コールバック関数を指定した場合はコールバック関数でエンコードする
 	 * @return	mixed			圧縮され指定されたエンコード変換後の変数
 	 */
 	public static function CompressVariable ($var, $encode = null) {
+		return static::CompressEncode(Json::encode($var), $encode);
+	}
+
+	/**
+	 * PHPの変数をシリアライズして圧縮します。
+	 *
+	 * @param	mixed			$var	PHPの変数
+	 * @param	string/callable	$encode	圧縮後に掛けるエンコード名 コールバック関数を指定した場合はコールバック関数でエンコードする
+	 * @return	mixed			圧縮され指定されたエンコード変換後の変数
+	 */
+	public static function CompressSerializedVariable ($var, $encode = null) {
 		return static::CompressEncode(serialize($var), $encode);
 	}
 
@@ -84,13 +97,25 @@ trait CompressionTrait {
 	}
 
 	/**
+	 * 指定されたエンコードでデコードしたのち、バイナリを伸長し、JSON DecodeしてPHPの変数として返します。
+	 *
+	 * @param	binary			$binary	圧縮されたバイナリ
+	 * @param	bool			$assoc	展開したPHPの変数を配列として受け取るかどうか
+	 * @param	string/callable	$decode	伸長後に掛けるデコーダ用エンコード名 コールバック関数を指定した場合はコールバック関数でデコードする
+	 * @return	mixed			アンシリアライズされたPHP変数
+	 */
+	public static function UnCompressVariable ($string, $assoc = true, $encode = null) {
+		return Json::decode(static::UnCompressDecode($string, $encode), $assoc);
+	}
+
+	/**
 	 * 指定されたエンコードでデコードしたのち、バイナリを伸長し、アンシリアライズしてPHPの変数として返します。
 	 *
 	 * @param	binary			$binary	圧縮されたバイナリ
 	 * @param	string/callable	$decode	伸長後に掛けるデコーダ用エンコード名 コールバック関数を指定した場合はコールバック関数でデコードする
 	 * @return	mixed			アンシリアライズされたPHP変数
 	 */
-	public static function UnCompressVariable ($string, $encode = null) {
+	public static function UnCompressSerializedVariable ($string, $encode = null) {
 		return unserialize(static::UnCompressDecode($string, $encode));
 	}
 

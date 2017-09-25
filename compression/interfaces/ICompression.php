@@ -34,23 +34,23 @@ interface ICompression {
 	 * @var	int	デフォルトの圧縮率
 	 * @static
 	 */
-	const COMPRESS_LEVEL	= 7;
+	public const COMPRESS_LEVEL	= 7;
 
 	/**
 	 * @var	string	エンコードモード用名称定数
 	 * @static
 	 */
-	const ENCODE			= 'encode';
+	public const ENCODE			= 'encode';
 
 	/**
 	 * @var	string	デコードモード用名称定数
 	 * @static
 	 */
-	const DECODE			= 'decode';
+	public const DECODE			= 'decode';
 
 	/**
 	 * @var	string	エンコードモード名：BASE64
 	 * @static
 	 */
-	const ENCODE_BASE64		= 'base64';
+	public const ENCODE_BASE64		= 'base64';
 }

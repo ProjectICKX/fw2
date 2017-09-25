@@ -221,6 +221,15 @@ trait ControllerTrait {
 	}
 
 	/**
+	 * POST Dataから値を取得しアサインします。
+	 *
+	 * @param	string	$name
+	 */
+	public function assignPostData ($name) {
+		$this->render[$name] = $this->request->data->$name;
+	}
+
+	/**
 	 * トリガーを保持します。
 	 */
 	public function keepTrigger () {

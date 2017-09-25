@@ -65,6 +65,9 @@ class Memcached implements \ickx\fw2\auth\interfaces\IAuthSessionDataStore {
 
 		$this->handler = new \Memcached();
 		$this->handler->addServer($host_name, $port);
+		if ($this->handler->getVersion() === false) {
+			throw new \ErrorException(sprintf('Memcachedとの接続に失敗しました。host name:%s, port:%s', $host_name, $port));
+		}
 	}
 
 	/**
