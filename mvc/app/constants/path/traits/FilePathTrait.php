@@ -38,13 +38,12 @@ trait FilePathTrait {
 	 * @return	array	上書き設定
 	 */
 	public static function PathConfig () {
-		if (false !== $path = (static::$_cache ?? static::$_cache = Cache::init(static::class))->get('path')) {
-			return $path;
+		static::$_cache ?? static::$_cache = Cache::init(static::class);
+		if (static::$_cache->has('path_config')) {
+			return static::$_cache->get('path_config');
 		}
-
-		$path = static::PathConfigList();
-		static::$_cache->set('path', $path);
-		return $path;
+		static::$_cache->set('path_config', $path_config = static::PathConfigList());
+		return $path_config;
 	}
 
 	/**
@@ -53,8 +52,11 @@ trait FilePathTrait {
 	 * @return	array	パス情報上書き設定用データ
 	 */
 	public static function PathConfigList () {
-		if (($path_config_list = (static::$_cache ?? static::$_cache = Cache::init(static::class))->get('path_config_list')) !== false) {
-			return $path_config_list;
+		static $boot_mode;
+
+		static::$_cache ?? static::$_cache = Cache::init(static::class);
+		if (static::$_cache->has('path_config_list')) {
+			return static::$_cache->get('path_config_list');
 		}
 
 		$path_config_list = [
@@ -62,7 +64,7 @@ trait FilePathTrait {
 			//一般設定
 			//==============================================
 			'PHP_BINDIR'			=> PHP_BINDIR,
-			'BOOT_MODE'				=> Environment::IsCli() ? 'cli' : 'web',
+			'BOOT_MODE'				=> ($boot_mode ?? $boot_mode = Environment::IsCli()) ? 'cli' : 'web',
 
 			//==============================================
 			//アプリ設定

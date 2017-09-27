@@ -44,6 +44,14 @@ interface ICache {
 	public function setGroupName ($name);
 
 	/**
+	 * 引数で与えた名前のキャッシュが存在するか確認します。
+	 *
+	 * @param	mixed	$name	キャッシュ名
+	 * @return	bool	引数で与えた名前のキャッシュが存在する場合はtrue、そうでない場合はfalse
+	 */
+	public function has ($name);
+
+	/**
 	 * キャッシュした値を取得します。
 	 *
 	 * @param	string	$name	キャッシュ名

@@ -106,7 +106,7 @@ trait ValidateTrait {
 			'uuid_v4'		=> ["/\A[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-4[0-9a-fA-F]{3}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}\z/", '{:title}にはUUID v4を入力してください。'],
 
 			//url
-			'url'			=> [function ($value, $options, $meta = []) {return static::Url($value, $options, $meta);}, '{:title}にはURLを入力してください。例：https://example.com/ または http://example.com/'],
+			'url'			=> [function ($value, $options, $meta = []) {return static::Url($value, $options, $meta);}, '{:title}にはURLを入力してください。{:validator_message}例：https://example.com/ または http://example.com/'],
 
 			//e-mail
 			'email'			=> [function ($value, $options, $meta = []) {return is_string(filter_var($value, \FILTER_VALIDATE_EMAIL));}, '{:title}にはemailアドレスを入力してください。例：user@example.com'],
@@ -277,30 +277,45 @@ trait ValidateTrait {
 	public static function Hostname ($value, $options = []) {
 		$length = strlen($value);
 		if ($length > 255) {
-			return false;
+			return [
+				'validator_message'	=> 'ホスト名の長さが255バイトを超えています。',
+			];
 		}
 		if ($length !== strspn($value, 'abcdefghijklmnopqrstuvwxyzABCEDFGHIJKLMNOPQRSTUVWXYZ1234567890-.')) {
-			return false;
+			return [
+				'validator_message'	=> 'ホスト名に使用できない文字が含まれています。',
+			];
 		}
 		if ($length === strspn($value, '1234567890.')) {
-			return false;
+			return [
+				'validator_message'	=> 'ホスト名のフォーマットが正しくありません。',
+			];
 		}
-		if ($length === strspn($value, 'abcdefghijklmnopqrstuvwxyz1234567890.:')) {
-			return false;
+		if ($length !== strspn($value, 'abcdefghijklmnopqrstuvwxyz1234567890.:')) {
+			return [
+				'validator_message'	=> 'ホスト名のフォーマットが正しくありません。',
+			];
 		}
 
 		foreach(explode('.', $value) as $label) {
 			$label_length = strlen($label);
 			if ($label_length === 0) {
-				return false;
+				return [
+					'validator_message'	=> 'ホスト名にドットが連続している箇所があります。',
+				];
 			}
 			if ($label_length > 63) {
-				return false;
+				return [
+					'validator_message'	=> 'ホスト名のパートに63バイトを超えている箇所があります。',
+				];
 			}
 			if (substr($label, -1) === '-') {
-				return false;
+				return [
+					'validator_message'	=> 'ホスト名の末尾に-があります。',
+				];
 			}
 		}
+
 		return true;
 	}
 
@@ -612,20 +627,49 @@ trait ValidateTrait {
 		return is_string(filter_var(implode('@', $part), \FILTER_VALIDATE_EMAIL));
 	}
 
+	/**
+	 * URLかどうか検証します。
+	 *
+	 * ！！注意！！
+	 * 国際化ドメイン名の検証は必ず失敗します。
+	 *
+	 * @param	mixed	$value		検証する値
+	 * @param	array	$options	オプション
+	 * @return	bool	検証に合格した場合:true、検証に失敗した場合:false
+	 */
 	public static function Url ($value, $options, $meta = []) {
-		if (false === filter_var($value, \FILTER_VALIDATE_URL, \FILTER_FLAG_SCHEME_REQUIRED | \FILTER_FLAG_HOST_REQUIRED | ($options['filter'] ?? $options['0'] ?? 0))) {
-			return false;
+		$filter_message_list	= [
+			\FILTER_FLAG_SCHEME_REQUIRED	=> 'URLにスキームが含まれていません。',
+			\FILTER_FLAG_HOST_REQUIRED		=> 'URLにホストが含まれていません。',
+			\FILTER_FLAG_PATH_REQUIRED		=> 'URLにパスが含まれていません。',
+			\FILTER_FLAG_QUERY_REQUIRED		=> 'URLにクエリ文字列がありません。',
+		];
+
+		$validator_message = [];
+		foreach (array_merge([\FILTER_FLAG_SCHEME_REQUIRED, \FILTER_FLAG_HOST_REQUIRED], $options['filter'] ?? $options['0'] ?? []) as $bit => $message) {
+			if (false === filter_var($value, \FILTER_VALIDATE_URL)) {
+				$validator_message[] = $message;
+			}
+		}
+		if (!empty($validator_message)) {
+			return [
+				'validator_message'	=> implode(' ', $validator_message),
+			];
 		}
 
 		$ret = parse_url($value);
 		$scheme = $ret['scheme'] ?? '';
 		if ($scheme !== 'http' && $scheme !== 'https') {
-			return false;
+			return [
+				'validator_message'	=> '使用できるスキーマはhttpまたはhttpsのみです。',
+			];
 		}
 
 		$host = $ret['host'] ?? '';
-		if (!static::Hostname($host) && filter_var($host, \FILTER_VALIDATE_IP) !== $host) {
-			return false;
+		if (true !== $host_name_error = static::Hostname($host) && filter_var($host, \FILTER_VALIDATE_IP) !== $host) {
+			return [
+				'validator_message'	=> implode(' ', empty($host_name_error) ? ['無効なホスト名です。'] : $host_name_error),
+			];
 		}
 
 		$accept_host = (array) ($options['accept_host'] ?? $options[0] ?? ['localhost']);
@@ -641,11 +685,15 @@ trait ValidateTrait {
 		}
 
 		if (false === $dot_pos = strrpos($host, '.')) {
-			return false;
+			return [
+				'validator_message'	=> 'ドットの無いホスト名が指定されています。',
+			];
 		}
 
 		if (!isset(DomainUtility::TOP_LEVEL_DOMAIN_LIST[substr($host, $dot_pos + 1)])) {
-			return false;
+			return [
+				'validator_message'	=> '無効なトップレベルドメインが指定されています。',
+			];
 		}
 
 		return true;

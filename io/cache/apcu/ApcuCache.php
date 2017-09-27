@@ -38,6 +38,24 @@ class ApcuCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	public const STORAGE_TYPE	= Cache::STORAGE_TYPE_APCU;
 
 	/**
+	 * 引数で与えた名前のキャッシュが存在するか確認します。
+	 *
+	 * @param	mixed	$name	キャッシュ名
+	 * @return	bool	引数で与えた名前のキャッシュが存在する場合はtrue、そうでない場合はfalse
+	 */
+	public function has ($name) {
+		if (!is_array($name)) {
+			return apcu_exists($this->groupName .'<>'. $name);
+		}
+
+		$ret = [];
+		foreach ($name as $key) {
+			$ret[$key] = apcu_exists($this->groupName .'<>'. $key);
+		}
+		return $ret;
+	}
+
+	/**
 	 * キャッシュした値を取得します。
 	 *
 	 * @param	string	$name	キャッシュ名

@@ -83,6 +83,8 @@ class Twig_Extension_Filter extends \Twig_Extension {
 			new \Twig_Filter('to_text',			[$this, 'toText']),
 			new \Twig_Filter('camelize',		[$this, 'camelize']),
 
+			new \Twig_Filter('method',			[$this, 'callMethod']),
+
 			//==============================================
 			//error support
 			//==============================================
@@ -301,5 +303,9 @@ class Twig_Extension_Filter extends \Twig_Extension {
 
 	public function strToDate ($value, $format) {
 		return date($format, strtotime($value));
+	}
+
+	public function callMethod ($instance, $method_name, ...$args) {
+		return $instance->$method_name(...$args);
 	}
 }

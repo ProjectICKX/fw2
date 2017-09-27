@@ -59,6 +59,32 @@ class FilesCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	}
 
 	/**
+	 * 引数で与えた名前のキャッシュが存在するか確認します。
+	 *
+	 * @param	mixed	$name	キャッシュ名
+	 * @return	bool	引数で与えた名前のキャッシュが存在する場合はtrue、そうでない場合はfalse
+	 */
+	public function has ($name) {
+		if (!is_array($name)) {
+			$name = str_replace("\\", '/', $name);
+			if (!(('/' === $char = mb_substr($name, 0, 1)) || (mb_substr($name, 1, 2) === ':/' && ($code = ord($char)) && ((65 <= $code && $code <= 90) || (97 <= $code && $code <= 122))))) {
+				$name = sprintf('%s/%s', $this->_cacheDir ?? sprintf('%s/%s/%s', sys_get_temp_dir(), static::DEFAULT_CACHE_SUB_DIRECTORY, str_replace(["\\", '/', "\r\n", "\r", "\n"], '/', $this->groupName)), $name);
+			}
+			return FileSystem::IsReadableFile($name, ['raise_exception' => false]) === true;
+		}
+
+		$ret = [];
+		foreach ($name as $key) {
+			$key = str_replace("\\", '/', $key);
+			if (!(('/' === $char = mb_substr($key, 0, 1)) || (mb_substr($key, 1, 2) === ':/' && ($code = ord($char)) && ((65 <= $code && $code <= 90) || (97 <= $code && $code <= 122))))) {
+				$key = sprintf('%s/%s', $this->_cacheDir ?? sprintf('%s/%s/%s', sys_get_temp_dir(), static::DEFAULT_CACHE_SUB_DIRECTORY, str_replace(["\\", '/', "\r\n", "\r", "\n"], '/', $this->groupName)), $key);
+			}
+			$ret[$key] = FileSystem::IsReadableFile($key, ['raise_exception' => false]) === true;
+		}
+		return $ret;
+	}
+
+	/**
 	 * キャッシュした値を取得します。
 	 *
 	 * @param	string	$name	キャッシュ名：キャッシュファイルパス
@@ -68,7 +94,7 @@ class FilesCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	public function get ($name) {
 		$name = str_replace("\\", '/', $name);
 		if (!(('/' === $char = mb_substr($name, 0, 1)) || (mb_substr($name, 1, 2) === ':/' && ($code = ord($char)) && ((65 <= $code && $code <= 90) || (97 <= $code && $code <= 122))))) {
-			$name = sprintf('%s/%s', $this->_cacheDir ?? sprintf('%s/%s/%s', sys_get_temp_dir(), static::DEFAULT_CACHE_SUB_DIRECTORY, str_replace(["\\", '/', "\r\n", "\r", "\n"], '_', $this->groupName)), $name);
+			$name = sprintf('%s/%s', $this->_cacheDir ?? sprintf('%s/%s/%s', sys_get_temp_dir(), static::DEFAULT_CACHE_SUB_DIRECTORY, str_replace(["\\", '/', "\r\n", "\r", "\n"], '/', $this->groupName)), $name);
 		}
 
 		if (true !== FileSystem::IsReadableFile($name, ['raise_exception' => false])) {
@@ -106,7 +132,7 @@ class FilesCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 			if ($fileInfo->isDir()) {
 				$children = $fileInfo->getChildren();
 				$children->setFlags(\FilesystemIterator::CURRENT_AS_FILEINFO);
-				var_dump($children->next());
+
 				if (is_null($children->next())) {
 					rmdir($full_path);
 				}
@@ -138,7 +164,7 @@ class FilesCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	public function set ($name, $value, $ttl = self::DEFAULT_TTL) {
 		$name = str_replace("\\", '/', $name);
 		if (!(('/' === $char = mb_substr($name, 0, 1)) || (mb_substr($name, 1, 2) === ':/' && ($code = ord($char)) && ((65 <= $code && $code <= 90) || (97 <= $code && $code <= 122))))) {
-			$cache_dir = $this->_cacheDir ?? sprintf('%s/%s/%s', sys_get_temp_dir(), static::DEFAULT_CACHE_SUB_DIRECTORY, str_replace(["\\", '/', "\r\n", "\r", "\n"], '_', $this->groupName));
+			$cache_dir = $this->_cacheDir ?? sprintf('%s/%s/%s', sys_get_temp_dir(), static::DEFAULT_CACHE_SUB_DIRECTORY, str_replace(["\\", '/', "\r\n", "\r", "\n"], '/', $this->groupName));
 			$name = sprintf('%s/%s', $cache_dir, $name);
 		}
 
@@ -162,7 +188,7 @@ class FilesCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 		foreach ($sets as $name => $value) {
 			$name = str_replace("\\", '/', $name);
 			if (!(('/' === $char = mb_substr($name, 0, 1)) || (mb_substr($name, 1, 2) === ':/' && ($code = ord($char)) && ((65 <= $code && $code <= 90) || (97 <= $code && $code <= 122))))) {
-				$cache_dir = $this->_cacheDir ?? sprintf('%s/%s/%s', sys_get_temp_dir(), static::DEFAULT_CACHE_SUB_DIRECTORY, str_replace(["\\", '/', "\r\n", "\r", "\n"], '_', $this->groupName));
+				$cache_dir = $this->_cacheDir ?? sprintf('%s/%s/%s', sys_get_temp_dir(), static::DEFAULT_CACHE_SUB_DIRECTORY, str_replace(["\\", '/', "\r\n", "\r", "\n"], '/', $this->groupName));
 				$name = sprintf('%s/%s', $cache_dir, $name);
 			}
 
@@ -185,7 +211,7 @@ class FilesCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	public function remove ($name) {
 		$name = str_replace("\\", '/', $name);
 		if (!(('/' === $char = mb_substr($name, 0, 1)) || (mb_substr($name, 1, 2) === ':/' && ($code = ord($char)) && ((65 <= $code && $code <= 90) || (97 <= $code && $code <= 122))))) {
-			$cache_dir = $this->_cacheDir ?? sprintf('%s/%s/%s', sys_get_temp_dir(), static::DEFAULT_CACHE_SUB_DIRECTORY, str_replace(["\\", '/', "\r\n", "\r", "\n"], '_', $this->groupName));
+			$cache_dir = $this->_cacheDir ?? sprintf('%s/%s/%s', sys_get_temp_dir(), static::DEFAULT_CACHE_SUB_DIRECTORY, str_replace(["\\", '/', "\r\n", "\r", "\n"], '/', $this->groupName));
 			if (true !== FileSystem::IsEnableDirectory($cache_dir, ['raise_exception' => false])) {
 				FileSystem::CreateDirectory($cache_dir, ['raise_exception' => true, 'name' => $this->_cacheDir, 'parents' => true, 'skip' => true, 'mode' => 0775]);
 			}
@@ -212,7 +238,7 @@ class FilesCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 			if ($fileInfo->isDir()) {
 				$children = $fileInfo->getChildren();
 				$children->setFlags(\FilesystemIterator::CURRENT_AS_FILEINFO);
-				var_dump($children->next());
+
 				if (is_null($children->next())) {
 					rmdir($full_path);
 				}

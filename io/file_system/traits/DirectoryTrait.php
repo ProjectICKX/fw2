@@ -211,16 +211,48 @@ trait DirectoryTrait {
 		//==============================================
 		//ディレクトリ検証
 		//==============================================
+		clearstatcache(true, $dir_path);
+
 		//ディレクトリ存在確認
 		if (!file_exists($dir_path)) {
-			if (!(($auto_create || $parents) ? static::CreateDirectory($dir_path, $options) : false)) {
+			if ($auto_create || $parents) {
+				//==============================================
+				//ディレクトリ作成
+				//==============================================
+				$mode			= $options['mode'] ?? static::DEFAULT_DIR_MODE;
+				$owner			= $options['owner'] ?? null;
+				$group			= $options['group'] ?? null;
+
+				//ディレクトリの作成
+				if (!mkdir($dir_path, $mode, $parents)) {
+					return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ディレクトリの作成に失敗しました。dir_path:%s, mode:%s, parents:%s', [$dir_path, $mode ,$parents]), $raise_exception);
+				}
+
+				//持ち主の変更
+				if ($owner !== null && !chown($dir_path, $owner)) {
+					return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ディレクトリのオーナー変更に失敗しました。dir_path:%s, owner:%s', [$dir_path, $owner]), $raise_exception);
+				}
+
+				//グループの変更
+				if ($group !== null && !chgrp($dir_path, $group)) {
+					return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ディレクトリのグループ変更に失敗しました。dir_path:%s, group:%s', [$dir_path, $group]), $raise_exception);
+				}
+
+				if ($state_cache) {
+					static::$_cache->set($dir_path, true);
+				}
+
+				clearstatcache(true, $dir_path);
+			}
+
+			if (!file_exists($dir_path)) {
 				return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('%sディレクトリがありません。dir:%s', [$name, $dir_path]), $raise_exception);
 			}
 		}
 
 		//対象確認
 		if (!is_dir($dir_path)) {
-			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('%sディレクトリではありません。dir:%s', [$name, $dir_path]), $raise_exception);
+			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ディレクトリではありません。%s dir:%s', [$name, $dir_path]), $raise_exception);
 		}
 
 		//書き込み権確認

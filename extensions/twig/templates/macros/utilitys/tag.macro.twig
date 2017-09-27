@@ -28,7 +28,7 @@
  #}
 {% macro attr(attribute_list, exclusion_attribute_list) %}{% filter replace({"\n" : ''})|raw %}
 {% for name, value in attribute_list %}
-{% if name not in exclusion_attribute_list and value != '' %}
+{% if name not in exclusion_attribute_list and value is not same as ('') %}
 {% if name == 'class' and value is iterable %}
 {% set value = ' ' ~ value|join(' ') %}
 {% endif %}

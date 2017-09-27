@@ -599,7 +599,9 @@ class Flywheel {
 
 	protected static function _LogSetup () {
 		$cache = Cache::init([static::class, __FUNCTION__]);
-		if (false === $path = $cache->get('path')) {
+		if ($cache->has('path')) {
+			$path = $cache->get('path');
+		} else {
 			$cache->set('path', $path = [
 				'app_timer_log_path'	=> FilePath::APP_TIMER_LOG_PATH(),
 				'sql_error_log_path'	=> FilePath::SQL_ERROR_LOG_PATH(),
@@ -608,12 +610,12 @@ class Flywheel {
 			]);
 		}
 
-		if (false !== $cache->get('created')) {
+		if (!$cache->has('created') || !$cache->get('created')) {
+			FileSystem::CreateDirectory($path['app_log_dir'],	['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'アプリログディレクトリ', 'state_cache' => true]);
+
 			FileSystem::CreateFile($path['app_timer_log_path'],	['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'タイマーログ', 'state_cache' => true]);
 			FileSystem::CreateFile($path['sql_error_log_path'],	['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'SQLエラー', 'state_cache' => true]);
 			FileSystem::CreateFile($path['php_error_log_path'],	['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'PHPエラー', 'state_cache' => true]);
-
-			FileSystem::CreateDirectory($path['app_log_dir'],	['auto_create' => true, 'parents' => true, 'skip' => true, 'name' => 'リクエスト', 'state_cache' => true]);
 
 			$cache->set('created', true);
 		}
