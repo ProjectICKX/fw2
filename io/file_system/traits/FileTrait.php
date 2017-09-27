@@ -180,9 +180,9 @@ trait FileTrait {
 	 * @param	array	$options	オプション
 	 * [
 	 *     'raise_exception'   => (bool) エラー発生時に例外を起こさせる場合はtrue
-	 *     'name'	           => (string) エラー表示用の名称
+	 *     'name'              => (string) エラー表示用の名称
 	 *     'auto_create'       => (bool) ディレクトリが存在しない場合に自動生成させる場合はtrue
-	 *     'parents'           => (bool) 'auto_create'有効時に存在しない親ディレクトリも生成させる場合はtrue
+	 *     'parents'           => (bool) 'auto_create'有効時に存在しない親ディレクトリも生成させる場合はtrue なお、ファイルが既に存在する場合は成功として終了する。
 	 *     'p'                 => 'parents'の省略表記
 	 *     'mode'              => (oct) ディレクトリのモード
 	 *     'owner'             => (string) ディレクトリのオーナー
@@ -202,21 +202,25 @@ trait FileTrait {
 		//==============================================
 		//インスタンス構築
 		//==============================================
-		$spi = new \SplFileInfo($file_path);
+//		統合FileSystemアクセスのための準備
+//		$spi = new \SplFileInfo($file_path);
 
 		//==============================================
 		//ファイル検証
 		//==============================================
 		//ファイル存在確認
+		clearstatcache(true, $file_path);
 		if (file_exists($file_path)) {
+			if ($parents) {
+				return true;
+			}
 			return CoreException::ScrubbedThrow(DirectoryStatus::Found('既にファイルが存在します。dir_path:%s', [$file_path]), $raise_exception);
 		}
 
 		//親ディレクトリ権限確認
-		$tmp_optioins = $options;
-		$tmp_optioins['name']			= ($name) ? '親' : $name . 'の親';
-		$tmp_optioins['auto_create']	= false;
-		if (($status = static::IsEnableDirectory(dirname($file_path), $tmp_optioins)) !== true && $parents === false) {
+		$tmp_options = $options;
+		$tmp_options['name']			= ($options['name'] ?? false) ? $options['name'] . 'の親' : '親';
+		if (($status = static::IsEnableDirectory(dirname($file_path), $tmp_options)) !== true && $parents === false) {
 			return $status;
 		}
 

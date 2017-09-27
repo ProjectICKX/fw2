@@ -45,6 +45,24 @@ class ClassVarCache extends \ickx\fw2\io\cache\abstracts\AbstractCache {
 	protected $cacheExpireList	= [];
 
 	/**
+	 * 引数で与えた名前のキャッシュが存在するか確認します。
+	 *
+	 * @param	mixed	$name	キャッシュ名
+	 * @return	bool	引数で与えた名前のキャッシュが存在する場合はtrue、そうでない場合はfalse
+	 */
+	public function has ($name) {
+		if (!is_array($name)) {
+			return isset($this->cacheList[$name]);
+		}
+
+		$ret = [];
+		foreach ($name as $key) {
+			$ret[$key] = isset($this->cacheList[$key]);
+		}
+		return $ret;
+	}
+
+	/**
 	 * キャッシュした値を取得します。
 	 *
 	 * @param	string	$name	キャッシュ名
