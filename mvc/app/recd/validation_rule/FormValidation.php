@@ -62,6 +62,28 @@ class FormValidation {
 		return $current_rule;
 	}
 
+	/**
+	 * 指定した名称のルールを除去します。
+	 *
+	 * @param	array	$rule_list		ルールリスト
+	 * @param	array	$target_list	ターゲットリスト
+	 * @return	array	指定した名称のルールを削除したルールリスト
+	 */
+	public function removeRule ($rule_list, $target_list) {
+		$remove_idx_list = [];
+		foreach ((array) $target_list as $target) {
+			$remove_idx_list = array_merge($remove_idx_list, array_keys(array_column($rule_list, 0), $target, true));
+		}
+		$remove_idx_list = array_unique($remove_idx_list);
+		rsort($remove_idx_list);
+
+		foreach ($remove_idx_list as $idx) {
+			unset($rule_list[$idx]);
+		}
+
+		return $rule_list;
+	}
+
 	//==============================================
 	// Form type
 	//==============================================
@@ -71,11 +93,12 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function text ($current_rule = [], $is_array = false) {
-		return array_merge([
+	public function text ($current_rule = [], $is_array = false, $remove_target = []) {
+		$rule_list = array_merge([
 			['require', 'raise_exception' => true],
 			['not_string_empty', 'is_array' => $is_array, 'is_last' => true],
 		], $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}
 
 	/**
@@ -84,12 +107,13 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function email ($current_rule = [], $is_array = false) {
-		return array_merge([
+	public function email ($current_rule = [], $is_array = false, $remove_target = []) {
+		$rule_list = array_merge([
 			['require', 'raise_exception' => true],
 			['not_string_empty', 'is_array' => $is_array, 'is_last' => true],
 			['email_jp_limited', 'is_array' => $is_array, 'is_last' => true],
 		], $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}
 
 	/**
@@ -98,11 +122,12 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function password ($current_rule = [], $is_array = false) {
-		return array_merge([
+	public function password ($current_rule = [], $is_array = false, $remove_target = []) {
+		$rule_list = array_merge([
 			['require', 'raise_exception' => true],
 			['not_string_empty', 'is_array'	=> $is_array, 'is_last' => true],
 		], $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}
 
 	/**
@@ -111,11 +136,12 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function textarea ($current_rule = [], $is_array = false) {
-		return array_merge([
+	public function textarea ($current_rule = [], $is_array = false, $remove_target = []) {
+		$rule_list = array_merge([
 			['require', 'raise_exception' => true],
 			['not_string_empty', 'is_array'	=> $is_array, 'is_last' => true],
 		], $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}
 
 	/**
@@ -124,12 +150,13 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function wysiwyg ($current_rule = [], $is_array = false) {
-		return array_merge([
+	public function wysiwyg ($current_rule = [], $is_array = false, $remove_target = []) {
+		$rule_list = array_merge([
 			['require', 'raise_exception' => true],
 			['not_string_empty', 'is_array'	=> $is_array, 'is_last' => true],
 			['html', array_merge(['script'], SecurityUtility::GetDefaultWatchAttributes(['style'])), 'is_array'	=> $is_array, 'is_last' => true],
 		], $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}
 
 	/**
@@ -138,12 +165,13 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function radio ($current_rule = [], $label_list = [], $is_array = false) {
-		return array_merge([
+	public function radio ($current_rule = [], $label_list = [], $is_array = false, $remove_target = []) {
+		$rule_list = array_merge([
 			['require', 'raise_exception' => true],
 			['not_string_empty', 'is_array'	=> $is_array, 'is_last' => true],
 			['key', $label_list, 'is_array'	=> $is_array, 'is_last' => true],
 		], $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}
 
 	/**
@@ -152,9 +180,9 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function checkbox ($current_rule = [], $label_list = [], $value = '1') {
+	public function checkbox ($current_rule = [], $label_list = [], $value = '1', $remove_target = []) {
 		$is_array = is_array($label_list) && !empty($label_list);
-		return array_merge([
+		$rule_list = array_merge([
 		'null_skip'	=> true,
 			['require', 'raise_exception' => true],
 			['not_string_empty', 'is_last' => true],
@@ -165,6 +193,7 @@ class FormValidation {
 		] : [
 			['==', $value, 'is_array' => $is_array, 'raise_exception' => true],
 		], $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}
 
 	/**
@@ -173,12 +202,13 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function select ($current_rule = [], $label_list = [], $multiple = false) {
-		return array_merge([
+	public function select ($current_rule = [], $label_list = [], $multiple = false, $remove_target = []) {
+		$rule_list = array_merge([
 			'null_skip'	=> true,
 			['require', 'raise_exception' => true],
 			['key', $label_list, 'is_array' => $multiple, 'raise_exception' => true],
 		], $multiple ? $this->adjustOption($current_rule, 'is_array', $multiple) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}
 
 	/**
@@ -187,12 +217,13 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function upload ($current_rule = [], $multiple = false) {
-		return array_merge([
+	public function upload ($current_rule = [], $multiple = false, $remove_target = []) {
+		$rule_list = array_merge([
 			'source'	=> 'upload',
 			['require',				'raise_exception' => true],
 			['upload_check_status',	'is_array'	=> $multiple, 'is_last' => true],
 		], $multiple ? $this->adjustOption($current_rule, 'is_array', $multiple) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}
 
 	//==============================================
@@ -207,13 +238,14 @@ class FormValidation {
 	 * @param	array		$force_error	エラーが発生した場合に強制的にエラー扱いとする項目
 	 * @return	array		お薦め設定
 	 */
-	public function complexWithOutValue ($current_rule = [], $premise = [], $filter = null, $force_error = null) {
-		return array_merge([
+	public function complexWithOutValue ($current_rule = [], $premise = [], $filter = null, $force_error = null, $remove_target = []) {
+		$rule_list = array_merge([
 			'force_validate'	=> true,
 			'premise'			=> $premise,
 			'fetch_from_keys'	=> $premise,
 			'filter'			=> $filter,
 			'force_error'		=> $force_error ?? $premise,
 		], $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}
 }

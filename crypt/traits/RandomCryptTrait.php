@@ -143,7 +143,7 @@ trait RandomCryptTrait {
 		$encoded_message = str_pad($encoded_message, $encoded_message_length + $encoded_message_length % 4,  '=');
 		$encoded_message = static::DecryptMessage(base64_decode($encoded_message), $password2, static::GetRandomEncryptOptions($binary_passwrod_2));
 		if ($encoded_message === false) {
-			throw new \ErrorException('有効な文字列を得られませんでした。');
+			return false;
 		}
 
 		$encoded_message = CompressionGz::UnCompress($encoded_message);

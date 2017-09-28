@@ -85,6 +85,10 @@ class Twig_Extension_Filter extends \Twig_Extension {
 
 			new \Twig_Filter('method',			[$this, 'callMethod']),
 
+			new \Twig_Filter('find_as_key',		[$this, 'findAsKey']),
+
+			new \Twig_Filter('iterate_by_map_method',	[$this, 'iterateByMapMethod']),
+
 			//==============================================
 			//error support
 			//==============================================
@@ -307,5 +311,24 @@ class Twig_Extension_Filter extends \Twig_Extension {
 
 	public function callMethod ($instance, $method_name, ...$args) {
 		return $instance->$method_name(...$args);
+	}
+
+	public function findAsKey ($key, $data) {
+		return is_object($data) ? ($data->$key ?? null) : ($data[$key] ?? null);
+	}
+
+	public function iterateByMapMethod ($object, $method_name, $use_key = false) {
+		if (!method_exists($object, $method_name)) {
+			return $object;
+		}
+
+		if (!is_array($key_list = $object->$method_name())) {
+			return $object;
+		}
+
+		$can_array_access = $object instanceof \ArrayAccess;
+		foreach ($use_key ? array_keys($key_list) : array_values($key_list) as $key) {
+			yield $can_array_access ? ($object[$key] ?? null) : ($object->$key ?? null);
+		}
 	}
 }

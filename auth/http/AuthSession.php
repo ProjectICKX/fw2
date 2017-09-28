@@ -904,7 +904,12 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		$dummy_password		= Hash::HmacStringStretching($this->stretcher[2], $dummy_password, $dummy_user_name);
 		$hmac_key			= Hash::HmacStringStretching($this->stretcher[0], $dummy_client_salt, $dummy_password);
 
-		return CompressionGz::UnCompressVariable(OpenSSL::DecryptRandom($cookie_value, $dummy_password, $dummy_client_salt, $hmac_key, $this->separatorLength));
+		$cookie_value		= OpenSSL::DecryptRandom($cookie_value, $dummy_password, $dummy_client_salt, $hmac_key, $this->separatorLength);
+		if ($cookie_value === false) {
+			return [];
+		}
+
+		return CompressionGz::UnCompressVariable($cookie_value);
 	}
 
 	/**
@@ -990,7 +995,8 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 
 		foreach ($check_target_list as $name) {
 			if (($server_data[$name] ?? null) !== ($client_data[$name] ?? null)) {
-				throw new \ErrorException(sprintf('認証セッションに齟齬があります。name:%s, server:%s, client:%s', $name, $server_data[$name] ?? '未設定', $client_data[$name] ?? '未設定'));
+				//throw new \ErrorException(sprintf('認証セッションに齟齬があります。name:%s, server:%s, client:%s', $name, $server_data[$name] ?? '未設定', $client_data[$name] ?? '未設定'));
+				return false;
 			}
 		}
 
