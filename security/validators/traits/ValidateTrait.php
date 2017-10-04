@@ -211,6 +211,7 @@ trait ValidateTrait {
 			'upload_max_filesize'	=> [function ($value, $options, $meta = []) {return static::Range($value['size'], ['max_range' => $options[0] ?? $options['max_range'] ?? null], $options['format'] ?? null, $options);}, '{:title}はファイルサイズが{:max_range:0}バイト以下である必要があります。'],
 			'upload_mimetype'		=> [function ($value, $options, $meta = []) {return in_array($value['type'], $options['mimetype'] ?? $options[0] ?? [], true);} ,'{:title}はMIME-Typeが{:mimetype:0}のファイルのみ扱えます。'],
 			'upload_ext'			=> [function ($value, $options, $meta = []) {return in_array(pathinfo($value['name'], \PATHINFO_EXTENSION), $options['ext'] ?? $options[0] ?? [], true);} ,'{:title}は拡張子が{:ext:0}のファイルのみ扱えます。'],
+			'upload_file_format'	=> [function ($value, $options, $meta = []) {isset($options['real_name']) ?: $options['real_name'] = $value['name'];return static::validFileFormat($value['tmp_name'], $options['type'] ?? $options[0] ?? null, $options);} ,'{:validator_message}{:title}は{:type:0}のファイルのみ扱えます。'],
 //			'upload_name_regex'		=> [function ($value, $options, $meta = []) {return $value['type'] > $options[0] ?? $options['max'] ?? null;} ,'{:title}は{:max:0}バイト以上にしてください。'],
 
 			'upload_csv_header_length_range'	=> [function ($value, $options, $meta = []) {return is_int(filter_var(count(static::createCsvGenerator($value['tmp_name'], $options['encoding'] ?? null, $options['bit_flag'] ?? null)()->current()), \FILTER_VALIDATE_INT, ['options' => $options]));}, '{:title}は{:min_range:0}列以上{:max_range:1}列以下の列数が必要です。'],
@@ -828,6 +829,14 @@ trait ValidateTrait {
 		return empty($result) ?: implode(', ', $result);
 	}
 
+	/**
+	 * アップロードされたファイルの状態を確認します。
+	 *
+	 * @param	array	$value
+	 * @param	array	$options
+	 * @param	array	$meta
+	 * @return boolean|string[]|NULL[]|unknown[]
+	 */
 	public static function CheckUploadStatus ($value, $options, $meta = []) {
 		$error_code = $value['error'] ?? null;
 		if ($error_code === \UPLOAD_ERR_OK) {
@@ -851,6 +860,14 @@ trait ValidateTrait {
 		];
 	}
 
+	/**
+	 * CSVの一部検証用のGeneratorを作成し返します。
+	 *
+	 * @param unknown $file_path
+	 * @param array $encoding
+	 * @param unknown $options
+	 * @return unknown
+	 */
 	public static function createCsvGenerator ($file_path, $encoding = [], $options = null) {
 		return function () use ($file_path, $encoding, $options) {
 			$csv_file = new \SplFileObject(sprintf('php://filter/read=convert.iconv.%s%%2F%s/resource=%s', $encoding['from'] ?? 'cp932', $encoding['to'] ?? 'utf-8', $file_path), 'rb');
@@ -866,10 +883,115 @@ trait ValidateTrait {
 			$csv_file->setFlags($bit_flag);
 
 			foreach ($csv_file as $idx => $row) {
-				yield $id => $row;
+				yield $idx => $row;
 			}
 
 			return null;
 		};
+	}
+
+	/**
+	 * ファイルフォーマットを検証します。
+	 *
+	 * @param unknown $file_path
+	 * @param unknown $target_list
+	 * @param unknown $options
+	 * @return string[]|boolean|string[]
+	 */
+	public static function validFileFormat ($file_path, $target_list, $options = null) {
+		$check_ext	= $options['check_ext'] ?? false;
+
+		if ($check_ext) {
+			$ext = strtolower(pathinfo(is_null($real_name = $options['real_name'] ?? null) ? $file_path : $real_name, \PATHINFO_EXTENSION));
+			if (!in_array($ext, $target_list, true)) {
+				return [
+					'validator_message'	=> ''. $ext. $target_list,
+				];
+			}
+		}
+
+		$validaters = [
+			'bom'	=> 'validFileFormatUtf8Bom',
+			'jpg'	=> 'validFileFormatJpg',
+			'jpeg'	=> 'validFileFormatJpg',
+			'png'	=> 'validFileFormatPng',
+			'gif'	=> 'validFileFormatGif',
+			'zip'	=> 'validFileFormatZip',
+		];
+
+		foreach ((array) $target_list as $target) {
+			if (static::{$validaters[$target]}($file_path)) {
+				return ($check_ext && $target !== $ext) ? [
+					'validator_message'	=> '拡張子とファイルの実体が異なっています。',
+				] : true;
+			}
+		}
+
+		return [
+			'validator_message'	=> '',
+		];
+	}
+
+	/**
+	 * BOM付きUTF-8ファイルのファイルフォーマットを検証します。
+	 *
+	 * @param unknown $file_path
+	 * @return boolean
+	 */
+	public static function validFileFormatUtf8Bom ($file_path) {
+		$is_itf8_bom	= fread($fp = fopen($file_path, 'rb'), 3) === static::SOF_UTF8_BOM;
+		fclose($fp);
+		return $is_itf8_bom;
+	}
+
+	/**
+	 * JPGファイルのファイルフォーマットを検証します。
+	 *
+	 * @param unknown $file_path
+	 * @return boolean
+	 */
+	public static function validFileFormatJpg ($file_path) {
+		$is_jpeg	= fread($fp = fopen($file_path, 'rb'), 2) === static::SOF_JPG;
+		fseek($fp, -2, \SEEK_END);
+		$is_jpeg	= $is_jpeg && fread($fp, 2) === static::EOF_JPG;
+		fclose($fp);
+		return $is_jpeg;
+	}
+
+	/**
+	 * PNGファイルフォーマットを検証します。
+	 *
+	 * @param unknown $file_path
+	 * @return boolean
+	 */
+	public static function validFileFormatPng ($file_path) {
+		$is_png	= fread($fp = fopen($file_path, 'rb'), 8) === static::SOF_PNG;
+		fclose($fp);
+		return $is_png;
+	}
+
+	/**
+	 * GIFファイルフォーマットを検証します。
+	 *
+	 * @param unknown $file_path
+	 * @return boolean
+	 */
+	public static function validFileFormatGif ($file_path) {
+		$byte	= fread($fp = fopen($file_path, 'rb'), 6);
+		$is_gif	= static::SOF_GIF_87A === $byte || static::SOF_GIF_89A === $byte;
+		fclose($fp);
+		return $is_gif;
+	}
+
+	/**
+	 * ZIPファイルフォーマットを検証します。
+	 *
+	 * @param unknown $file_path
+	 * @return boolean
+	 */
+	public static function validFileFormatZip ($file_path) {
+		$is_zip	= fread($fp = fopen($file_path, 'rb'), 4) === static::SOF_ZIP;
+		fclose($fp);
+		return $is_zip;
 	}
 }

@@ -451,6 +451,31 @@ trait ControllerTrait {
 	}
 
 	/**
+	 * GET パラメータからフィルタ済みの配列を返します。
+	 *
+	 * @param	array	$parameter_name_list	許可するパラメータ名リスト
+	 * @return	array	フィルタ済みの配列
+	 */
+	public function getFilteredParameters ($parameter_name_list) {
+		return array_filter($this->request->parameter->getRecursiveArrayCopy(), function ($key) use ($parameter_name_list) {return in_array($key, $parameter_name_list);}, \ARRAY_FILTER_USE_KEY);
+	}
+
+	public function stringEmptyFilter ($array, $key_list = []) {
+		return array_filter($array, function ($value, $key) use ($key_list) {return !empty($key_list) && !in_array($key, $key_list, true) ? true : $value !== '';}, \ARRAY_FILTER_USE_BOTH);
+	}
+
+	public function arrayEmptyFilter ($array, $key_list = []) {
+		return array_filter($array, function ($value, $key) use ($key_list) {return !empty($key_list) && !in_array($key, $key_list, true) ? true : !empty($value);}, \ARRAY_FILTER_USE_BOTH);
+	}
+
+	public function toArrayFilter ($array, $keys) {
+		foreach ($keys as $key) {
+			$array[$key] = isset($array[$key]) ? (array) $array[$key] : [];
+		}
+		return $array;
+	}
+
+	/**
 	 * CLIモード時のコマンドラインパラメータを取得します。
 	 *
 	 */

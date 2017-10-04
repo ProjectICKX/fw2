@@ -90,7 +90,7 @@ class LazyEval {
 	 *								function (bool $is_repeat, callable $callback, ...$args);
 	 *	]
 	 */
-	protected function __construct ($callback, $options = [], $default_args = []) {
+	protected function __construct ($callback, $options = [], ...$default_args) {
 		$this->callback		= $callback;
 		$this->options		= $options;
 		$this->defaultArgs	= $default_args;
