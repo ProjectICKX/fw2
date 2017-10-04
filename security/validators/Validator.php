@@ -111,6 +111,21 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	];
 
 	//==============================================
+	//For File format validation
+	//==============================================
+	public const SOF_UTF8_BOM	= "\xef\xbb\xbf";
+
+	public const SOF_JPG		= "\xff\xd8";
+	public const EOF_JPG		= "\xff\xd9";
+
+	public const SOF_GIF_87A	= "\x47\x49\x46\x38\x37\x61";
+	public const SOF_GIF_89A	= "\x47\x49\x46\x38\x39\x61";
+
+	public const SOF_PNG		= "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a";
+
+	public const SOF_ZIP		= "\x04\x03\x4B\x50";
+
+	//==============================================
 	//Validation
 	//==============================================
 	/**
@@ -182,6 +197,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 			//==============================================
 			$is_files = ($rule_list['source'] ?? null) === 'files';
 			$is_upaload = ($rule_list['source'] ?? null) === 'upload';
+			$is_force_value = isset($rule_list['force_value']) ?: array_key_exists('force_value', $rule_list);
 
 			//==============================================
 			//ルールごとの初期化
@@ -196,7 +212,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 			$config_force_use_value = $rule_list[static::CONFIG_FORCE_USE_VALUE] ?? false;
 
 			//対象データの取得：フォースバリューが設定されている場合は強制上書き
-			$target_value = $is_files ? static::AdjustUploadFile($data, $data_name) : $is_upaload ? $data :  $data[$data_name] ?? null;
+			$target_value = $is_files ? static::AdjustUploadFile($data, $data_name) : $is_upaload ? $data : ($is_force_value ? $rule_list['force_value'] : $data[$data_name] ?? null);
 
 			if (isset($rule_list[static::CONFIG_USE_CURRENT_DATA]) && static::CONFIG_USE_CURRENT_DATA) {
 				$target_value = [$data_name => $data];

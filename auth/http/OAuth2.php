@@ -337,24 +337,28 @@ class OAuth2 {
 				}
 
 				// コード受け取り時の処理
-				if ($this->isCodeUrl() && !empty($tmpSession = $this->authSession->tmpGet())) {
-					try {
-						$tmp_session_extra_data	= $tmpSession['extra_data'];
-						$state					= $tmp_session_extra_data[$this->stateParamName];
-						$origin_url				= $tmp_session_extra_data[static::PROPERTY_ORIGIN_REQUEST_URL];
-						$code_verifier			= $tmp_session_extra_data[static::PROPERTY_CODE_VERIFIER];
-						$code_challenge			= $tmp_session_extra_data[static::PROPERTY_CODE_CHALLENGE];
-						$access_token			= $this->token		= $this->getAccessToken($state, $code_verifier, $code_challenge);
-						$expand_data			= $this->expandData	= is_callable($this->expandDataFilter) ? $this->expandDataFilter()($access_token, $tmpSession) : $this->expandData;
+				if ($this->isCodeUrl()) {
+					if (!empty($tmpSession = $this->authSession->tmpGet())) {
+						try {
+							$tmp_session_extra_data	= $tmpSession['extra_data'];
+							$state					= $tmp_session_extra_data[$this->stateParamName];
+							$origin_url				= $tmp_session_extra_data[static::PROPERTY_ORIGIN_REQUEST_URL];
+							$code_verifier			= $tmp_session_extra_data[static::PROPERTY_CODE_VERIFIER];
+							$code_challenge			= $tmp_session_extra_data[static::PROPERTY_CODE_CHALLENGE];
+							$access_token			= $this->token		= $this->getAccessToken($state, $code_verifier, $code_challenge);
+							$expand_data			= $this->expandData	= is_callable($this->expandDataFilter) ? $this->expandDataFilter()($access_token, $tmpSession) : $this->expandData;
 
-						$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $access_token, 'expand_data' => $expand_data]);
-					} catch (\Throwable $e) {
-						throw $e;
-					} finally {
-						$this->authSession->tmpClose();
+							$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $access_token, 'expand_data' => $expand_data]);
+						} catch (\Throwable $e) {
+							throw $e;
+						} finally {
+							$this->authSession->tmpClose();
+						}
+
+						$this->redirectUrl($origin_url);
+
+						return false;
 					}
-
-					$this->redirectUrl($origin_url);
 
 					return false;
 				}
