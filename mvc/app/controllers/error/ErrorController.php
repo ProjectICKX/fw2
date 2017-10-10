@@ -30,4 +30,10 @@ namespace ickx\fw2\mvc\app\controllers\error;
  * @varsion		2.0.0
  */
 class ErrorController extends \ickx\fw2\mvc\app\AppController {
+	/**
+	 * 404
+	 */
+	public function notFoundAction () {
+		http_response_code(404);
+	}
 }

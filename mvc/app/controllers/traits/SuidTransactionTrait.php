@@ -154,9 +154,8 @@ trait SuidTransactionTrait {
 			foreach ($callback() as $id => $value) {
 				$consistent_validate_rule[$id] = [
 					'force_validate'	=> false,
-					'force_value'		=> false,
-					'value'	=> $value,
-					['===', static::ReadSuidSession($id), 'raise_exception', 'message' => 'トランザクション中固定値がマッチしません。target:{:title} input:{:value}, session:{:operand:0}'],
+					'force_value'		=> $value,
+					['===', static::ReadSuidSession($id), 'raise_exception' => true, 'message' => 'トランザクション中固定値がマッチしません。target:{:title} input:{:value}, session:{:operand:0}'],
 				];
 			}
 

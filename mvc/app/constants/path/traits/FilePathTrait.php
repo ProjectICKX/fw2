@@ -21,6 +21,7 @@
 namespace ickx\fw2\mvc\app\constants\path\traits;
 
 use ickx\fw2\io\php_ini\PhpIni;
+use ickx\fw2\io\cache\Cache;
 
 /**
  * ファイルパス管理特性

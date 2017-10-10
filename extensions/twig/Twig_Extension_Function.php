@@ -59,6 +59,7 @@ class Twig_Extension_Function extends \Twig_Extension {
 			new \Twig_Function('filter',				[$this, 'filter'], ['needs_environment' => true]),
 			new \Twig_Function('replace_sub_domain',	[$this, 'replaceSubDomain']),
 			new \Twig_Function('action_switch',			[$this, 'actionSwitch']),
+			new \Twig_Function('same_in',				[$this, 'sameIn']),
 
 			//==============================================
 			//var type
@@ -426,10 +427,10 @@ class Twig_Extension_Function extends \Twig_Extension {
 			return $attribute_list['id'];
 		}
 
-		return (implode('_', array_filter([
+		return str_replace(['/'], '_', (implode('_', array_filter([
 			$name,
 			!is_array($value) && !is_object($value) ? $value : $optional
-		], function ($value) {return !(is_null($value) || $value === '' || $value === false);})));
+		], function ($value) {return !(is_null($value) || $value === '' || $value === false);}))));
 	}
 
 	public function jsonEncode ($value) {
@@ -454,5 +455,9 @@ class Twig_Extension_Function extends \Twig_Extension {
 		}
 
 		return $target_list;
+	}
+
+	public function sameIn ($value, $array) {
+		return in_array($value, (array) $array, true);
 	}
 }
