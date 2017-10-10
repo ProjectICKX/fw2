@@ -88,8 +88,8 @@ interface IFilePath {
 	const TWIG_INI_PATH							= '{:CONF_DIR}/{:PACKAGE_NS_PATH}/commons/twig/twig.ini';
 	const TWIG_CACHE_DIR						= '{:CACHE_DIR}/{:APP_NS_PATH}/';
 
-	const COMS_TWIG_EXTENSION_FUNCTION			= '\ickx\fw2\extensions\twig\Twig_Extension_Function';
-	const COMS_TWIG_EXTENSION_FILTER			= '\ickx\fw2\extensions\twig\Twig_Extension_Filter';
+	const FW2_TWIG_EXTENSION_FUNCTION			= '\ickx\fw2\extensions\twig\Twig_Extension_Function';
+	const FW2_TWIG_EXTENSION_FILTER				= '\ickx\fw2\extensions\twig\Twig_Extension_Filter';
 
 	const APP_TWIG_EXTENSION_FUNCTION			= '\{:APP_NS_CLASS_PATH}\app\extensions\twig\Twig_Extension_Function';
 	const APP_TWIG_EXTENSION_FILTER				= '\{:APP_NS_CLASS_PATH}\app\extensions\twig\Twig_Extension_Filter';

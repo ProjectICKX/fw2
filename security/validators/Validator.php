@@ -494,7 +494,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 
 						//
 						if (is_array($validator_message)) {
-							$validator_message['validator_message'] = $validator_message['validator_message'];
+							$validator_message['validator_message'] = $validator_message['validator_message'] ?? '';
 						} else {
 							$validator_message = ['validator_message' => $validator_message];
 						}

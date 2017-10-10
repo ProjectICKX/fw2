@@ -277,6 +277,21 @@ class Flywheel {
 
 		Environment::IsCli() ?: \ickx\fw2\basic\outcontrol\OutputBuffer::EndFlush();
 
+		//------------------------------------------------------
+		//実行時間計測：ログ出力
+		//------------------------------------------------------
+		//ログ出力文字列の生成
+		$log = sprintf("Execution time=%s, URL=%s", $diff = Stopwatch::RequestTimeDiff(), static::GetClassVar(static::URL_PARAM_NAME));
+
+		//最大許容実行時間を越えていた場合はアラートを出す
+		if ($diff > Engine::MAX_EXECUTE_TIME) {
+			//ログ出力
+			StaticLog::WriteErrorLog('SLOW DOWN!!:'. $log);
+		}
+
+		//実行時間ログの出力
+		StaticLog::WriteLog('timer', $log);
+
 		return $ret;
 	}
 

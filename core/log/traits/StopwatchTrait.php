@@ -106,6 +106,15 @@ trait StopwatchTrait {
 	}
 
 	/**
+	 * Request Timeと現在時間との差分を取ります。
+	 *
+	 * @return	float	Request Timeと現在時間との差分
+	 */
+	public static function RequestTimeDiff () {
+		return microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'];
+	}
+
+	/**
 	 * 取得したログを整形して返します。
 	 *
 	 * @param	string	$name	ストップウォッチ名 デフォルトでは呼び出し元クラス名

@@ -230,6 +230,62 @@ class FormValidation {
 	// Special
 	//==============================================
 	/**
+	 * datetime text field用のお勧め設定を返します。
+	 *
+	 * @param	array	$current_rule	追加したいvalidation rule
+	 * @param	array	$options		オプション設定
+	 * @param	bool	$is_array		配列か否か
+	 * @param	array	$remove_target	除去する検証対象
+	 * @return	array	お薦め設定
+	 */
+	public function datetime ($current_rule = [], $options = [], $is_array = false, $remove_target = []) {
+		$rule_list = [
+			['require', 'raise_exception' => true],
+			['not_string_empty', 'is_array' => $is_array, 'is_last' => true],
+			['datetime', 'is_array' => $is_array, 'is_last' => true, 'format' => $options['format'] ?? null],
+		];
+
+		if (!is_null($premise = $options['premise'] ?? null)) {
+			$rule_list['force_validate']	= true;
+			$rule_list['premise']			= $premise;
+			$rule_list['fetch_from_keys']	= $premise;
+			$rule_list['filter']			= $options['filter'] ?? null;
+			$rule_list['force_error']		= $options['force_error'] ?? $premise;
+		}
+
+		$rule_list = array_merge($rule_list, $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
+	}
+
+	/**
+	 * date text field用のお勧め設定を返します。
+	 *
+	 * @param	array	$current_rule	追加したいvalidation rule
+	 * @param	array	$options		オプション設定
+	 * @param	bool	$is_array		配列か否か
+	 * @param	array	$remove_target	除去する検証対象
+	 * @return	array	お薦め設定
+	 */
+	public function date ($current_rule = [], $options = [], $is_array = false, $remove_target = []) {
+		$rule_list = [
+			['require', 'raise_exception' => true],
+			['not_string_empty', 'is_array' => $is_array, 'is_last' => true],
+			['date', 'is_array' => $is_array, 'is_last' => true, 'format' => $options['format'] ?? null],
+		];
+
+		if (!is_null($premise = $options['premise'] ?? null)) {
+			$rule_list['force_validate']	= true;
+			$rule_list['premise']			= $premise;
+			$rule_list['fetch_from_keys']	= $premise;
+			$rule_list['filter']			= $options['filter'] ?? null;
+			$rule_list['force_error']		= $options['force_error'] ?? $premise;
+		}
+
+		$rule_list = array_merge($rule_list, $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
+	}
+
+	/**
 	 * 複数入力項目の内容を元に検証を行う場合のお勧め設定を返します。
 	 *
 	 * @param	array		$current_rule	追加したいvalidation rule
