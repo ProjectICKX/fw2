@@ -49,18 +49,19 @@ trait PathTrait {
 	 * @return	string	クラス定数値
 	 */
 	public static function __callStatic($name, $args = []) {
-		static::$_cache ?? static::$_cache = Cache::init(static::class);
+//		static::$_cache ?? static::$_cache = Cache::init(static::class);
 
 		$cache_name = $name;
 		if (!empty($args) && isset($args[0])) {
 			$cache_name = $cache_name . '<>' . hash('sha256', json_encode($args, \JSON_HEX_TAG | \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT));
 		}
 
-		if (static::$_cache->has($cache_name)) {
-			return static::$_cache->get($cache_name);
-		}
+// 		if (static::$_cache->has($cache_name)) {
+// 			return static::$_cache->get($cache_name);
+// 		}
 
-		static::$_cache->set($cache_name, $path = static::MakePath($name, $args[1] ?? [], $args[2] ?? null));
+// 		static::$_cache->set($cache_name, $path = static::MakePath($name, $args[1] ?? [], $args[2] ?? null));
+		$path = static::MakePath($name, $args[1] ?? [], $args[2] ?? null);
 		return $path;
 	}
 
@@ -72,23 +73,25 @@ trait PathTrait {
 	 * @return	string	パス
 	 */
 	public static function MakePath ($name, $node_list = [], $path_config = null) {
-		static::$_cache ?? static::$_cache = Cache::init(static::class);
+// 		static::$_cache ?? static::$_cache = Cache::init(static::class);
 
-		if (static::$_cache->has($name)) {
-			return static::$_cache->get($name);
-		}
+// 		if (static::$_cache->has($name)) {
+// 			return static::$_cache->get($name);
+// 		}
 
 		$class_const = static::class.'::'.$name;
-		if (!static::$_cache->has($class_const)) {
+// 		if (!static::$_cache->has($class_const)) {
 			if (!defined($class_const)) {
 				throw new \Exception(sprintf('未定義のパス定数を設定されました。%s', $class_const));
 			}
-			static::$_cache->set($class_const, $path = constant($class_const));
-		} else {
-			$path = static::$_cache->get($class_const);
-		}
+// 			static::$_cache->set($class_const, $path = constant($class_const));
+			$path = constant($class_const);
+// 		} else {
+// 			$path = static::$_cache->get($class_const);
+// 		}
 
-		$path_config = static::$_cache->has('path_config') ? static::$_cache->get('path_config') :  static::PathConfig();
+// 		$path_config = static::$_cache->has('path_config') ? static::$_cache->get('path_config') :  static::PathConfig();
+		$path_config = static::PathConfig();
 
 		$add_node_flag = !empty($node_list);
 		!$add_node_flag ?: $path .= '/'. implode('/', (array) $node_list);
@@ -98,7 +101,7 @@ trait PathTrait {
 		}
 		$path = str_replace('//', '/', $path);
 
-		$add_node_flag ?: static::$_cache->set($name, $path);
+// 		$add_node_flag ?: static::$_cache->set($name, $path);
 
 		return $path;
 	}
