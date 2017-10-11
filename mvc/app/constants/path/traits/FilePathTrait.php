@@ -39,11 +39,12 @@ trait FilePathTrait {
 	 * @return	array	上書き設定
 	 */
 	public static function PathConfig () {
-		static::$_cache ?? static::$_cache = Cache::init(static::class);
-		if (static::$_cache->has('path_config')) {
-			return static::$_cache->get('path_config');
-		}
-		static::$_cache->set('path_config', $path_config = static::PathConfigList());
+// 		static::$_cache ?? static::$_cache = Cache::init(static::class);
+// 		if (static::$_cache->has('path_config')) {
+// 			return static::$_cache->get('path_config');
+// 		}
+// 		static::$_cache->set('path_config', $path_config = static::PathConfigList());
+	    $path_config = static::PathConfigList();
 		return $path_config;
 	}
 
@@ -55,10 +56,10 @@ trait FilePathTrait {
 	public static function PathConfigList () {
 		static $boot_mode;
 
-		static::$_cache ?? static::$_cache = Cache::init(static::class);
-		if (static::$_cache->has('path_config_list')) {
-			return static::$_cache->get('path_config_list');
-		}
+// 		static::$_cache ?? static::$_cache = Cache::init(static::class);
+// 		if (static::$_cache->has('path_config_list')) {
+// 			return static::$_cache->get('path_config_list');
+// 		}
 
 		$path_config_list = [
 			//==============================================
@@ -104,7 +105,7 @@ trait FilePathTrait {
 			'FW2_DEFAULTS_DIR'		=> Flywheel::GetVendorPath() . '/ickx/fw2/mvc/defaults',
 		];
 
-		static::$_cache->set('path_config_list', $path_config_list);
+// 		static::$_cache->set('path_config_list', $path_config_list);
 		return $path_config_list;
 	}
 
