@@ -98,6 +98,11 @@ trait ValidateTrait {
 			'alpha_num'		=> [function ($value, $options, $meta = []) {return ctype_alnum($value);}, '{:title}にはアルファベットと数字のみ入力してください。'],
 			'blank'			=> ["/^\s/", '{:title}には空白以外を入力しないでください。'],
 			'phone'			=> ["/^\d{2,4}\-\d{4}\-\d{4}\$/", '{:title}には電話番号を入力してください。例：000-0000-0000'],
+			'alpha_num_mark'	=> [function ($value, $options, $meta = []) {return 1 === preg_match("/^[\x21-\x7e]+$/", $value);}, '{:title}にはアルファベットと数字、記号のみ入力してください。'],
+			'alpha_num_mark_sp'	=> [function ($value, $options, $meta = []) {return 1 === preg_match("/^[\x20-\x7e]+$/", $value);}, '{:title}にはアルファベットと数字、記号、半角空白のみ入力してください。'],
+
+			//全ても含まれていること
+			'in_ul_alpha_num_mark'	=> [function ($value, $options, $meta = []) {return 1 === preg_match("/(?:[!-\/]|[\x3a-\x40]|[\x5b-\x60]|[\x7b-\x7e])/", $value) && 1 === preg_match("/[A-Z]/", $value) && 1 === preg_match("/[a-z]/", $value) && 1 === preg_match("/[0-9]/", $value);}, '{:title}には記号、大文字のアルファベット、小文字のアルファベット、数字をそれぞれ最低1文字以上入力してください。'],
 
 			//PHP session id
 			'session_id'	=> ["/\A[,0-9a-zA-Z\-]{1,128}\z/", '{:title}にはsession idとして有効な値を入力してください。'],
@@ -212,7 +217,7 @@ trait ValidateTrait {
 			'upload_mimetype'		=> [function ($value, $options, $meta = []) {return in_array($value['type'], $options['mimetype'] ?? $options[0] ?? [], true);} ,'{:title}はMIME-Typeが{:mimetype:0}のファイルのみ扱えます。'],
 			'upload_ext'			=> [function ($value, $options, $meta = []) {return in_array(pathinfo($value['name'], \PATHINFO_EXTENSION), $options['ext'] ?? $options[0] ?? [], true);} ,'{:title}は拡張子が{:ext:0}のファイルのみ扱えます。'],
 			'upload_file_format'	=> [function ($value, $options, $meta = []) {isset($options['real_name']) ?: $options['real_name'] = $value['name'];return static::validFileFormat($value['tmp_name'], $options['type'] ?? $options[0] ?? null, $options);} ,'{:validator_message}{:title}は{:type:0}のファイルのみ扱えます。'],
-//			'upload_name_regex'		=> [function ($value, $options, $meta = []) {return $value['type'] > $options[0] ?? $options['max'] ?? null;} ,'{:title}は{:max:0}バイト以上にしてください。'],
+			'upload_name_regex'		=> [function ($value, $options, $meta = []) {return preg_match($options[0] ?? $options['regex'] ?? null, ($options['real_name'] ?? $value['name'])) === 1;}, '{:title}がパターンに一致しません。'],
 
 			'upload_csv_header_length_range'	=> [function ($value, $options, $meta = []) {return is_int(filter_var(count(static::createCsvGenerator($value['tmp_name'], $options['encoding'] ?? null, $options['bit_flag'] ?? null)()->current()), \FILTER_VALIDATE_INT, ['options' => $options]));}, '{:title}は{:min_range:0}列以上{:max_range:1}列以下の列数が必要です。'],
 			'upload_csv_header_not_empty_cell'	=> [function ($value, $options, $meta = []) {$error_cols = [];foreach (static::createCsvGenerator($value['tmp_name'], $options['encoding'] ?? null, $options['bit_flag'] ?? null)()->current() as $idx => $element) {if ($element === '') {$error_cols[] = $idx + 1;};};return empty($error_cols) ? true : ['error_cols' => implode(', ', $error_cols)];}, '{:title}の{:error_cols}列目に空の列名があります。'],

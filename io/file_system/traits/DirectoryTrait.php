@@ -238,10 +238,6 @@ trait DirectoryTrait {
 					return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ディレクトリのグループ変更に失敗しました。dir_path:%s, group:%s', [$dir_path, $group]), $raise_exception);
 				}
 
-				if ($state_cache) {
-					static::$_cache->set($dir_path, true);
-				}
-
 				clearstatcache(true, $dir_path);
 			}
 

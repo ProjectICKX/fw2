@@ -98,6 +98,13 @@ trait StaticLogTrait {
 		if ($log_file_path === false) {
 			error_log($strings . static::GetClassVar($name .'_log_file_lf_code'));
 		} else {
+			clearstatcache(true, $log_file_path);
+			if (!is_file($log_file_path)) {
+				throw new \ErrorException(sprintf('指定されたパスがファイルではありません。path:%s', $log_file_path));
+			}
+			if (!is_writable($log_file_path)) {
+				throw new \ErrorException(sprintf('指定されたファイルが書き込み可能ではありません。path:%s', $log_file_path));
+			}
 			error_log($strings . static::GetClassVar($name .'_log_file_lf_code'), 3, $log_file_path);
 		}
 	}
