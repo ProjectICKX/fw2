@@ -231,8 +231,17 @@ trait FileTrait {
 		$owner	= isset($options['owner']) ? $options['owner'] : null;
 		$group	= isset($options['group']) ? $options['group'] : null;
 
+		//親ディレクトリの作成
+		if ($parents) {
+			$parent_dir_path = dirname($file_path);
+			clearstatcache(true, $parent_dir_path);
+			if (!file_exists($parent_dir_path) && !mkdir($parent_dir_path, $mode, $parents)) {
+				return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('親ディレクトリの作成に失敗しました。dir_path:%s, mode:%o, parents:%s', [$parent_dir_path, $mode ,$parents]), $raise_exception);
+			}
+		}
+
 		//ファイルの作成
-		if (!mkdir($file_path, $mode, $parents)) {
+		if (!touch($file_path)) {
 			return CoreException::ScrubbedThrow(DirectoryStatus::NotFound('ファイルの作成に失敗しました。dir_path:%s, mode:%s, parents:%s', [$file_path, $mode ,$parents]), $raise_exception);
 		}
 

@@ -42,6 +42,7 @@ class Request extends \ickx\fw2\core\net\http\Http {
 		return LazyArrayObject::Create([
 			'parameter'	=> static::GetParameters(),
 			'data'		=> static::GetPostData(),
+			'post'		=> static::GetPost(),
 			'cookie'	=> static::GetCookies(),
 			'upload'	=> static::GetUploadFileData(),
 		]);

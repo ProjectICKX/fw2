@@ -48,11 +48,11 @@ trait PathTrait {
 	 * @param	array	$args	引数
 	 * @return	string	クラス定数値
 	 */
-	public static function __callStatic($name, $args = []) {
+	public static function __callStatic($name, $args) {
 //		static::$_cache ?? static::$_cache = Cache::init(static::class);
 
 		$cache_name = $name;
-		if (!empty($args) && isset($args[0])) {
+		if (!empty($args)) {
 			$cache_name = $cache_name . '<>' . hash('sha256', json_encode($args, \JSON_HEX_TAG | \JSON_HEX_AMP | \JSON_HEX_APOS | \JSON_HEX_QUOT));
 		}
 
@@ -61,25 +61,25 @@ trait PathTrait {
 // 		}
 
 // 		static::$_cache->set($cache_name, $path = static::MakePath($name, $args[1] ?? [], $args[2] ?? null));
-		$path = static::MakePath($name, $args[1] ?? [], $args[2] ?? null);
+		$path = static::MakePath($name, $args[0] ?? [], $args[1] ?? null);
 		return $path;
 	}
 
 	/**
 	 * クラス定数名とパス設定から実際のパスを構築します。
 	 *
-	 * @param	string	$name		クラス定数名
+	 * @param	string	$const_name		クラス定数名
 	 * @param	array	$path_config	パス設定
 	 * @return	string	パス
 	 */
-	public static function MakePath ($name, $node_list = [], $path_config = null) {
+	public static function MakePath ($const_name, $node_list = [], $path_config = null) {
 // 		static::$_cache ?? static::$_cache = Cache::init(static::class);
 
 // 		if (static::$_cache->has($name)) {
 // 			return static::$_cache->get($name);
 // 		}
 
-		$class_const = static::class.'::'.$name;
+		$class_const = static::class.'::'.$const_name;
 // 		if (!static::$_cache->has($class_const)) {
 			if (!defined($class_const)) {
 				throw new \Exception(sprintf('未定義のパス定数を設定されました。%s', $class_const));
@@ -100,6 +100,18 @@ trait PathTrait {
 			$path = str_replace('{:'.$name.'}', $value, $path);
 		}
 		$path = str_replace('//', '/', $path);
+
+		for (;false !== ($start = mb_strpos($path, '{:')) && false !== ($end = mb_strpos($path, '}', $start));) {
+			$part = mb_substr($path, $end + 1);
+			$name = mb_substr($path, $start + 2, $end - 2);
+
+			$class_const = static::class.'::'.$name;
+			if (!defined($class_const)) {
+				throw new \Exception(sprintf('未定義のパス定数を設定されました。%s', $class_const));
+			}
+
+			$path = [static::class, $name]() . $part;
+		}
 
 // 		$add_node_flag ?: static::$_cache->set($name, $path);
 

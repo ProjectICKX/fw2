@@ -41,7 +41,7 @@ trait AppTwigRenderTrait {
 	public function renderSetting () {
 		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 
-		$this->templateDirList = array_merge([
+		$this->templateDirList = array_merge($this->templateExtDirList, [
 			FilePath::TEMPLATES_PATH(),
 			FilePath::CreateDirPath([FilePath::TEMPLATES_PATH(), 'layouts']),
 			FilePath::APP_PATH(),
@@ -51,7 +51,7 @@ trait AppTwigRenderTrait {
 			FilePath::COMS_TEMPLATES_PATH(),
 			FilePath::FW2_CONTROLLER_PATH([$this->controller, 'template', '/']),
 			FilePath::FW2_EXT_TEMPLATES_PATH(),
-		], $this->templateExtDirList);
+		]);
 		$this->templateDirList = array_filter($this->templateDirList, function ($value) {clearstatcache(true, $value);return file_exists($value);});
 
 		$cache_dir_path = FilePath::TWIG_CACHE_DIR();

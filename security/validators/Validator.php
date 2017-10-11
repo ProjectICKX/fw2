@@ -21,7 +21,6 @@
 namespace ickx\fw2\security\validators;
 
 use ickx\fw2\core\exception\CoreException;
-use ickx\fw2\international\encoding\Encoding;
 use ickx\fw2\vartype\arrays\Arrays;
 
 /**
@@ -78,6 +77,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	const OPTION_IS_LAST			= 'is_last';
 	const OPTION_NOT_DEAL_ARRAY		= 'not_deal_array';
 	const OPTION_EMPTY_SKIP			= 'empty_skip';
+	const OPTION_STRING_EMPTY_SKIP	= 'string_empty_skip';
 	const OPTION_SEE_ARRAY_KEYS		= 'array_keys';
 	const OPTION_FORCE_VALLIDATE	= 'force_validate';
 	const OPTION_PREMISE			= 'premise';
@@ -253,7 +253,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 			}
 
 			//空白時（ブランク有効）スキップフラグがある場合は次のデータへ
-			if (isset($rule_list[static::CONFIG_STRING_EMPTY_SKIP]) && $rule_list[static::CONFIG_STRING_EMPTY_SKIP] === true && !static::Rule(static::RULE_NOT_STRING_EMPTY, $target_value)) {
+			if (($rule_list[static::CONFIG_STRING_EMPTY_SKIP] ?? false) === true && !static::Rule(static::RULE_NOT_STRING_EMPTY, $target_value)) {
 				continue;
 			}
 
@@ -486,6 +486,10 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 
 				//検証の実行
 				foreach ($work_value as $key => $value) {
+					if (($options[static::OPTION_STRING_EMPTY_SKIP] ?? false) && $value === '') {
+						continue;
+					}
+
 					if (($validator_message = static::Rule($rule_name, $value, $options, $tmp_meta)) !== true) {
 						//繰り返し要素用エラーメッセージの更新
 						$message_list['loop_index0'] = $idx;
