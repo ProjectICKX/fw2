@@ -50,7 +50,7 @@ trait TwigRenderTrait {
 	}
 
 	public function twigTemplateSetting ($template_text = null, $template_dir_list = [], $options = []) {
-		$allow_parameter_list = ['debug', 'trim_blocks', 'charset', 'base_template_class', 'cache', 'auto_reload', 'extension_list', 'filter_list'];
+		$allow_parameter_list = ['debug', 'trim_blocks', 'charset', 'base_template_class', 'cache', 'auto_reload', 'extension_list', 'filter_list', 'token_parser_list'];
 		$options = [
 			'target'	=> 'Twig_Environment',
 			'options'	=> [
@@ -60,6 +60,7 @@ trait TwigRenderTrait {
 			'cache_dir'		=> FilePath::INI_CACHE_DIR(),
 			'static_cache'	=> true,
 		];
+
 		$twig_config = IniFile::GetConfig($this->iniPath, $allow_parameter_list, $options);
 
 		if (empty($template_dir_list)) {
@@ -81,6 +82,13 @@ trait TwigRenderTrait {
 		$this->templateFilterList = $twig_config['filter_list'] ?? [];
 		foreach ($this->templateFilterList as $templateFilter) {
 			$twig->addExtension(new $templateFilter['name']($templateFilter['value']));
+		}
+
+		$this->templateTokenParserList = $twig_config['token_parser_list'] ?? [];
+		foreach ($this->templateTokenParserList as $templateTokenParser) {
+			if (class_exists($templateTokenParser['name'])) {
+				$twig->addExtension(new $templateTokenParser['name']($templateTokenParser['value']));
+			}
 		}
 
 		$this->layout = $this->layout ?: 'default';

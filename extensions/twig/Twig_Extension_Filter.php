@@ -89,6 +89,9 @@ class Twig_Extension_Filter extends \Twig_Extension {
 
 			new \Twig_Filter('iterate_by_map_method',	[$this, 'iterateByMapMethod']),
 
+			new \Twig_Filter('strtoupper',	'strtoupper'),
+			new \Twig_Filter('strtolower',	'strtolower'),
+
 			//==============================================
 			//error support
 			//==============================================

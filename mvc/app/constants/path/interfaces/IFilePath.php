@@ -90,9 +90,11 @@ interface IFilePath {
 
 	const FW2_TWIG_EXTENSION_FUNCTION			= '\ickx\fw2\extensions\twig\Twig_Extension_Function';
 	const FW2_TWIG_EXTENSION_FILTER				= '\ickx\fw2\extensions\twig\Twig_Extension_Filter';
+	const FW2_TWIG_EXTENSION_TOKEN_PARSER		= '\ickx\fw2\extensions\twig\Twig_Extension_TokenParser';
 
 	const APP_TWIG_EXTENSION_FUNCTION			= '\{:APP_NS_CLASS_PATH}\app\extensions\twig\Twig_Extension_Function';
 	const APP_TWIG_EXTENSION_FILTER				= '\{:APP_NS_CLASS_PATH}\app\extensions\twig\Twig_Extension_Filter';
+	const APP_TWIG_EXTENSION_TOKEN_PARSER		= '\{:APP_NS_CLASS_PATH}\app\extensions\twig\Twig_Extension_TokenParser';
 
 	const FW2_CONTROLLER_PATH					= '{:VENDOR_DIR}/ickx/fw2/mvc/app/controllers/';
 
