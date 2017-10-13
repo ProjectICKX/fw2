@@ -477,8 +477,7 @@ class Twig_Extension_Function extends \Twig_Extension {
 			$class_name = $class_path;
 		}
 
-		$twig_use_class = DI::GetClassVar('TwigUseClass', []);
-		$target_class_path = $twig_use_class[$class_name] ?? $class_name;
+		$target_class_path = \ickx\fw2\extensions\twig\Twig_Extension_Store::get('use_class', $class_name, $class_name);
 
 		if (!class_exists($target_class_path)) {
 			throw new \ErrorException(sprintf('対象のクラスが見つかりませんでした。class path:%s (<= %s <= %s)', $target_class_path, $class_name, $class_path));
@@ -501,8 +500,7 @@ class Twig_Extension_Function extends \Twig_Extension {
 			$class_name = $class_path;
 		}
 
-		$twig_use_class = DI::GetClassVar('TwigUseClass', []);
-		$target_class_path = $twig_use_class[$class_name] ?? $class_name;
+		$target_class_path = \ickx\fw2\extensions\twig\Twig_Extension_Store::get('use_class', $class_name, $class_name);
 
 		if (!class_exists($target_class_path)) {
 			throw new \ErrorException(sprintf('対象のクラスが見つかりませんでした。class path:%s (<= %s <= %s)', $target_class_path, $class_name, $class_path));
@@ -529,14 +527,13 @@ class Twig_Extension_Function extends \Twig_Extension {
 			}
 		}
 
-		$twig_use_class = DI::GetClassVar('TwigUseClass', []);
-		$target_class_path = $twig_use_class[$class_name] ?? $class_name;
+		$target_class_path = \ickx\fw2\extensions\twig\Twig_Extension_Store::get('use_class', $class_name, $class_name);
 
 		if (!class_exists($target_class_path)) {
 			throw new \ErrorException(sprintf('対象のクラスが見つかりませんでした。class path:%s (<= %s <= %s)', $target_class_path, $class_name, $class_path));
 		}
 
-		if (!method_exists($target_class_path, $method_name)) {
+		if (!is_callable([$target_class_path, $method_name])) {
 			throw new \ErrorException(sprintf('対象のクラスメソッドが見つかりませんでした。class method:%s::%s()', $target_class_path, $method_name));
 		}
 

@@ -20,7 +20,7 @@
 
 namespace ickx\fw2\extensions\twig\token_parser;
 
-use ickx\fw2\container\DI;
+use ickx\fw2\extensions\twig\node\Twig_Node_UseClass;
 
 /**
  * use class.
@@ -29,23 +29,24 @@ use ickx\fw2\container\DI;
  * {% use_const "path to class" as "alias" %}
  * </pre>
  */
-final class Twig_TokenParser_UseClass extends \Twig_TokenParser
-{
-    public function parse(\Twig_Token $token)
-    {
-    	$class_path	= $this->parser->getExpressionParser()->parseExpression()->getAttribute('value');
+final class Twig_TokenParser_UseClass extends \Twig_TokenParser {
+	public function parse(\Twig_Token $token) {
+		$class_path = $this->parser->getExpressionParser()->parseStringExpression();
+		$lineno	= $token->getLine();
 
-		$this->parser->getStream()->expect('as');
-		$alias = (new \Twig_Node_Expression_AssignName($this->parser->getStream()->expect(\Twig_Token::STRING_TYPE)->getValue(), $token->getLine()))->getAttribute('name');
-		$this->parser->getStream()->expect(\Twig_Token::BLOCK_END_TYPE);
+		$stream = $this->parser->getStream();
+		if ($stream->nextIf(\Twig_Token::NAME_TYPE, 'as')) {
+			$alias = $this->parser->getExpressionParser()->parseMultitargetExpression()->getNode(0);
+		} else {
+			$string_class_path = $class_path->getattribute('value');
+			$alias = new \Twig_Node_Expression_Constant(mb_substr($string_class_path, mb_strrpos($string_class_path, "\\") + 1), $lineno);
+		}
+		$stream->expect(\Twig_Token::BLOCK_END_TYPE);
 
-		$twig_use_class = DI::GetClassVar('TwigUseClass', []);
-		$twig_use_class[$alias] = $class_path;
-		DI::Connect('TwigUseClass', $twig_use_class);
-    }
+		return new Twig_Node_UseClass($class_path, $alias, $lineno, $this->getTag());
+	}
 
-    public function getTag()
-    {
-        return 'use_class';
-    }
+	public function getTag() {
+		return 'use_class';
+	}
 }
