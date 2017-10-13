@@ -23,6 +23,7 @@ namespace ickx\fw2\extensions\twig;
 use ickx\fw2\router\Router;
 use ickx\fw2\vartype\objects\Objects;
 use ickx\fw2\vartype\arrays\Arrays;
+use ickx\fw2\container\DI;
 
 class Twig_Extension_Function extends \Twig_Extension {
 	use	\ickx\fw2\traits\data_store\ClassVariableTrait,
@@ -61,6 +62,10 @@ class Twig_Extension_Function extends \Twig_Extension {
 			new \Twig_Function('action_switch',			[$this, 'actionSwitch']),
 			new \Twig_Function('same_in',				[$this, 'sameIn']),
 
+			new \Twig_Function('class_const',			[$this, 'classConst']),
+			new \Twig_Function('class_property',		[$this, 'classProperty']),
+			new \Twig_Function('class_method',			[$this, 'classMethod']),
+
 			//==============================================
 			//var type
 			//==============================================
@@ -86,6 +91,9 @@ class Twig_Extension_Function extends \Twig_Extension {
 			//==============================================
 			new \Twig_Function('time',	'time'),
 			new \Twig_Function('date',	'date'),
+
+			new \Twig_Function('strtoupper',	'strtoupper'),
+			new \Twig_Function('strtolower',	'strtolower'),
 
 			//==============================================
 			//disp support
@@ -460,4 +468,79 @@ class Twig_Extension_Function extends \Twig_Extension {
 	public function sameIn ($value, $array) {
 		return in_array($value, (array) $array, true);
 	}
+
+	public function classConst ($class_path, $const_name = null) {
+		if (false !== $separate_pos = strpos($class_path, '::')) {
+			$class_name = substr($class_path, 0, $separate_pos);
+			$const_name = substr($class_path, $separate_pos + 2);
+		} else {
+			$class_name = $class_path;
+		}
+
+		$twig_use_class = DI::GetClassVar('TwigUseClass', []);
+		$target_class_path = $twig_use_class[$class_name] ?? $class_name;
+
+		if (!class_exists($target_class_path)) {
+			throw new \ErrorException(sprintf('対象のクラスが見つかりませんでした。class path:%s (<= %s <= %s)', $target_class_path, $class_name, $class_path));
+		}
+
+		$define_naem = $target_class_path . '::'. $const_name;
+
+		if (!defined($define_naem)) {
+			throw new \ErrorException(sprintf('対象のクラス定数が見つかりませんでした。class const:%s', $define_naem));
+		}
+
+		return constant($define_naem);
+	}
+
+	public function classProperty ($class_path, $property_name = null) {
+		if (false !== $separate_pos = strpos($class_path, '::')) {
+			$class_name = substr($class_path, 0, $separate_pos);
+			$property_name = substr($class_path, $separate_pos + 2);
+		} else {
+			$class_name = $class_path;
+		}
+
+		$twig_use_class = DI::GetClassVar('TwigUseClass', []);
+		$target_class_path = $twig_use_class[$class_name] ?? $class_name;
+
+		if (!class_exists($target_class_path)) {
+			throw new \ErrorException(sprintf('対象のクラスが見つかりませんでした。class path:%s (<= %s <= %s)', $target_class_path, $class_name, $class_path));
+		}
+
+		if (!property_exists($target_class_path, $property_name)) {
+			throw new \ErrorException(sprintf('対象のクラスプロパティが見つかりませんでした。class property:%s::%s', $target_class_path, $property_name));
+		}
+
+		return $target_class_path::$property_name;
+	}
+
+	public function classMethod ($class_path, ...$args) {
+		if (false !== $separate_pos = strpos($class_path, '::')) {
+			$class_name = substr($class_path, 0, $separate_pos);
+			$method_name = substr($class_path, $separate_pos + 2);
+		} else {
+			$class_name = $class_path;
+			$method_name = $args[0];
+			if (isset($args[1])) {
+				$args = array_slice($args, 1);
+			} else {
+				unset($args[0]);
+			}
+		}
+
+		$twig_use_class = DI::GetClassVar('TwigUseClass', []);
+		$target_class_path = $twig_use_class[$class_name] ?? $class_name;
+
+		if (!class_exists($target_class_path)) {
+			throw new \ErrorException(sprintf('対象のクラスが見つかりませんでした。class path:%s (<= %s <= %s)', $target_class_path, $class_name, $class_path));
+		}
+
+		if (!method_exists($target_class_path, $method_name)) {
+			throw new \ErrorException(sprintf('対象のクラスメソッドが見つかりませんでした。class method:%s::%s()', $target_class_path, $method_name));
+		}
+
+		return $target_class_path::$method_name(...$args);
+	}
+
 }

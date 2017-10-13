@@ -71,6 +71,9 @@ trait RenderTrait {
 	/** @var	array	テンプレート用フィルタリスト */
 	public $templateFilterList	= [];
 
+	/** @var	array	テンプレート用トークンパーサリスト */
+	public $templateTokenParser	= [];
+
 	/** @var	bool	レンダー処理をスキップします */
 	public $skipRender			= false;
 
