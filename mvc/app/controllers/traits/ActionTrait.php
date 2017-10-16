@@ -311,6 +311,10 @@ trait ActionTrait {
 				$action_set[$key] = [$action[0], null, $result_alias, null, $is_var];
 				continue;
 			} else {
+				if (is_array($action) && empty($action)) {
+					continue;
+				}
+
 				//アクション実行用のパラメータを設定
 				$parameters = [];
 				if (!is_object($action)) {
