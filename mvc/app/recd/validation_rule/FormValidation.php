@@ -32,6 +32,12 @@ use ickx\fw2\security\utility\SecurityUtility;
  * @varsion		2.0.0
  */
 class FormValidation {
+	/**
+	 * @var	string	デフォルトのチェックボックス値
+	 * @static
+	 */
+	public const DEFAULT_CHECKBOX_VALUE	= '1';
+
 	//==============================================
 	// Utility
 	//==============================================
@@ -180,18 +186,18 @@ class FormValidation {
 	 * @param	array	$current_rule	追加したいvalidation rule
 	 * @return	array	お薦め設定
 	 */
-	public function checkbox ($current_rule = [], $label_list = [], $value = '1', $remove_target = []) {
+	public function checkbox ($current_rule = [], $label_list = [], $require_any_checked = false, $value = self::DEFAULT_CHECKBOX_VALUE, $remove_target = []) {
 		$is_array = is_array($label_list) && !empty($label_list);
-		$rule_list = array_merge([
-		'null_skip'	=> true,
-			['require', 'raise_exception' => true],
-			['not_string_empty', 'is_last' => true],
-		],
-		$is_array ? [
-			['key', $label_list, 'is_array' => true, 'array_keys' => true, 'raise_exception' => true],
-			['==', $value, 'is_array' => $is_array, 'raise_exception' => true],
+		$rule_list = [
+			'is_array'		=> $is_array,
+			'null_skip'		=> !$require_any_checked,
+		] + array_merge($is_array ? [
+			$require_any_checked ? ['not_empty', 'is_array' => true, 'is_last' => true, 'empty_value' => []] : [],
+			['key', $label_list, 'is_array' => true,  'array_keys' => true, 'raise_exception' => true],
+			['===', $value, 'is_array' => $is_array, 'raise_exception' => true],
 		] : [
-			['==', $value, 'is_array' => $is_array, 'raise_exception' => true],
+			$require_any_checked ? ['require_any_checked', 'is_last' => true] : [],
+			['===', $value, 'is_array' => $is_array, 'raise_exception' => true],
 		], $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
 		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
 	}

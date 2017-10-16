@@ -81,6 +81,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 	const OPTION_SEE_ARRAY_KEYS		= 'array_keys';
 	const OPTION_FORCE_VALLIDATE	= 'force_validate';
 	const OPTION_PREMISE			= 'premise';
+	const OPTION_ANY_CHECKED		= 'any_checked';
 
 	const OP_LT						= '<';
 	const OP_LT_EQ					= '<=';
@@ -350,7 +351,7 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 				//----------------------------------------------
 				//優先対象ルール取得処理
 				//----------------------------------------------
-				switch ($value[0]) {
+				switch ($value[0] ?? '') {
 					case 'require':
 						$high_priority_rule_list['require'] = $value;
 						$value = null;
@@ -414,10 +415,13 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 				//----------------------------------------------
 				//作業用の変数に移し替え
 				$work_value = $target_value;
+				if (is_null($work_value) && isset($options['empty_value'])) {
+					$work_value = [$options['empty_value']];
+				}
 
 				//キーを見る設定にされている場合はarray_keysをかける
 				if ($options[static::OPTION_SEE_ARRAY_KEYS] ?? false) {
-					if (!static::Rule(static::RULE_IS_ARRAY, $work_value, $options) && !$work_value instanceof \ArrayObject) {
+					if (($options[static::OPTION_ANY_CHECKED] ?? false) || !static::Rule(static::RULE_IS_ARRAY, $work_value, $options) && !$work_value instanceof \ArrayObject) {
 						throw \ickx\fw2\core\exception\CoreException::RaiseSystemError('array_keysオプションが与えられていますが値が配列ではありません。is_arrayオプション使用時はそれより前にis_arrayルールで値を検証してください。 value:%s', [$target_value]);
 					}
 
@@ -448,15 +452,15 @@ class Validator implements \ickx\fw2\date_time\interfaces\IDateTimeConst {
 				if (!$option_force_validate) {
 					//ルールレベルでの空時スキップ判定時はスキップされない
 					if ($options[static::OPTION_EMPTY_SKIP] ?? false && static::Rule(static::RULE_NOT_EMPTY, $work_value)) {
-					continue;
+						continue;
+					}
 				}
 
-					//プレミスが設定されてあり、対象となるキーがある場合はスキップ
-					if (isset($options[static::OPTION_PREMISE]) && !empty($options[static::OPTION_PREMISE])) {
-						foreach ((array) $options[static::OPTION_PREMISE] as $premise_key) {
-							if (isset($errors[$premise_key]) || isset($before_errors[$premise_key])) {
-								continue 2;
-							}
+				//プレミスが設定されてあり、対象となるキーがある場合はスキップ
+				if (isset($options[static::OPTION_PREMISE]) && !empty($options[static::OPTION_PREMISE])) {
+					foreach ((array) $options[static::OPTION_PREMISE] as $premise_key) {
+						if (isset($errors[$premise_key]) || isset($before_errors[$premise_key])) {
+							continue 2;
 						}
 					}
 				}

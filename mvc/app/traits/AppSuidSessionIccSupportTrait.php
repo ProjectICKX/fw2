@@ -30,6 +30,14 @@ namespace ickx\fw2\mvc\app\traits;
  * @varsion		2.0.0
  */
 trait AppSuidSessionIccSupportTrait {
+
+	public function buildSuidSessionChoiceValidateRule ($lazy_evals, $check_target = false) {
+		if (is_null($validater = ($check_target ? ($lazy_evals['target'] ?? null) : null) ?? $lazy_evals['validate'] ?? null)) {
+			return [];
+		}
+		return static::ActionBuilder('assign')->param('validate_rule_list')->bind($validater, 1);
+	}
+
 	/**
 	 * SUIDセッション 入力画面用 ルールクリエイタ
 	 *
@@ -56,6 +64,7 @@ trait AppSuidSessionIccSupportTrait {
 					'action'	=> array_merge(
 						[
 							['StartSuidSession'],
+							$this->buildSuidSessionChoiceValidateRule($lazy_evals),
 						],
 						$lazy_evals['action'] ?? []
 					),
@@ -66,6 +75,9 @@ trait AppSuidSessionIccSupportTrait {
 				return [
 					'validate'	=> $lazy_evals['validate'],
 					'action'	=> array_merge(
+						[
+							$this->buildSuidSessionChoiceValidateRule($lazy_evals),
+						],
 						$lazy_evals['next_pre_action'] ?? [],
 						['postDataToSuidSession', [function () use ($lazy_evals) {return array_keys(is_callable($lazy_evals['validate']) ? $lazy_evals['validate']() : $lazy_evals['validate']);}]],
 						$lazy_evals['next_post_action'] ?? []
@@ -73,7 +85,12 @@ trait AppSuidSessionIccSupportTrait {
 					'next'	=> [
 						[static::MakeUrl($lazy_evals['next_controller'] ?? $this, $lazy_evals['next_action'], $lazy_evals['next_path_params'] ?? [], $lazy_evals['next_params'] ?? [])],
 					],
-					'error'	=> $lazy_evals['error_action'] ?? $lazy_evals['action'] ?? [],
+					'error'	=> array_merge(
+						[
+							$this->buildSuidSessionChoiceValidateRule($lazy_evals),
+						],
+						$lazy_evals['error_action'] ?? $lazy_evals['action'] ?? []
+					),
 				];
 			},
 		];
@@ -111,6 +128,7 @@ trait AppSuidSessionIccSupportTrait {
 					'validate'	=> $lazy_evals['validate'] ?? [],
 					'action'	=> array_merge(
 						[
+							$this->buildSuidSessionChoiceValidateRule($lazy_evals, true),
 							['suidSessionToAssignData', [function () use ($lazy_evals) {return array_keys(is_callable($lazy_evals['target']) ? $lazy_evals['target']() : $lazy_evals['target']);}]],
 						],
 						$lazy_evals['action'] ?? []
@@ -167,6 +185,9 @@ trait AppSuidSessionIccSupportTrait {
 				return [
 					'validate'	=> $lazy_evals['validate'] ?? [],
 					'action'	=> array_merge(
+						[
+							$this->buildSuidSessionChoiceValidateRule($lazy_evals, true),
+						],
 						$lazy_evals['pre_action'] ?? [],
 						[
 							static::ActionBuilder('suidSessionToAssignData')->param(array_keys(is_callable($lazy_evals['target']) ? $lazy_evals['target']() : $lazy_evals['target']))->alias('assign_data'),

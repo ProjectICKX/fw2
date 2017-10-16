@@ -63,6 +63,7 @@ class Twig_Extension_Function extends \Twig_Extension {
 			new \Twig_Function('same_in',				[$this, 'sameIn']),
 
 			new \Twig_Function('class_const',			[$this, 'classConst']),
+			new \Twig_Function('find_by_class_const',	[$this, 'findByClassConst']),
 			new \Twig_Function('class_property',		[$this, 'classProperty']),
 			new \Twig_Function('class_method',			[$this, 'classMethod']),
 
@@ -490,6 +491,31 @@ class Twig_Extension_Function extends \Twig_Extension {
 		}
 
 		return constant($define_naem);
+	}
+
+	public function findByClassConst ($class_path, $const_name = null, $target_key = null, $default_value = null) {
+		if (false !== $separate_pos = strpos($class_path, '::')) {
+			$class_name = substr($class_path, 0, $separate_pos);
+			$const_name = substr($class_path, $separate_pos + 2);
+		} else {
+			$class_name = $class_path;
+			$target_key = $const_name;
+			$target_key = $default_value;
+		}
+
+		$target_class_path = \ickx\fw2\extensions\twig\Twig_Extension_Store::get('use_class', $class_name, $class_name);
+
+		if (!class_exists($target_class_path)) {
+			throw new \ErrorException(sprintf('対象のクラスが見つかりませんでした。class path:%s (<= %s <= %s)', $target_class_path, $class_name, $class_path));
+		}
+
+		$define_naem = $target_class_path . '::'. $const_name;
+
+		if (!defined($define_naem)) {
+			throw new \ErrorException(sprintf('対象のクラス定数が見つかりませんでした。class const:%s', $define_naem));
+		}
+
+		return constant($define_naem)[$target_key] ?? $default_value;
 	}
 
 	public function classProperty ($class_path, $property_name = null) {

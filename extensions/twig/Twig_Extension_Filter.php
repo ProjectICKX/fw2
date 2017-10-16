@@ -85,7 +85,8 @@ class Twig_Extension_Filter extends \Twig_Extension {
 
 			new \Twig_Filter('method',			[$this, 'callMethod']),
 
-			new \Twig_Filter('find_as_key',		[$this, 'findAsKey']),
+			new \Twig_Filter('find_as_key',			[$this, 'findAsKey']),
+			new \Twig_Filter('find_by_class_const',	[$this, 'findByClassConst']),
 
 			new \Twig_Filter('iterate_by_map_method',	[$this, 'iterateByMapMethod']),
 
@@ -318,6 +319,30 @@ class Twig_Extension_Filter extends \Twig_Extension {
 
 	public function findAsKey ($key, $data) {
 		return is_object($data) ? ($data->$key ?? null) : ($data[$key] ?? null);
+	}
+
+	public function findByClassConst ($target_key, $class_path, $const_name = null, $default_value = null) {
+		if (false !== $separate_pos = strpos($class_path, '::')) {
+			$class_name = substr($class_path, 0, $separate_pos);
+			$const_name = substr($class_path, $separate_pos + 2);
+		} else {
+			$class_name = $class_path;
+			$default_value = $const_name;
+		}
+
+		$target_class_path = \ickx\fw2\extensions\twig\Twig_Extension_Store::get('use_class', $class_name, $class_name);
+
+		if (!class_exists($target_class_path)) {
+			throw new \ErrorException(sprintf('対象のクラスが見つかりませんでした。class path:%s (<= %s <= %s)', $target_class_path, $class_name, $class_path));
+		}
+
+		$define_naem = $target_class_path . '::'. $const_name;
+
+		if (!defined($define_naem)) {
+			throw new \ErrorException(sprintf('対象のクラス定数が見つかりませんでした。class const:%s', $define_naem));
+		}
+
+		return constant($define_naem)[$target_key] ?? $default_value;
 	}
 
 	public function iterateByMapMethod ($object, $method_name, $use_key = false) {
