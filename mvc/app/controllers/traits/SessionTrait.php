@@ -512,4 +512,131 @@ trait SessionTrait {
 			}
 		}
 	}
+
+	//------------------------------------------------------
+	//クラスフラッシュセッション
+	//------------------------------------------------------
+	/**
+	 * 次リクエストでだけ有効なセッションを破棄します。
+	 */
+	public function clearFlashClassSession () {
+		if (static::ExistsClassSession('flash')) {
+			static::RemoveClassSession('flash');
+		}
+
+		if (static::ExistsClassSession('tmp_flash')) {
+			static::WriteClassSession('flash', static::ReadClassSession('tmp_flash'));
+			static::RemoveClassSession('tmp_flash');
+		}
+	}
+
+	/**
+	 * 次リクエストでだけ有効なセッションを設定します。
+	 *
+	 * @param	string	$name	キー名
+	 * @param	mixed	$data	データ
+	 */
+	public function setFlashClassSession ($name, $data) {
+		static::WriteClassSession(['flash', $name], $data);
+	}
+
+	/**
+	 * 今リクエストでだけ有効なセッションを取得します。
+	 *
+	 * @param	string	$name		キー名
+	 * @param	mixed	$default	対象が存在しなかった場合のデフォルト値
+	 * @return	mixed	値
+	 */
+	public function getFlashClassSession ($name, $default = null) {
+		return static::ExistsClassSession(['flash', $name]) ? static::ReadClassSession(['flash', $name]) : $default;
+	}
+
+	/**
+	 * 今リクエストでだけ有効なセッションを次リクエストにフォワードします。
+	 *
+	 * @param	string	$name	キー名
+	 */
+	public function forwardFlashClassSession ($name) {
+		if (static::ExistsClassSession(['flash', $name])) {
+			static::WriteClassSession(['tmp_flash', $name], $before_request = static::ReadClassSession(['flash', $name]));
+		}
+	}
+
+	/**
+	 * 現在のリクエストデータを次リクエストのみ有効なセッションに設定します。
+	 *
+	 * @param	string	$alias
+	 */
+	public function setRequestFlashClassSession ($alias = 'default') {
+		$route = $this->route;
+		unset($route['routing_url']);
+
+		if (isset($route['controller'])) {
+			unset($route['controller']);
+		}
+		if (isset($route['action'])) {
+			unset($route['action']);
+		}
+
+		static::WriteClassSession(['tmp_flash', 'request', $alias], [
+			'controller'	=> $this->controller,
+			'action'		=> $this->action,
+			'route'			=> $route->getRecursiveArrayCopy(),
+			'parameter'		=> $this->request->parameter->getRecursiveArrayCopy(),
+		]);
+	}
+
+	/**
+	 * 前リクエストでのリクエストデータを返します。
+	 *
+	 * @param	string	$alias	エイリアス
+	 * @return	mixed	リクエストデータ
+	 */
+	public function getRequestFlashClassSession ($alias = 'default') {
+		if (is_null($request = static::ReadClassSession(['flash', 'request', $alias]))) {
+			return [];
+		}
+
+		return [
+			'request'	=> $request,
+			'url'		=> static::MakeUrl($request['controller'], $request['action'], $request['route']) . (empty($request['parameter']) ? '' : '?'. http_build_query($request['parameter'])),
+		];
+	}
+
+	/**
+	 * 今リクエストでだけ有効なセッションを次リクエストにフォワードします。
+	 *
+	 * @param	string	$alias	エイリアス
+	 */
+	public function forwardRequestFlashClassSession ($alia_list) {
+		foreach ((array) $alia_list as $alias) {
+			if (static::ExistsClassSession(['flash', 'request', $alias])) {
+				static::WriteClassSession(['tmp_flash', 'request', $alias], $before_request = static::ReadClassSession(['flash', 'request', $alias]));
+			}
+		}
+	}
+
+	/**
+	 * 今リクエストだけで有効なリクエスト情報をエイリアスリスト順に走査し、マッチしたリクエスト情報を返します。
+	 *
+	 * @param	string|array	$alia_list		エイリアスリスト
+	 * @param	string			$default_url	見つからなかった場合のURL
+	 */
+	public function choiceRequestFlashClassSession ($alia_list, $default_url = null) {
+		if (!static::ExistsClassSession(['flash', 'request'])) {
+			return [
+				'url'	=> $default_url,
+			];
+		}
+		$request = static::ReadClassSession(['flash', 'request']);
+
+		foreach ((array) $alia_list as $alias) {
+			if (isset($request[$alias])) {
+				return $this->getRequestFlashClassSession($alias);
+			}
+		}
+		return [
+			'url'	=> $default_url,
+		];
+	}
 }

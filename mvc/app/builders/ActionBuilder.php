@@ -35,7 +35,6 @@ class ActionBuilder {
 	protected $_params		= null;
 	protected $_alias		= null;
 	protected $_postFilter	= null;
-	protected $_binds		= null;
 
 	public function __construct() {
 	}
@@ -51,7 +50,7 @@ class ActionBuilder {
 		return $this;
 	}
 
-	public function params ($params) {
+	public function params (...$params) {
 		$this->_params = $params;
 		return $this;
 	}
@@ -66,20 +65,10 @@ class ActionBuilder {
 		return $this;
 	}
 
-	public function bind ($render_var_name, $target = 0) {
-		$this->_binds[$target] = $render_var_name;
-		return $this;
-	}
-
-	public function binds ($binds) {
-		$this->_binds = $binds;
-		return $this;
-	}
-
 	public function toArray () {
 		return [
 			0	=> $this->_executer,
-			1	=> $this->_paramBind(),
+			1	=> $this->_params,
 			2	=> $this->_alias,
 			3	=> $this->_postFilter,
 			4	=> $this->_isVar,
@@ -87,7 +76,17 @@ class ActionBuilder {
 	}
 
 	public function __invoke () {
-		$result = $this->_isVar ? $this->_executer(...$this->_params) : $this->_executer;
+		if ($this->_isVar) {
+			$result = $this->_executer;
+		} else {
+			foreach ($params = array_values($this->_params ?? []) as $idx => $param) {
+				if ($param instanceof BindBuilder) {
+					$params[$idx] = $param();
+				}
+			}
+			$result = $this->_executer(...$params);
+		}
+
 		$result = !is_null($this->_postFilter) ? $this->_postFilter($result) : $result;
 		if ($this->_alias) {
 			if (is_array($this->_alias)) {
@@ -108,24 +107,5 @@ class ActionBuilder {
 			}
 		}
 		return $result;
-	}
-
-	protected function _paramBind () {
-		$params = $this->_params ?? [];
-		foreach ($this->_binds ?? [] as $idx => $render_var_name) {
-			if (is_string($render_var_name) || is_int($render_var_name)) {
-				$params[$idx] = function ($data) use ($render_var_name) {
-					return $data->$render_var_name;
-				};
-			} elseif (is_object($render_var_name) && is_callable($render_var_name)) {
-				$params[$idx] = function ($data) use ($render_var_name) {
-					return $render_var_name($data);
-				};
-			} else {
-				$params[$idx] = $render_var_name;
-			}
-		}
-		ksort($params);
-		return $params;
 	}
 }

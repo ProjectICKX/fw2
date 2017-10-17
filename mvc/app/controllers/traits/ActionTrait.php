@@ -23,6 +23,7 @@ namespace ickx\fw2\mvc\app\controllers\traits;
 use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\mvc\app\builders\ActionBuilder;
 use ickx\fw2\mvc\app\builders\ValidationBuilder;
+use ickx\fw2\mvc\app\builders\BindBuilder;
 
 /**
  * Flywheel2 Action特性です。
@@ -52,6 +53,18 @@ trait ActionTrait {
 
 	public static function ValidationBuilder ($executer, $is_var) {
 		return ValidationBuilder()::instance()->executer($executer, $is_var);
+	}
+
+	public function bind ($command, $options = []) {
+		return (new BindBuilder())->executer($this, $command, $options)->typeRenderVar();
+	}
+
+	public function literal ($command, $options = []) {
+		return (new BindBuilder())->executer($this, $command, $options)->typeVar();
+	}
+
+	public function promise ($command, $options = []) {
+		return (new BindBuilder())->executer($this, $command, $options)->typePromise();
 	}
 
 	/**
@@ -113,13 +126,21 @@ trait ActionTrait {
 				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('isError'));
 				return $this->render;
 			}
-			$action_list = $this->rule->error ?: [];
+			$action_list = array_merge(
+				$this->rule->pre_process ?? [],
+				$this->rule->error ?? [],
+				$this->rule->post_process ?? []
+			);
 		} else {
 			if ($this->rule->action === false) {
 				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('isActionRuleError'));
 				return $this->render;
 			}
-			$action_list = $this->rule->action ?: [];
+			$action_list = array_merge(
+				$this->rule->pre_process ?? [],
+				$this->rule->action ?? [],
+				$this->rule->post_process ?? []
+			);
 		}
 
 		$action_set = static::GetExecuteAction($this, $action_list);
@@ -212,8 +233,12 @@ trait ActionTrait {
 				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log(static::getActionMethodName($action)));
 			}
 
-			if ($post_action_filter !== null && is_callable($post_action_filter)) {
-				$result_part_list = $post_action_filter(...$result_part_list);
+			if ($post_action_filter !== null && !empty($post_action_filter)) {
+				foreach ((array) $post_action_filter as $filter) {
+					if (is_callable($filter)) {
+						$result_part_list = $filter($result_part_list);
+					}
+				}
 			}
 
 			if (!is_null($result_alias)) {
