@@ -38,7 +38,7 @@ trait AppOneTimeAccessParamTrait {
 	 * @return	\ickx\fw2\mvc\app\builders\ActionBuilder	One Time Token用オブジェクトをアサインするためのアクション
 	 */
 	public function buildOneTimeAccessSetAction (\ickx\fw2\other\token\LazyToken $token, $token_name = null) {
-		return static::ActionBuilder('assign')->params([$token_name ?? $token->tokenName() ?? 'token', $token]);
+		return static::ActionBuilder('assign')->params($token_name ?? $token->tokenName() ?? 'token', $token);
 	}
 
 	/**

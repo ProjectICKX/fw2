@@ -234,7 +234,7 @@ trait FileTrait {
 	 * 											['id'	=> 3, 'group'	=> 'c'],
 	 * 											['id'	=> 4, 'group'	=> 'a'],
 	 * 										]:
-	 * 										$ret = fileTrait::Alignment($value, ['group', 'id']);
+	 * 										$ret = FileTrait::Alignment($value, ['group', 'id']);
 	 *										$retは次の配列となる
 	 * 										$ret = [
 	 * 											'a'	=> [

@@ -35,7 +35,32 @@ trait AppSuidSessionIccSupportTrait {
 		if (is_null($validater = ($check_target ? ($lazy_evals['target'] ?? null) : null) ?? $lazy_evals['validate'] ?? null)) {
 			return [];
 		}
-		return static::ActionBuilder('assign')->param('validate_rule_list')->bind($validater, 1);
+		return static::ActionBuilder('assign')->params('validate_rule_list', $this->promise($validater));
+	}
+
+	public function buildSimpleSearchFormRule ($lazy_evals) {
+		return [
+			static::MEAN_DEFAULT	=> function () use ($lazy_evals) {
+				$lazy_evals = $lazy_evals();
+				return [
+					'validate'	=> $lazy_evals['validate'],
+					'pre_process'	=> $lazy_evals['pre_process'] ?? [],
+					'action'	=> array_merge(
+						[
+							$this->buildSuidSessionChoiceValidateRule($lazy_evals),
+						],
+						$lazy_evals['action'] ?? []
+					),
+					'error'	=> array_merge(
+						[
+							$this->buildSuidSessionChoiceValidateRule($lazy_evals),
+						],
+						$lazy_evals['error_action'] ?? $lazy_evals['action'] ?? []
+					),
+					'post_process'	=> $lazy_evals['post_process'] ?? [],
+				];
+			},
+		];
 	}
 
 	/**
@@ -61,6 +86,7 @@ trait AppSuidSessionIccSupportTrait {
 			static::MEAN_DEFAULT	=> function () use ($lazy_evals) {
 				$lazy_evals = $lazy_evals();
 				return [
+					'pre_process'	=> $lazy_evals['pre_process'] ?? [],
 					'action'	=> array_merge(
 						[
 							['StartSuidSession'],
@@ -68,12 +94,14 @@ trait AppSuidSessionIccSupportTrait {
 						],
 						$lazy_evals['action'] ?? []
 					),
+					'post_process'	=> $lazy_evals['post_process'] ?? [],
 				];
 			},
 			$next_trigger ?? 'submit'	=> function () use ($lazy_evals) {
 				$lazy_evals = $lazy_evals();
 				return [
 					'validate'	=> $lazy_evals['validate'],
+					'pre_process'	=> $lazy_evals['pre_process'] ?? [],
 					'action'	=> array_merge(
 						[
 							$this->buildSuidSessionChoiceValidateRule($lazy_evals),
@@ -91,6 +119,7 @@ trait AppSuidSessionIccSupportTrait {
 						],
 						$lazy_evals['error_action'] ?? $lazy_evals['action'] ?? []
 					),
+					'post_process'	=> $lazy_evals['post_process'] ?? [],
 				];
 			},
 		];
@@ -126,6 +155,7 @@ trait AppSuidSessionIccSupportTrait {
 				$lazy_evals = $lazy_evals();
 				return [
 					'validate'	=> $lazy_evals['validate'] ?? [],
+					'pre_process'	=> $lazy_evals['pre_process'] ?? [],
 					'action'	=> array_merge(
 						[
 							$this->buildSuidSessionChoiceValidateRule($lazy_evals, true),
@@ -133,6 +163,7 @@ trait AppSuidSessionIccSupportTrait {
 						],
 						$lazy_evals['action'] ?? []
 					),
+					'post_process'	=> $lazy_evals['post_process'] ?? [],
 				];
 			},
 			$next_trigger ?? 'submit'	=> function () use ($lazy_evals) {
@@ -146,6 +177,7 @@ trait AppSuidSessionIccSupportTrait {
 			$back_trigger ?? 'back'	=> function () use ($lazy_evals) {
 				$lazy_evals = $lazy_evals();
 				return [
+					'pre_process'	=> $lazy_evals['pre_process'] ?? [],
 					'action'	=> array_merge(
 						$lazy_evals['back_pre_action'] ?? [],
 						[
@@ -154,6 +186,7 @@ trait AppSuidSessionIccSupportTrait {
 						],
 						$lazy_evals['back_post_action'] ?? []
 					),
+					'post_process'	=> $lazy_evals['post_process'] ?? [],
 					'next'	=> [
 						[static::MakeUrl($lazy_evals['back_controller'] ?? $this, $lazy_evals['back_action'], $lazy_evals['back_path_params'] ?? [], $lazy_evals['back_params'] ?? [])],
 					],
@@ -184,18 +217,20 @@ trait AppSuidSessionIccSupportTrait {
 				$lazy_evals = $lazy_evals();
 				return [
 					'validate'	=> $lazy_evals['validate'] ?? [],
+					'pre_process'	=> $lazy_evals['pre_process'] ?? [],
 					'action'	=> array_merge(
 						[
 							$this->buildSuidSessionChoiceValidateRule($lazy_evals, true),
 						],
 						$lazy_evals['pre_action'] ?? [],
 						[
-							static::ActionBuilder('suidSessionToAssignData')->param(array_keys(is_callable($lazy_evals['target']) ? $lazy_evals['target']() : $lazy_evals['target']))->alias('assign_data'),
-							isset($lazy_evals['save_filter']) && is_callable($lazy_evals['save_filter']) ? static::ActionBuilder($lazy_evals['save_filter'])->bind('assign_data') : function () {},
-							static::ActionBuilder('saveSuidTransaction')->params([$lazy_evals['save_function'], null, $lazy_evals['suid_check'] ?? true, $lazy_evals['save_args'] ?? []])->bind('assign_data', 1)->alias('data'),
+							static::ActionBuilder('suidSessionToAssignData')->params(array_keys(is_callable($lazy_evals['target']) ? $lazy_evals['target']() : $lazy_evals['target']))->alias('assign_data'),
+							isset($lazy_evals['save_filter']) && is_callable($lazy_evals['save_filter']) ? static::ActionBuilder($lazy_evals['save_filter'])->params($this->bind('assign_data')) : function () {},
+							static::ActionBuilder('saveSuidTransaction')->params($lazy_evals['save_function'], $this->bind('assign_data'), $lazy_evals['suid_check'] ?? true, $lazy_evals['save_args'] ?? [])->alias('data'),
 						],
 						$lazy_evals['post_action'] ?? []
 					),
+					'post_process'	=> $lazy_evals['post_process'] ?? [],
 				];
 			},
 		];

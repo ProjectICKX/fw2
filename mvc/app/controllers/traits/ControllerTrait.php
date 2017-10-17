@@ -121,6 +121,9 @@ trait ControllerTrait {
 		if (isset($instance->options['redirect'])) {
 			$instance->nextRule = IController::NEXT_REDIRECT;
 			$instance->nextUrl = $instance->options['redirect'];
+			if (method_exists($instance, 'clearFlashClassSession')) {
+				$instance->clearFlashClassSession();
+			}
 			return $instance;
 		}
 
@@ -142,6 +145,9 @@ trait ControllerTrait {
 					"/\{:(.+?)\}/",
 					function ($matches) use ($render, $options) {
 						$replace = isset($render[$matches[1]]) ? $render[$matches[1]] : (isset($options[$matches[1]]) ? $options[$matches[1]] : $matches[0]);
+						if (method_exists($instance, 'clearFlashClassSession')) {
+							$instance->clearFlashClassSession();
+						}
 						return is_callable($replace) ? $replace($render, $options) : $replace;
 					},
 					is_callable($value) ? $value($render, $options) : $value
@@ -197,6 +203,9 @@ trait ControllerTrait {
 
 		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 
+		if (method_exists($instance, 'clearFlashClassSession')) {
+			$instance->clearFlashClassSession();
+		}
 		return $instance;
 	}
 	/**
@@ -321,12 +330,20 @@ trait ControllerTrait {
 	 * @return	mixed	デフォルトの次URL
 	 */
 	public function getDefaultNextUrl () {
-		if (isset($this->rule->next[$this->nextName]) && is_object($this->rule->next[$this->nextName]) && is_callable($this->rule->next[$this->nextName])) {
-			$this->rule->next[$this->nextName] = [
-				$this->rule->next[$this->nextName]()
+		$next_name = $this->nextName;
+		if (!isset($this->rule->next[$this->nextName]) && !empty($this->rule->next)) {
+			$next_name = $this->rule->next;
+			reset($next_name);
+			$next_name = key($next_name);
+		}
+
+		if (isset($this->rule->next[$next_name]) && is_object($this->rule->next[$next_name]) && is_callable($this->rule->next[$next_name])) {
+			$this->rule->next[$next_name] = [
+				$this->rule->next[$next_name]()
 			];
 		}
-		return isset($this->rule->next[$this->nextName][0]) ? $this->rule->next[$this->nextName][0] : null;
+
+		return isset($this->rule->next[$next_name][0]) ? $this->rule->next[$next_name][0] : null;
 	}
 
 	/**
