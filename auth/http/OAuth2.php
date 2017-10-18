@@ -466,6 +466,7 @@ class OAuth2 {
 	public function deprive () {
 		$this->authSession->close();
 		$this->authSession->tmpClose();
+		$this->isAuthed(false);
 	}
 
 	/**
@@ -601,7 +602,7 @@ class OAuth2 {
 		])->bodies([
 			'grant_type'		=> static::GRANT_TYPE_REFRESH_TOKEN,
 			'refresh_token'		=> $this->token['refresh_token'],
-		])->exec();
+		])->sslVerify($this->authApiHostSslVerify)->exec();
 
 		$header = $result['header'];
 		switch ($header['http_code']) {

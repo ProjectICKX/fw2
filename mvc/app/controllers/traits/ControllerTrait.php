@@ -136,19 +136,20 @@ trait ControllerTrait {
 		$instance->controller	= str_replace('/', '_', $params->controller ?? 'index');
 		$instance->action		= str_replace('/', '_', $params->action ?? 'index');
 
+		$route		= $instance->route;
 		$render		= $instance->render;
 		$options	= $instance->options;
 
+		$replace_values	= LazyArrayObject::Create();
+		$replace_values->merge($route, $render);
+
 		foreach ($instance->options->getArrayCopy() as $key => $value) {
-			if (mb_strpos($value, '{:') !== false) {
+			if (!is_object($value) && mb_strpos($value, '{:') !== false) {
 				$instance->options->$key = preg_replace_callback(
 					"/\{:(.+?)\}/",
-					function ($matches) use ($render, $options) {
-						$replace = isset($render[$matches[1]]) ? $render[$matches[1]] : (isset($options[$matches[1]]) ? $options[$matches[1]] : $matches[0]);
-						if (method_exists($instance, 'clearFlashClassSession')) {
-							$instance->clearFlashClassSession();
-						}
-						return is_callable($replace) ? $replace($render, $options) : $replace;
+					function ($matches) use ($replace_values, $options) {
+						$replace = isset($replace_values[$matches[1]]) ? $replace_values[$matches[1]] : (isset($options[$matches[1]]) ? $options[$matches[1]] : $matches[0]);
+						return is_callable($replace) ? $replace($replace_values, $options) : $replace;
 					},
 					is_callable($value) ? $value($render, $options) : $value
 				);

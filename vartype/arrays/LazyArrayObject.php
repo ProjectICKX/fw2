@@ -103,6 +103,7 @@ class LazyArrayObject extends \ArrayObject implements \Serializable {
 	 */
 	public function merge () {
 		static::_ArrayObjectMerge($this, func_get_args());
+		return $this;
 	}
 
 	/**
