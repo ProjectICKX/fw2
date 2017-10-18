@@ -725,15 +725,11 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		}
 
 		$dummy_realm		= Hash::CreateRandomHash($realm.microtime(true).random_int(0, 1000), $this->clientKey, $this->clientSalt, $this->separatorLength);
-		if ($this->strict) {
-			$dummy_user_name	= Hash::CreateRandomHash(microtime(true).random_int(0, 1000), $this->clientKey, $this->clientSalt, $this->separatorLength);
-		} else {
-			$dummy_user_name	= '4!:0&NY\i[gz``bD9ZR$(8ps"jgUpm\'KMDhjc7C)qS0^!O87^C%&[dB41t7R<pc@"HDJ-b8O2j@2]g2BsAN_]%K$__orlC;v>foEX]"c$ed|e**Q=H_(Xj7(nKGJwC3+';
-		}
-
-		$cnonce_seed		= Hash::CreateRandomHash($dummy_user_name . random_int(0, 1000) . $dummy_realm, $this->clientSalt, $this->clientKey, $this->separatorLength);
 
 		if ($this->getCookieName() && !empty($old_server_data = $this->get())) {
+			$dummy_user_name	= $old_server_data['raw_data']['maru'];
+			$cnonce_seed		= Hash::CreateRandomHash($dummy_user_name . random_int(0, 1000) . $dummy_realm, $this->clientSalt, $this->clientKey, $this->separatorLength);
+
 			if ($this->strict) {
 				++$old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC];
 				$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . $old_server_data['raw_data'][$this->digestAuth::PROPERTY_NC], $this->clientSalt, $this->clientKey, $this->separatorLength))
@@ -745,6 +741,9 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 				->cnonce($old_server_data['raw_data'][$this->digestAuth::PROPERTY_CNONCE]);
 			}
 		} else {
+			$dummy_user_name	= Hash::CreateRandomHash(microtime(true).random_int(0, 1000), $this->clientKey, $this->clientSalt, $this->separatorLength);
+			$cnonce_seed		= Hash::CreateRandomHash($dummy_user_name . random_int(0, 1000) . $dummy_realm, $this->clientSalt, $this->clientKey, $this->separatorLength);
+
 			$this->digestAuth->nonce(Hash::CreateRandomHash(random_int(0, 1000) . 1, $this->clientSalt, $this->clientKey, $this->separatorLength))
 			->nc(1)
 			->cnonce(Hash::CreateRandomHash($cnonce_seed . 1, $this->clientKey, $this->clientSalt, $this->separatorLength));
@@ -763,6 +762,7 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 		$server_data['shadow']		= $dummy_user_name;
 		$server_data['cnonce_seed']	= $cnonce_seed;
 		$server_data['extra_data']	= $extra_data;
+		$server_data['maru']		= $dummy_user_name;
 
 		$dummy_password	= Hash::HmacStringStretching($this->stretcher[2], $password, $user_name);
 

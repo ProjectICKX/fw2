@@ -21,6 +21,7 @@
 namespace ickx\fw2\mvc;
 
 use ickx\fw2\core\exception\CoreException;
+use ickx\fw2\other\middleware\Middleware;
 
 /**
  * フレームワークをまわすクラス
@@ -42,10 +43,11 @@ class Engine {
 	 *
 	 * @param	string	$url		フレームワーク起動URL
 	 * @param	string	$namespace	アプリケーションネームスペース
+	 * @param	string	$fw_class	起動元フレームワーククラス
 	 * @param	string	$call_type	フレームワークの呼び出され方
 	 * @return	boolean	実行後ステータス 正常終了：true 異常終了：false callタイプの場合：アクションの実行結果
 	 */
-	public static function Ignition ($url, $namespace, $call_type = null) {
+	public static function Ignition ($url, $namespace, $fw_class, $call_type = null) {
 		//------------------------------------------------------
 		//実行時間計測：開始
 		//------------------------------------------------------
@@ -64,7 +66,7 @@ class Engine {
 
 		//主処理の実行
 		try {
-			$ret = static::_Dispatch($url, $namespace, $call_type);
+			$ret = static::_Dispatch($url, $namespace, $fw_class, $call_type);
 		} catch (CoreException $core_e) { // フレームワークで例外をキャッチできる最終地点
 			StaticLog::WriteErrorLog($core_e->getStatusMessage() ."\n". CoreException::ConvertToStringMultiLine($core_e));
 			throw $core_e;
@@ -92,82 +94,15 @@ class Engine {
 	}
 
 	/**
-	 * フレームワーク主処理
-	 *
-	 * @param	string	$url		フレームワーク起動URL
-	 * @param	string	$namespace	アプリケーションネームスペース
-	 * @return	boolean	実行後ステータス 正常終了：true 異常終了：false
+	 * ミドルウェアを起動し、処理を遂行します。
 	 */
-	protected static function _Dispatch ($url, $namespace, $call_type = null) {
-		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
-		//------------------------------------------------------
-		//実行対象URLの解析
-		//------------------------------------------------------
-		//URLの解析
-		$route = Router::Find($url);
-
-		//------------------------------------------------------
-		//実行キューの初期化
-		//------------------------------------------------------
-		//初期起動コントローラ、アクションの設定
-		Queue::Init($route);
-
-		//------------------------------------------------------
-		//主処理開始
-		//------------------------------------------------------
-		foreach (Queue::GetIterator() as $route) {
-			if (isset($route['path_through'])) {
-				$real_path = realpath($route['path_through']);
-//@TODO SRC以下以外ははじくようにする
-				if (substr($real_path, 0, 5) !== '/etc/' && file_exists($real_path)) {
-					readfile($route['path_through']);
-				}
-				break;
-			}
-
-			$controller_class = static::GetControllerClassPath($route, $namespace);
-			$controller_instance = $controller_class::Execute($route);
-			switch ($controller_instance->nextRule) {
-				case IController::NEXT_REDIRECT:
-					if (!$controller_instance->isRedirect()) {
-						CoreException::RaiseSystemError('リダイレクトが設定されていません。');
-					}
-
-					$url = $controller_instance->nextUrl;
-					if (preg_match("/^https?:\/\//", $url) !== 1) {
-						$url = sprintf(
-							'%s://%s/%s',
-							strtolower(\ickx\fw2\core\net\http\Request::GetCurrnetProtocol()),
-							\ickx\fw2\core\net\http\Request::GetHeader('Host'),
-							$url
-						);
-					}
-					$url = explode('://', $url, 2);
-					$url = $url[0] .'://'. preg_replace("/\/+/", '/', $url[1]);
-					header("Location: ". $url);
-					exit;
-				case IController::NEXT_FORWARD:
-					Queue::Add(Router::Find($controller_instance->nextUrl));
-
-					Flywheel::SetCurrnetUrl($controller_instance->nextUrl);
-					continue;
-				case IController::NEXT_RENDERING:
-					if (!in_array($call_type, ['call', 'caller'], true)) {
-						assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
-						$ret = $controller_instance->rendering();
-						assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('rendering'));
-					}
-					break;
-				case IController::NEXT_CALLER:
-					$ret = $controller_instance->render;
-				default:
-					throw CoreException::RaiseSystemError('適切な次処理が設定されていません。next:%s', [$controller_instance->next]);
-					break;
-			}
-		}
-		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log(''));
-
-		return $ret;
+	protected static function _Dispatch ($url, $namespace, $fw_class , $call_type) {
+		return Middleware::init($fw_class::getMiddlewareList())->run([
+			'url'		=> $url,
+			'namespace'	=> $namespace,
+			'call_type'	=> $call_type,
+			'fw_class'	=> $fw_class,
+		]);
 	}
 
 	/**

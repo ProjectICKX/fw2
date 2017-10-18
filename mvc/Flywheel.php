@@ -23,6 +23,8 @@ namespace ickx\fw2\mvc;
 use ickx\fw2\core\environment\Environment;
 use ickx\fw2\core\cli\Cli;
 use ickx\fw2\io\cache\Cache;
+use ickx\fw2\mvc\app\middleware\exception\ExceptionMiddleware;
+use ickx\fw2\mvc\app\middleware\dispatch\DispatchMiddleware;
 
 /**
  * Flywheel Freamwork spin-up class
@@ -67,6 +69,18 @@ class Flywheel {
 	 * @static
 	 */
 	public static $reportingLevel			= self::REPORTING_LEVEL_PROD | self::REPORTING_LEVEL_INFO;
+
+	/**
+	 * defaultのミドルウェア設定
+	 *
+	 * @return string[]
+	 */
+	public static function getMiddlewareList () {
+		return [
+			ExceptionMiddleware::class,
+			DispatchMiddleware::class,
+		];
+	}
 
 	/**
 	 * phase0:Built-in server support
@@ -237,7 +251,7 @@ class Flywheel {
 		static::Clutch();
 		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('clutch'));
 
-		$ret = \ickx\fw2\mvc\Engine::Ignition(static::GetClassVar(static::URL_PARAM_NAME), static::GetClassVar('app_namespace'), static::GetCallType());
+		$ret = \ickx\fw2\mvc\Engine::Ignition(static::GetClassVar(static::URL_PARAM_NAME), static::GetClassVar('app_namespace'), static::class, static::GetCallType());
 		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('ignition'));
 
 		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->outputDump(FilePath::APP_PROFILE_LOG_PATH()));

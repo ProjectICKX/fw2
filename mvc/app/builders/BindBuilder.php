@@ -71,7 +71,7 @@ class BindBuilder {
 			case static::TYPE_VAR:
 				return $command;
 			case static::TYPE_RENDER_VAR:
-				return $this->_controller->render->$command ?? $this->_options['default'] ?? $command;
+				return $this->_controller->render->$command ?? $this->_options['default'] ?? null;
 			case static::TYPE_PROMISE:
 				return $command(...($this->_options['args'] ?? []));
 		}
