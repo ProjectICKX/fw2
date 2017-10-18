@@ -724,8 +724,12 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			$this->gc();
 		}
 
-		$dummy_user_name	= Hash::CreateRandomHash(microtime(true).random_int(0, 1000), $this->clientKey, $this->clientSalt, $this->separatorLength);
 		$dummy_realm		= Hash::CreateRandomHash($realm.microtime(true).random_int(0, 1000), $this->clientKey, $this->clientSalt, $this->separatorLength);
+		if ($this->strict) {
+			$dummy_user_name	= Hash::CreateRandomHash(microtime(true).random_int(0, 1000), $this->clientKey, $this->clientSalt, $this->separatorLength);
+		} else {
+			$dummy_user_name	= '4!:0&NY\i[gz``bD9ZR$(8ps"jgUpm\'KMDhjc7C)qS0^!O87^C%&[dB41t7R<pc@"HDJ-b8O2j@2]g2BsAN_]%K$__orlC;v>foEX]"c$ed|e**Q=H_(Xj7(nKGJwC3+';
+		}
 
 		$cnonce_seed		= Hash::CreateRandomHash($dummy_user_name . random_int(0, 1000) . $dummy_realm, $this->clientSalt, $this->clientKey, $this->separatorLength);
 
