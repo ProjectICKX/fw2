@@ -579,8 +579,8 @@ trait SessionTrait {
 		}
 
 		static::WriteClassSession(['tmp_flash', 'request', $alias], [
-			'controller'	=> $this->controller,
-			'action'		=> $this->action,
+			'controller'	=> $this->rawController,
+			'action'		=> $this->rawAction,
 			'route'			=> $route->getRecursiveArrayCopy(),
 			'parameter'		=> $this->request->parameter->getRecursiveArrayCopy(),
 		]);
@@ -597,9 +597,11 @@ trait SessionTrait {
 			return [];
 		}
 
+		$url	= static::MakeUrl($request['controller'], $request['action'], $request['route']);
+
 		return [
 			'request'	=> $request,
-			'url'		=> static::MakeUrl($request['controller'], $request['action'], $request['route']) . (empty($request['parameter']) ? '' : '?'. http_build_query($request['parameter'])),
+			'url'		=> $url === false ? null : $url .= empty($request['parameter']) ? '' : '?'. http_build_query($request['parameter']),
 		];
 	}
 
@@ -608,8 +610,8 @@ trait SessionTrait {
 	 *
 	 * @param	string	$alias	エイリアス
 	 */
-	public function forwardRequestFlashClassSession ($alia_list) {
-		foreach ((array) $alia_list as $alias) {
+	public function forwardRequestFlashClassSession (...$alia_list) {
+		foreach ($alia_list as $alias) {
 			if (static::ExistsClassSession(['flash', 'request', $alias])) {
 				static::WriteClassSession(['tmp_flash', 'request', $alias], $before_request = static::ReadClassSession(['flash', 'request', $alias]));
 			}
@@ -638,5 +640,15 @@ trait SessionTrait {
 		return [
 			'url'	=> $default_url,
 		];
+	}
+
+	/**
+	 * 今リクエストだけで有効なリクエスト情報をエイリアスリスト順に走査し、マッチしたリクエスト情報を返します。
+	 *
+	 * @param	string|array	$alia_list		エイリアスリスト
+	 * @param	string			$default_url	見つからなかった場合のURL
+	 */
+	public function choiceRequestUrlFlashClassSession ($alia_list, $default_url = null) {
+		return $this->choiceRequestFlashClassSession($alia_list, $default_url)['url'];
 	}
 }

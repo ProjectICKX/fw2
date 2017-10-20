@@ -136,6 +136,9 @@ trait ControllerTrait {
 		$instance->controller	= str_replace('/', '_', $params->controller ?? 'index');
 		$instance->action		= str_replace('/', '_', $params->action ?? 'index');
 
+		$instance->rawController	= $params->controller;
+		$instance->rawAction		= $params->action;
+
 		$route		= $instance->route;
 		$render		= $instance->render;
 		$options	= $instance->options;
