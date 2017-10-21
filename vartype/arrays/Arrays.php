@@ -199,10 +199,18 @@ class Arrays {
 	 */
 	public static function GetLowest ($array, $keys) {
 		foreach ((array) $keys as $key) {
-			if (isset($array[$key]) || array_key_exists($key, $array)) {
-				$array = $array[$key];
+			if (is_object($array) && !$array instanceof \ArrayAccess) {
+				if (property_exists($array, $key)) {
+					$array = $array->$key;
+				} else {
+					return null;
+				}
 			} else {
-				return null;
+				if (isset($array[$key]) || array_key_exists($key, $array)) {
+					$array = $array[$key];
+				} else {
+					return null;
+				}
 			}
 		}
 		return $array;
