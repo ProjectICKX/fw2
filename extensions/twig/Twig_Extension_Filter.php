@@ -39,64 +39,65 @@ class Twig_Extension_Filter extends \Twig_Extension {
 	 */
 	public function getFilters () {
 		return [
-			new \Twig_Filter('del_lf',			[$this, 'deleteLf']),
-			new \Twig_Filter('default',			[$this, 'customDefault']),
-			new \Twig_Filter('str_search',		[$this, 'strSearch']),
-			new \Twig_Filter('str_truncate',	[$this, 'strTruncate']),
-			new \Twig_Filter('empty',			[$this, 'isEmpty']),
-			new \Twig_Filter('strtotime',		[$this, 'strToTime']),
-			new \Twig_Filter('var_dump',		'var_dump'),
-			new \Twig_Filter('back_fill',		[$this, 'backFill']),
+			new \Twig_SimpleFilter('del_lf',		[$this, 'deleteLf']),
+			new \Twig_SimpleFilter('default',		[$this, 'customDefault']),
+			new \Twig_SimpleFilter('default_se',	[$this, 'customDefaultStringEmpty']),
+			new \Twig_SimpleFilter('str_search',	[$this, 'strSearch']),
+			new \Twig_SimpleFilter('str_truncate',	[$this, 'strTruncate']),
+			new \Twig_SimpleFilter('empty',			[$this, 'isEmpty']),
+			new \Twig_SimpleFilter('strtotime',		[$this, 'strToTime']),
+			new \Twig_SimpleFilter('var_dump',		'var_dump'),
+			new \Twig_SimpleFilter('back_fill',		[$this, 'backFill']),
 
-			new \Twig_Filter('vsprintf',		[$this, 'vsprintf']),
+			new \Twig_SimpleFilter('vsprintf',		[$this, 'vsprintf']),
 
-			new \Twig_Filter('sort',			[$this, 'sort']),
-			new \Twig_Filter('rsort',			[$this, 'rSort']),
-			new \Twig_Filter('ksort',			[$this, 'kSort']),
-			new \Twig_Filter('krsort',			[$this, 'krSort']),
+			new \Twig_SimpleFilter('sort',			[$this, 'sort']),
+			new \Twig_SimpleFilter('rsort',			[$this, 'rSort']),
+			new \Twig_SimpleFilter('ksort',			[$this, 'kSort']),
+			new \Twig_SimpleFilter('krsort',		[$this, 'krSort']),
 
-			new \Twig_Filter('count',			[$this, 'count']),
+			new \Twig_SimpleFilter('count',			[$this, 'count']),
 
-			new \Twig_Filter('self_combine',	[$this, 'selfCombine']),
+			new \Twig_SimpleFilter('self_combine',	[$this, 'selfCombine']),
 
-			new \Twig_Filter('shift',			[$this, 'shift']),
-			new \Twig_Filter('current',			'current'),
-			new \Twig_Filter('key',				'key'),
+			new \Twig_SimpleFilter('shift',			[$this, 'shift']),
+			new \Twig_SimpleFilter('current',		'current'),
+			new \Twig_SimpleFilter('key',			'key'),
 
-			new \Twig_Filter('adjust',			[$this, 'adjust']),
+			new \Twig_SimpleFilter('adjust',		[$this, 'adjust']),
 
-			new \Twig_Filter('gmdate',			[$this, 'gmdate']),
+			new \Twig_SimpleFilter('gmdate',		[$this, 'gmdate']),
 
-			new \Twig_Filter('str_to_date',		[$this, 'strToDate']),
+			new \Twig_SimpleFilter('str_to_date',	[$this, 'strToDate']),
 
 			//error
-			new \Twig_Filter('adjust_error',	[$this, 'adjustError']),
+			new \Twig_SimpleFilter('adjust_error',	[$this, 'adjustError']),
 
-			new \Twig_Filter('toggle',			[$this, 'toggle']),
+			new \Twig_SimpleFilter('toggle',		[$this, 'toggle']),
 
-			new \Twig_Filter('route_toggle',	[$this, 'routeToggle']),
+			new \Twig_SimpleFilter('route_toggle',	[$this, 'routeToggle']),
 
-			new \Twig_Filter('exit',			'exit'),
+			new \Twig_SimpleFilter('exit',			'exit'),
 
-			new \Twig_Filter('str_pad',			'str_pad'),
-			new \Twig_Filter('to_array',		[$this, 'toArray']),
-			new \Twig_Filter('to_text',			[$this, 'toText']),
-			new \Twig_Filter('camelize',		[$this, 'camelize']),
+			new \Twig_SimpleFilter('str_pad',		'str_pad'),
+			new \Twig_SimpleFilter('to_array',		[$this, 'toArray']),
+			new \Twig_SimpleFilter('to_text',		[$this, 'toText']),
+			new \Twig_SimpleFilter('camelize',		[$this, 'camelize']),
 
-			new \Twig_Filter('method',			[$this, 'callMethod']),
+			new \Twig_SimpleFilter('method',			[$this, 'callMethod']),
 
-			new \Twig_Filter('find_as_key',			[$this, 'findAsKey']),
-			new \Twig_Filter('find_by_class_const',	[$this, 'findByClassConst']),
+			new \Twig_SimpleFilter('find_as_key',			[$this, 'findAsKey']),
+			new \Twig_SimpleFilter('find_by_class_const',	[$this, 'findByClassConst']),
 
-			new \Twig_Filter('iterate_by_map_method',	[$this, 'iterateByMapMethod']),
+			new \Twig_SimpleFilter('iterate_by_map_method',	[$this, 'iterateByMapMethod']),
 
-			new \Twig_Filter('strtoupper',	'strtoupper'),
-			new \Twig_Filter('strtolower',	'strtolower'),
+			new \Twig_SimpleFilter('strtoupper',	'strtoupper'),
+			new \Twig_SimpleFilter('strtolower',	'strtolower'),
 
 			//==============================================
 			//error support
 			//==============================================
-			new \Twig_Filter('filter_disable_error_set',	[$this, 'filterDisableErrorSet']),
+			new \Twig_SimpleFilter('filter_disable_error_set',	[$this, 'filterDisableErrorSet']),
 		];
 	}
 
@@ -129,11 +130,22 @@ class Twig_Extension_Filter extends \Twig_Extension {
 			case 'empty':
 				return empty($value) ? $default : $value;
 			case 'string':
-				return ($value !== '' && $value !== null) ? $value : $default;
+				return ($value !== '' && !is_null($value)) ? $value : $default;
 			case 'null':
 			default:
-				return ($value === null) ? $default : $value;
+				return is_null($value) ? $default : $value;
 		}
+	}
+
+	/**
+	 * 空文字用のデフォルトフィルタを定義します。
+	 *
+	 * @param	mixed	$value		有効な値か調べる値
+	 * @param	mixed	$default	値が無効な場合に使う値
+	 * @return	mixed	$valueが有効な場合は$value、そうでない場合は$default
+	 */
+	public function customDefaultStringEmpty ($value, $default) {
+		return ($value !== '' && !is_null($value)) ? $value : $default;
 	}
 
 	/**

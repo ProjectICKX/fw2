@@ -49,103 +49,103 @@ class Twig_Extension_Function extends \Twig_Extension {
 			//==============================================
 			//base
 			//==============================================
-			new \Twig_Function('asset',					[$this, 'asset']),
-			new \Twig_Function('asset_common',			[$this, 'assetCommon']),
-			new \Twig_Function('asset_cdn',				[$this, 'assetCdn']),
-			new \Twig_Function('make_url',				[$this, 'makeUrl']),
-			new \Twig_Function('make_domain_url',		[$this, 'makeDomainUrl']),
-			new \Twig_Function('make_force_domain_url',	[$this, 'makeForceDomainUrl']),
-			new \Twig_Function('current_url',			[$this, 'currentUrl']),
-			new \Twig_Function('current_full_url',		[$this, 'currentFullUrl']),
-			new \Twig_Function('filter',				[$this, 'filter'], ['needs_environment' => true]),
-			new \Twig_Function('replace_sub_domain',	[$this, 'replaceSubDomain']),
-			new \Twig_Function('action_switch',			[$this, 'actionSwitch']),
-			new \Twig_Function('same_in',				[$this, 'sameIn']),
+			new \Twig_SimpleFunction ('asset',					[$this, 'asset']),
+			new \Twig_SimpleFunction ('asset_common',			[$this, 'assetCommon']),
+			new \Twig_SimpleFunction ('asset_cdn',				[$this, 'assetCdn']),
+			new \Twig_SimpleFunction ('make_url',				[$this, 'makeUrl']),
+			new \Twig_SimpleFunction ('make_domain_url',		[$this, 'makeDomainUrl']),
+			new \Twig_SimpleFunction ('make_force_domain_url',	[$this, 'makeForceDomainUrl']),
+			new \Twig_SimpleFunction ('current_url',			[$this, 'currentUrl']),
+			new \Twig_SimpleFunction ('current_full_url',		[$this, 'currentFullUrl']),
+			new \Twig_SimpleFunction ('filter',				[$this, 'filter'], ['needs_environment' => true]),
+			new \Twig_SimpleFunction ('replace_sub_domain',	[$this, 'replaceSubDomain']),
+			new \Twig_SimpleFunction ('action_switch',			[$this, 'actionSwitch']),
+			new \Twig_SimpleFunction ('same_in',				[$this, 'sameIn']),
 
-			new \Twig_Function('class_const',			[$this, 'classConst']),
-			new \Twig_Function('find_by_class_const',	[$this, 'findByClassConst']),
-			new \Twig_Function('class_property',		[$this, 'classProperty']),
-			new \Twig_Function('class_method',			[$this, 'classMethod']),
+			new \Twig_SimpleFunction ('class_const',			[$this, 'classConst']),
+			new \Twig_SimpleFunction ('find_by_class_const',	[$this, 'findByClassConst']),
+			new \Twig_SimpleFunction ('class_property',		[$this, 'classProperty']),
+			new \Twig_SimpleFunction ('class_method',			[$this, 'classMethod']),
 
 			//==============================================
 			//var type
 			//==============================================
-			new \Twig_Function('var_dump',		'var_dump'),
+			new \Twig_SimpleFunction ('var_dump',		'var_dump'),
 
-			new \Twig_Function('empty',			[$this, 'isEmpty']),
+			new \Twig_SimpleFunction ('empty',			[$this, 'isEmpty']),
 
-			new \Twig_Function('adjust_array',	'\ickx\fw2\vartype\arrays\Arrays::AdjustArray'),
-			new \Twig_Function('array_unshift',	[$this, 'arrayUnshift']),
-			new \Twig_Function('array_push',	[$this, 'arrayPush']),
-			new \Twig_Function('array_add',		[$this, 'arrayAdd']),
-			new \Twig_Function('array_merge',	[$this, 'merge']),
-			new \Twig_Function('implode',		'implode'),
-			new \Twig_Function('explode',		'explode'),
-			new \Twig_Function('array_filter',	'array_filter'),
+			new \Twig_SimpleFunction ('adjust_array',	'\ickx\fw2\vartype\arrays\Arrays::AdjustArray'),
+			new \Twig_SimpleFunction ('array_unshift',	[$this, 'arrayUnshift']),
+			new \Twig_SimpleFunction ('array_push',	[$this, 'arrayPush']),
+			new \Twig_SimpleFunction ('array_add',		[$this, 'arrayAdd']),
+			new \Twig_SimpleFunction ('array_merge',	[$this, 'merge']),
+			new \Twig_SimpleFunction ('implode',		'implode'),
+			new \Twig_SimpleFunction ('explode',		'explode'),
+			new \Twig_SimpleFunction ('array_filter',	'array_filter'),
 
-			new \Twig_Function('merge',			[$this, 'merge']),
+			new \Twig_SimpleFunction ('merge',			[$this, 'merge']),
 
-			new \Twig_Function('late_array_bind',	[$this, 'lateArrayBind']),
+			new \Twig_SimpleFunction ('late_array_bind',	[$this, 'lateArrayBind']),
 
 			//==============================================
 			//Native Functions
 			//==============================================
-			new \Twig_Function('time',	'time'),
-			new \Twig_Function('date',	'date'),
+			new \Twig_SimpleFunction ('time',	'time'),
+			new \Twig_SimpleFunction ('date',	'date'),
 
-			new \Twig_Function('strtoupper',	'strtoupper'),
-			new \Twig_Function('strtolower',	'strtolower'),
+			new \Twig_SimpleFunction ('strtoupper',	'strtoupper'),
+			new \Twig_SimpleFunction ('strtolower',	'strtolower'),
 
 			//==============================================
 			//disp support
 			//==============================================
-			new \Twig_Function('adjust',		[$this, 'adjust']),
-			new \Twig_Function('params_adjust',	[$this, 'paramsAdjust']),
-			new \Twig_Function('sprintf',		'sprintf'),
-			new \Twig_Function('has_validator',	[$this, 'hasValidator']),
-			new \Twig_Function('elvis',			[$this, 'elvis']),
-			new \Twig_Function('switch',		[$this, 'elvis']),
+			new \Twig_SimpleFunction ('adjust',		[$this, 'adjust']),
+			new \Twig_SimpleFunction ('params_adjust',	[$this, 'paramsAdjust']),
+			new \Twig_SimpleFunction ('sprintf',		'sprintf'),
+			new \Twig_SimpleFunction ('has_validator',	[$this, 'hasValidator']),
+			new \Twig_SimpleFunction ('elvis',			[$this, 'elvis']),
+			new \Twig_SimpleFunction ('switch',		[$this, 'elvis']),
 
-			new \Twig_Function('make_id',		[$this, 'makeId']),
+			new \Twig_SimpleFunction ('make_id',		[$this, 'makeId']),
 
-			new \Twig_Function('json_encode',	[$this, 'jsonEncode']),
-			new \Twig_Function('json_decode',	[$this, 'jsonDecode']),
+			new \Twig_SimpleFunction ('json_encode',	[$this, 'jsonEncode']),
+			new \Twig_SimpleFunction ('json_decode',	[$this, 'jsonDecode']),
 
 			//==============================================
 			//form data set
 			//==============================================
 			//form status
-			new \Twig_Function('form_open',				[$this, 'formOpen']),
-			new \Twig_Function('form_status',			[$this, 'formStatus']),
-			new \Twig_Function('is_post_form',			[$this, 'isPostForm']),
-			new \Twig_Function('form_close',			[$this, 'formClose']),
+			new \Twig_SimpleFunction ('form_open',				[$this, 'formOpen']),
+			new \Twig_SimpleFunction ('form_status',			[$this, 'formStatus']),
+			new \Twig_SimpleFunction ('is_post_form',			[$this, 'isPostForm']),
+			new \Twig_SimpleFunction ('form_close',			[$this, 'formClose']),
 			//file upload
-			new \Twig_Function('file_upload',			[$this, 'fileUpload']),
+			new \Twig_SimpleFunction ('file_upload',			[$this, 'fileUpload']),
 			//CURRENT REQUEST data
-			new \Twig_Function('exist_request_data',	[$this, 'existRequestData']),
-			new \Twig_Function('request_data',			[$this, 'getRequestData']),
-			new \Twig_Function('request_data_set',		[$this, 'getRequestDataSet']),
+			new \Twig_SimpleFunction ('exist_request_data',	[$this, 'existRequestData']),
+			new \Twig_SimpleFunction ('request_data',			[$this, 'getRequestData']),
+			new \Twig_SimpleFunction ('request_data_set',		[$this, 'getRequestDataSet']),
 			//GET parameter
-			new \Twig_Function('exist_parameter',		[$this, 'existParameter']),
-			new \Twig_Function('parameter',				[$this, 'getParameter']),
-			new \Twig_Function('parameters',			[$this, 'getParameters']),
+			new \Twig_SimpleFunction ('exist_parameter',		[$this, 'existParameter']),
+			new \Twig_SimpleFunction ('parameter',				[$this, 'getParameter']),
+			new \Twig_SimpleFunction ('parameters',			[$this, 'getParameters']),
 			//POST data
-			new \Twig_Function('exist_form_data',		[$this, 'existFormData']),
-			new \Twig_Function('form_data',				[$this, 'getFormData']),
-			new \Twig_Function('form_data_set',			[$this, 'getFormDataSet']),
+			new \Twig_SimpleFunction ('exist_form_data',		[$this, 'existFormData']),
+			new \Twig_SimpleFunction ('form_data',				[$this, 'getFormData']),
+			new \Twig_SimpleFunction ('form_data_set',			[$this, 'getFormDataSet']),
 			//message
 			//error
-			new \Twig_Function('exist_errors',			[$this, 'existError']),
-			new \Twig_Function('errors',				[$this, 'getError']),
-			new \Twig_Function('errors_set',			[$this, 'getErrorSet']),
+			new \Twig_SimpleFunction ('exist_errors',			[$this, 'existError']),
+			new \Twig_SimpleFunction ('errors',				[$this, 'getError']),
+			new \Twig_SimpleFunction ('errors_set',			[$this, 'getErrorSet']),
 			//warn
-			new \Twig_Function('exist_warns',			[$this, 'existWarn']),
-			new \Twig_Function('warns',					[$this, 'getWarn']),
-			new \Twig_Function('warns_set',				[$this, 'getWarnSet']),
+			new \Twig_SimpleFunction ('exist_warns',			[$this, 'existWarn']),
+			new \Twig_SimpleFunction ('warns',					[$this, 'getWarn']),
+			new \Twig_SimpleFunction ('warns_set',				[$this, 'getWarnSet']),
 			//info
-			new \Twig_Function('exist_infos',			[$this, 'existInfo']),
-			new \Twig_Function('infos',					[$this, 'getInfo']),
-			new \Twig_Function('infos_set',				[$this, 'getInfoSet']),
+			new \Twig_SimpleFunction ('exist_infos',			[$this, 'existInfo']),
+			new \Twig_SimpleFunction ('infos',					[$this, 'getInfo']),
+			new \Twig_SimpleFunction ('infos_set',				[$this, 'getInfoSet']),
 		];
 	}
 
@@ -347,28 +347,19 @@ class Twig_Extension_Function extends \Twig_Extension {
 		}
 
 		foreach ($filter_list as $filter_set) {
-			if (is_array($filter_set)) {
-				$filter_name = key($filter_set);
-				$args = current($filter_set);
-			} else {
-				$filter_name = $filter_set;
-				$args = [];
+			if (!is_array($filter_set)) {
+				$filter_set = [$filter_set];
 			}
-			$args = $args ?: [];
+
+			$filter_name	= $filter_set[0];
+			$args			= isset($filter_set[1]) ? array_slice($filter_set, 1) : [];
 
 			$filter = $env->getFilter($filter_name);
-			if ($filter instanceof \Twig_Filter_Function) {
-				$function = Objects::ForceGetProperty($filter, 'function');
-				array_unshift($args, $value);
-				$value = call_user_func_array($function, $args);
-			} elseif ($filter instanceof \Twig_Filter_Method) {
-				$extension = Objects::ForceGetProperty($filter, 'extension');
-				$method = Objects::ForceGetProperty($filter, 'method');
-				array_unshift($args, $value);
-
-				$value = call_user_func_array([$extension, $method], $args);
+			if ($filter instanceof \Twig_SimpleFilter) {
+				$value = $filter->getCallable()($value, ...$args);
 			}
 		}
+
 		return $value;
 	}
 
