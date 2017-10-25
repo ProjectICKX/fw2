@@ -359,6 +359,15 @@ class Session {
 		return session_module_name();
 	}
 
+	/**
+	 * 現在のセッションデータ保存パスを取得します。
+	 *
+	 * @return	string	現在のセッションデータ保存パス
+	 */
+	public static function SavePath () {
+		return session_save_path();
+	}
+
 	//----------------------------------------------
 	//Setter
 	//----------------------------------------------

@@ -236,6 +236,25 @@ class FormValidation {
 	// Special
 	//==============================================
 	/**
+	 * postal code text array field用のお勧め設定を返します。
+	 *
+	 * @param	array	$current_rule	追加したいvalidation rule
+	 * @param	array	$options		オプション設定
+	 * @param	bool	$is_array		配列か否か
+	 * @param	array	$remove_target	除去する検証対象
+	 * @return	array	お薦め設定
+	 */
+	public function postalCode ($current_rule = [], $options = [], $is_array = false, $remove_target = []) {
+		$rule_list = [
+			['require', 'raise_exception' => true],
+			['not_string_empty', 'is_array' => $is_array, 'is_last' => true],
+			['postal_code', 'not_deal_array' => true, 'is_array' => $is_array, 'is_last' => true],
+		];
+		$rule_list = array_merge($rule_list, $is_array ? $this->adjustOption($current_rule, 'is_array', $is_array) : $current_rule);
+		return empty($remove_target) ? $rule_list : $this->removeRule($rule_list, $remove_target);
+	}
+
+	/**
 	 * datetime text field用のお勧め設定を返します。
 	 *
 	 * @param	array	$current_rule	追加したいvalidation rule

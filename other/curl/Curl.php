@@ -158,6 +158,15 @@ class Curl {
 			$header[$key] = curl_getinfo($curl, $key);
 		}
 
+		$error_no	= curl_errno($curl);
+		$error	= [
+			'no'		=> $error_no,
+			'error'		=> curl_error($curl),
+			'share_str'	=> curl_share_strerror($error_no),
+			'str'		=> curl_strerror($error_no),
+			'multi_str'	=> curl_multi_strerror($error_no),
+		];
+
 		curl_close($curl);
 
 		$header_size	= $header[\CURLINFO_HEADER_SIZE];
@@ -171,6 +180,7 @@ class Curl {
 			'header_size'		=> $header_size,
 			'raw_header'		=> $raw_header,
 			'body'				=> $body,
+			'error'				=> $error,
 		];
 	}
 

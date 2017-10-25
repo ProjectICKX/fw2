@@ -537,7 +537,12 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 			throw new \ErrorException('検証前セッションデータの取得に失敗しました。');
 		}
 
-		$data				= CompressionGz::UnCompressSerializedVariable(OpenSSL::DecryptRandom($value, $this->tmpCookieName, $this->tmpServerSalt, $this->tmpServerKey, $this->tmpSeparatorLength));
+		$data				= OpenSSL::DecryptRandom($value, $this->tmpCookieName, $this->tmpServerSalt, $this->tmpServerKey, $this->tmpSeparatorLength);
+		if ($data === false) {
+			throw new \ErrorException('複合に失敗しました。');
+		}
+
+		$data				= CompressionGz::UnCompressSerializedVariable($data);
 
 		$dummy_password		= $data['dummy_password'];
 		$hmac_key			= Hash::HmacStringStretching($this->tmpStretcher[0], $this->tmpServerSalt, $dummy_password);
