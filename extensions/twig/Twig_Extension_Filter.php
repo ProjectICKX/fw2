@@ -95,6 +95,34 @@ class Twig_Extension_Filter extends \Twig_Extension {
 			new \Twig_SimpleFilter('strtolower',	'strtolower'),
 
 			//==============================================
+			// is_*
+			//==============================================
+			new \Twig_SimpleFilter('is_array',				'is_array'),
+			new \Twig_SimpleFilter('is_array_accessable',	[$this, 'isArrayAccessable']),
+			new \Twig_SimpleFilter('is_bool',				'is_bool'),
+			new \Twig_SimpleFilter('is_callable',			'is_callable'),
+			new \Twig_SimpleFilter('is_double',				'is_double'),
+			new \Twig_SimpleFilter('is_float',				'is_float'),
+			new \Twig_SimpleFilter('is_int',				'is_int'),
+			new \Twig_SimpleFilter('is_integer',			'is_integer'),
+			new \Twig_SimpleFilter('is_iterable',			'is_iterable'),
+			new \Twig_SimpleFilter('is_long',				'is_long'),
+			new \Twig_SimpleFilter('is_null',				'is_null'),
+			new \Twig_SimpleFilter('is_numeric',			'is_numeric'),
+			new \Twig_SimpleFilter('is_object',				'is_object'),
+			new \Twig_SimpleFilter('is_real',				'is_real'),
+			new \Twig_SimpleFilter('is_resource',			'is_resource'),
+			new \Twig_SimpleFilter('is_scalar',				'is_scalar'),
+			new \Twig_SimpleFilter('is_string',				'is_string'),
+			new \Twig_SimpleFilter('isset',					'isset'),
+
+			//==============================================
+			// explode
+			//==============================================
+			new \Twig_SimpleFilter('implode',		[$this, 'implode']),
+			new \Twig_SimpleFilter('explode',		[$this, 'explode']),
+
+			//==============================================
 			//error support
 			//==============================================
 			new \Twig_SimpleFilter('filter_disable_error_set',	[$this, 'filterDisableErrorSet']),
@@ -370,5 +398,17 @@ class Twig_Extension_Filter extends \Twig_Extension {
 		foreach ($use_key ? array_keys($key_list) : array_values($key_list) as $key) {
 			yield $can_array_access ? ($object[$key] ?? null) : ($object->$key ?? null);
 		}
+	}
+
+	public function implode ($value, $separator) {
+		return implode($separator, $value);
+	}
+
+	public function explode ($value, $separator) {
+		return explode($separator, $value);
+	}
+
+	public function isArrayAccessable ($value) {
+		return is_array($value) || $value instanceof \ArrayAccess;
 	}
 }

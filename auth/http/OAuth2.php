@@ -360,6 +360,17 @@ class OAuth2 {
 						return false;
 					}
 
+					if (isset($_GET[$this->codeParamName])) {
+						unset($_GET[$this->codeParamName]);
+					}
+
+					if (isset($_GET[$this->stateParamName])) {
+						unset($_GET[$this->stateParamName]);
+					}
+
+					$origin_url = substr($_SERVER['REQUEST_URI'], 0, strpos($_SERVER['REQUEST_URI'], '?')) . empty($_GET) ? '' : '?' . http_query_builder($_GET);
+					$this->redirectUrl($origin_url);
+
 					return false;
 				}
 
@@ -578,14 +589,28 @@ class OAuth2 {
 				$access_token = (array) (is_callable($this->acceccTokenFilter) ? $this->acceccTokenFilter()($result) : $result['body'] ?? '');
 				$access_token['start_time']	= $start_time;
 				return $access_token;
-			case 403:
-				break;
 			case 0:
-				throw new \ErrorException(sprintf('access token取得時にエラーが発生しました。http status code:%s, url:%s', $header['http_code'], $header['url']));
+				$error = $result['error'];
+				$error_message = sprintf(
+					'[%d:%s:%s] %s',
+					$error['no'],
+					$error['share_str'],
+					$error['multi_str'],
+					$error['error']
+				);
+				throw new \ErrorException(sprintf('access token取得時にエラーが発生しました。http status code:%s, error:(%s), url:%s', $error_message, $header['http_code'], $header['url']));
 				break;
 		}
 
-		throw new \ErrorException(sprintf('access token取得時にエラーが発生しました。http status code:%s, message:%s', $header['http_code'], $result['body']));
+		$error = $result['error'];
+		$error_message = sprintf(
+			'[%d:%s:%s] %s',
+			$error['no'],
+			$error['share_str'],
+			$error['multi_str'],
+			$error['error']
+		);
+		throw new \ErrorException(sprintf('access token取得時にエラーが発生しました。http status code:%s, error:(%s), message:%s', $header['http_code'], $error_message, $result['body']));
 	}
 
 	/**
@@ -610,11 +635,28 @@ class OAuth2 {
 				$access_token = (array) (is_callable($this->acceccTokenFilter) ? $this->acceccTokenFilter()($result) : $result['body'] ?? '');
 				$access_token['start_time']	= $start_time;
 				return $access_token;
-			case 403:
+			case 0:
+				$error = $result['error'];
+				$error_message = sprintf(
+					'[%d:%s:%s] %s',
+					$error['no'],
+					$error['share_str'],
+					$error['multi_str'],
+					$error['error']
+					);
+				throw new \ErrorException(sprintf('token refresh時にエラーが発生しました。http status code:%s, error:(%s), url:%s', $error_message, $header['http_code'], $header['url']));
 				break;
 		}
 
-		throw new \ErrorException(sprintf('token refresh時にエラーが発生しました。http status code:%s, message:%s', $header['http_code'], $result['body']));
+		$error = $result['error'];
+		$error_message = sprintf(
+			'[%d:%s:%s] %s',
+			$error['no'],
+			$error['share_str'],
+			$error['multi_str'],
+			$error['error']
+			);
+		throw new \ErrorException(sprintf('token refresh時にエラーが発生しました。http status code:%s, error:(%s), message:%s', $header['http_code'], $error_message, $result['body']));
 	}
 
 	/**

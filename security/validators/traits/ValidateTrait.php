@@ -246,6 +246,9 @@ trait ValidateTrait {
 			'luhn'			=> [function ($value, $options, $meta = []) {for ($i = 0, $digits = strrev($digits), $alt = true, $total = 0; ($str = substr($digits, $i, 1)) !== false;$total += $alt ? $str : ($str < 5 ? $str * 2 : 1 + ($str - 5) * 2), $alt = !$alt, $i++); return $total % 10 === 0;}, '{:title}のチェックディジットが正しくありません。'],
 			'credit_card'	=> [function ($value, $options, $meta = []) {return static::CreditCard($value, $options, $meta);}, '{:title}のクレジットカード番号が正しくありません。'],
 
+			//郵便番号
+			'postal_code'	=> [function ($value, $options, $meta = []) {return static::PostalCode($value, $options, $meta);}, '{:title}が正しくありません。{:validator_message}'],
+
 			//パディング
 			'padding'		=> [function ($value, $options, $meta = []) {return $value === str_pad($value, $options['length'], $options['char'], $options['vector']);}, '{:title}の値が正しくありません。'],
 			'zero_padding'	=> [function ($value, $options, $meta = []) {return $value === str_pad($value, $options['length'], '0', \STR_PAD_LEFT);}, '{:title}の値が正しくありません。'],
@@ -1000,5 +1003,58 @@ trait ValidateTrait {
 		$is_zip	= fread($fp = fopen($file_path, 'rb'), 4) === static::SOF_ZIP;
 		fclose($fp);
 		return $is_zip;
+	}
+
+	/**
+	 * 郵便番号チェック
+	 *
+	 * @param	mixed	$value		検証する値
+	 * @param	string	$operator	演算子
+	 * @param	array	$options	オプション
+	 * @return	bool	検証に合格した場合:true、検証に失敗した場合:false
+	 */
+	public static function PostalCode ($value, $options, $meta = []) {
+		$separator	= $options['separator'] ?? '-';
+
+		if (!is_array($value) && !$value instanceof \ArrayAccess) {
+			if (empty($separator)) {
+				if (strlen($value) !== 7) {
+					return [
+						'validator_message'	=> '桁数が足りません。',
+					];
+				}
+				$value = implode($separator, $value);
+			} else {
+				if (strpos($separator, $value) === false) {
+					return [
+						'validator_message'	=> sprintf('%sが含まれていません。', $separator),
+					];
+				}
+				$value = [
+					substr($value, 0, 3),
+					substr($value, 4),
+				];
+			}
+		}
+
+		if (count($value) !== 2) {
+			return [
+				'validator_message'	=> 'データ数が多すぎます。',
+			];
+		}
+
+		if (strlen($value[0]) !== 3 && filter_var($value[0], \FILTER_VALIDATE_INT) === false) {
+			return [
+				'validator_message'	=> '郵便区番号は3桁の数字を入力してください。',
+			];
+		}
+
+		if (strlen($value[1]) !== 4 && filter_var($value[1], \FILTER_VALIDATE_INT) === false) {
+			return [
+				'validator_message'	=> '町域番号は4桁の数字を入力してください。。',
+			];
+		}
+
+		return true;
 	}
 }
