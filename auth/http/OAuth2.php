@@ -462,7 +462,7 @@ class OAuth2 {
 					throw $e;
 				}
 
-				$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $this->token = $access_token, 'expand_data' => $this->expandData = $expand_data]);
+				$this->authSession->update($access_token['access_token'], $access_token['refresh_token'], ['access_token' => $this->token, 'expand_data' => $this->expandData]);
 
 				// ここまで到達できている場合、有効な認可があると判断する
 				return true;

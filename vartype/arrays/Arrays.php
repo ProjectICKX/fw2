@@ -235,27 +235,63 @@ class Arrays {
 	 * @param	mixed	$keys	階層
 	 * @return	array	設定後の配列
 	 */
-	public static function SetLowest (array $array, $keys, $value) {
+	public static function SetLowest ($array, $keys, $value) {
 		$keys = (array) $keys;
 		if (empty($array)) {
 			$tmp =& $array;
 		} else {
 			if (is_array($array)) {
 				$tmp =& $array[array_shift($keys)];
-			} else if ($tmp instanceof \ickx\fw2\vartype\arrays\LazyArrayObject) {
+			} else if ($array instanceof \ArrayAccess) {
 				$tmp =& $array->{array_shift($keys)};
 			}
 		}
 
-		foreach ($keys as $key) {
-			$tmp = (array) $tmp;
-			if (!isset($tmp[$key])) {
-				$tmp[$key] = null;
+		end($keys);
+		$last_idx = key($keys);
+
+		foreach ($keys as $idx => $key) {
+			if (is_object($tmp) && $tmp instanceof \ArrayAccess) {
+				if (!property_exists($tmp, $key)) {
+					if (is_object($tmp)) {
+						if ($last_idx === $idx) {
+							$tmp->$key = $value;
+						} else {
+							$tmp->$key = null;
+							$tmp =& $tmp->$key;
+						}
+					} else {
+						$tmp = (array) $tmp;
+						if ($last_idx === $idx) {
+							$tmp[$key] = $value;
+						} else {
+							$tmp[$key] = null;
+							$tmp =& $tmp[$key];
+						}
+					}
+				}
+			} else {
+				if (!isset($tmp[$key])) {
+					if (is_object($tmp)) {
+						if ($last_idx === $idx) {
+							$tmp->$key = $value;
+						} else {
+							$tmp->$key = null;
+							$tmp =& $tmp->$key;
+						}
+					} else {
+						$tmp = (array) $tmp;
+						if ($last_idx === $idx) {
+							$tmp[$key] = $value;
+						} else {
+							$tmp[$key] = null;
+							$tmp =& $tmp[$key];
+						}
+					}
+				}
 			}
-			$tmp =& $tmp[$key];
 		}
 
-		$tmp = $value;
 		unset($tmp);
 
 		return $array;
