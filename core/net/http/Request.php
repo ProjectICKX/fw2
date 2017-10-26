@@ -226,8 +226,8 @@ class Request extends \ickx\fw2\core\net\http\Http {
 	 * @param	string	$name	パラメータ名
 	 */
 	public static function RemoveParameter ($name) {
-		if (static::HasClassVar('_get', $name)) {
-			static::RemoveClassVar('_get', $name);
+		if (static::HasClassVar(['_get', $name])) {
+			static::RemoveClassVar(['_get', $name]);
 		}
 		if (Arrays::ExistsLowest($_GET, $name)) {
 			Arrays::RemoveLowest($_GET, $name);
@@ -268,9 +268,9 @@ class Request extends \ickx\fw2\core\net\http\Http {
 	 * @param	string	$name	パラメータ名
 	 * @param	mixed	$value	上書きするパラメータ
 	 */
-	public static function OverWriteParameters ($name, $value) {
+	public static function OverWriteParameter ($name, $value) {
 		static::SetClassVar(array_merge(['_get'], (array) $name), $value);
-		$_GET = Arrays::SetLowest($_GET, $name, $value);
+		$_GET[$name] = $value;
 	}
 
 	/**
