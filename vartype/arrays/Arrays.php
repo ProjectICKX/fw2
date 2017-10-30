@@ -242,58 +242,27 @@ class Arrays {
 		} else {
 			if (is_array($array)) {
 				$tmp =& $array[array_shift($keys)];
-			} else if ($array instanceof \ArrayAccess) {
+			} else if ($tmp instanceof \ArrayAccess) {
 				$tmp =& $array->{array_shift($keys)};
 			}
 		}
 
-		end($keys);
-		$last_idx = key($keys);
-
-		foreach ($keys as $idx => $key) {
-			if (is_object($tmp) && $tmp instanceof \ArrayAccess) {
+		foreach ($keys as $key) {
+			if (is_object($tmp) && !$tmp instanceof \ArrayAccess) {
 				if (!property_exists($tmp, $key)) {
-					if (is_object($tmp)) {
-						if ($last_idx === $idx) {
-							$tmp->$key = $value;
-						} else {
-							$tmp->$key = null;
-							$tmp =& $tmp->$key;
-						}
-					} else {
-						$tmp = (array) $tmp;
-						if ($last_idx === $idx) {
-							$tmp[$key] = $value;
-						} else {
-							$tmp[$key] = null;
-							$tmp =& $tmp[$key];
-						}
-					}
+					$tmp->$key = null;
 				}
+				$tmp =& $tmp->$key;
 			} else {
+				$tmp = (array) $tmp;
 				if (!isset($tmp[$key])) {
-					if (is_object($tmp)) {
-						if ($last_idx === $idx) {
-							$tmp->$key = $value;
-						} else {
-							$tmp->$key = null;
-							$tmp =& $tmp->$key;
-						}
-					} else {
-						$tmp = (array) $tmp;
-						if ($last_idx === $idx) {
-							$tmp[$key] = $value;
-						} else {
-							$tmp[$key] = null;
-							$tmp =& $tmp[$key];
-						}
-					}
+					$tmp[$key] = null;
 				}
+				$tmp =& $tmp[$key];
 			}
 		}
-
+		$tmp = $value;
 		unset($tmp);
-
 		return $array;
 	}
 
