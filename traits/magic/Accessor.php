@@ -31,11 +31,11 @@ namespace ickx\fw2\traits\magic;
  */
 trait Accessor {
 	/**
-	 * ƒCƒ“ƒXƒ^ƒ“ƒX‚ğ¶¬‚µAw’è‚³‚ê‚½ƒƒ\ƒbƒh‚ğÀs‚µ‚Ä‚©‚çƒCƒ“ƒXƒ^ƒ“ƒX‚ğ•Ô‚µ‚Ü‚·B
+	 * ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç”Ÿæˆã—ã€æŒ‡å®šã•ã‚ŒãŸãƒ¡ã‚½ãƒƒãƒ‰ã‚’å®Ÿè¡Œã—ã¦ã‹ã‚‰ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’è¿”ã—ã¾ã™ã€‚
 	 *
-	 * @param	string	$name		Ã“IŒÄ‚Ño‚µƒƒ\ƒbƒh–¼
-	 * @param	string	$arguments	ˆø”
-	 * @return	mixed	’l‚ªİ’è‚³‚ê‚éê‡‚Í©g‚ÌƒCƒ“ƒXƒ^ƒ“ƒXAˆø”‚È‚µ‚Ìê‡‚ÍƒvƒƒpƒeƒB‚Ìİ’è’l
+	 * @param	string	$name		é™çš„å‘¼ã³å‡ºã—ãƒ¡ã‚½ãƒƒãƒ‰å
+	 * @param	string	$arguments	å¼•æ•°
+	 * @return	mixed	å€¤ãŒè¨­å®šã•ã‚Œã‚‹å ´åˆã¯è‡ªèº«ã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã€å¼•æ•°ãªã—ã®å ´åˆã¯ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã®è¨­å®šå€¤
 	 */
 	public static function __callStatic ($name, $arguments) {
 		if (method_exists(static::class, 'init')) {
@@ -45,12 +45,12 @@ trait Accessor {
 	}
 
 	/**
-	 * ƒvƒƒpƒeƒBƒ}ƒWƒbƒNƒAƒNƒZƒT
+	 * ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ãƒã‚¸ãƒƒã‚¯ã‚¢ã‚¯ã‚»ã‚µ
 	 *
-	 * @param	string	$name		ŒÄ‚Ño‚µƒƒ\ƒbƒh–¼
-	 * @param	string	$arguments	ˆø”
-	 * @throws	\RuntimeException	ƒvƒƒpƒeƒB‚ª‘¶İ‚µ‚È‚¢ê‡
-	 * @return	mixed	’l‚ªİ’è‚³‚ê‚éê‡‚Í©g‚ÌƒCƒ“ƒXƒ^ƒ“ƒXAˆø”‚È‚µ‚Ìê‡‚ÍƒvƒƒpƒeƒB‚Ìİ’è’l
+	 * @param	string	$name		å‘¼ã³å‡ºã—ãƒ¡ã‚½ãƒƒãƒ‰å
+	 * @param	string	$arguments	å¼•æ•°
+	 * @throws	\RuntimeException	ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ãŒå­˜åœ¨ã—ãªã„å ´åˆ
+	 * @return	mixed	å€¤ãŒè¨­å®šã•ã‚Œã‚‹å ´åˆã¯è‡ªèº«ã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã€å¼•æ•°ãªã—ã®å ´åˆã¯ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã®è¨­å®šå€¤
 	 */
 	public function __call ($name, $arguments) {
 		if (method_exists($this, $name)) {

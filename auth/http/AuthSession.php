@@ -962,7 +962,8 @@ class AuthSession implements \ickx\fw2\auth\interfaces\IAuthSession {
 
 		//認証セッション情報の付け替え
 		$server_data		= $this->sessionSaveHandler->load();
-		$this->sessionSaveHandler->remove()->name($new_auth_session_name)->save($server_data, $this->sessionExpire);
+		$this->sessionSaveHandler->remove($new_auth_session_name);
+		$this->sessionSaveHandler->save($server_data, $this->sessionExpire);
 
 		//クライアント側クッキーの付け替え
 		$expire	= time() - 1800;

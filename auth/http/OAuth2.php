@@ -355,6 +355,8 @@ class OAuth2 {
 							$this->authSession->tmpClose();
 						}
 
+						$this->isAuthed(true);
+
 						$this->redirectUrl($origin_url);
 
 						return false;
