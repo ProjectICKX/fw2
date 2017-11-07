@@ -51,6 +51,10 @@ class FormValidation {
 	 */
 	public function adjustOption ($current_rule, $option_name, $flag) {
 		foreach ($current_rule as $idx => $rule) {
+			if (!is_array($rule)) {
+				continue;
+			}
+
 			if (isset($rule[$option_name])) {
 				$current_rule[$idx][$option_name] = $flag;
 				continue;

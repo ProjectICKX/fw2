@@ -107,11 +107,8 @@ trait SuidTransactionTrait {
 		try {
 			static::Begin();
 
-			if (is_string($save_function) && strpos($save_function, '::') !== false) {
-				//PHPネイティブでは指定できないが、'クラスパス::メソッド名'の指定に合わせるための処理
-				$save_function = explode('::', $save_function, 2);
-			} else if (is_callable($save_function)) {
-
+			if (is_callable($save_function)) {
+				$save_function = $save_function();
 			} else {
 				//インスタンスメソッドを指定する場合
 				$save_function = [$this, $save_function];
