@@ -134,7 +134,6 @@ trait AppSuidSessionIccSupportTrait {
 	 *		'validate'			=> バリデーションルール
 	 *		'target'
 	 *		'next_pre_action'	=> 次アクションへ移動する際にデータをセッションに詰める前に実行する処理のリスト
-	 *		'next_post_action'	=> 次アクションへ移動する際にデータをセッションに詰めた後に実行する処理のリスト
 	 *		'next_controller'	=> バリデーション成功時に遷移するコントローラ
 	 *		'next_action'		=> バリデーション成功時に遷移するアクション名
 	 *		'next_path_params'	=> バリデーション成功時に使用するパスパラメータ
@@ -169,7 +168,9 @@ trait AppSuidSessionIccSupportTrait {
 			$next_trigger ?? 'submit'	=> function () use ($lazy_evals) {
 				$lazy_evals = $lazy_evals();
 				return [
-					'next'	=> [
+					'pre_process'	=> $lazy_evals['pre_process'] ?? [],
+					'post_process'	=> $lazy_evals['post_process'] ?? [],
+					'next'		=> [
 						[static::MakeUrl($lazy_evals['next_controller'] ?? $this, $lazy_evals['next_action'], $lazy_evals['next_path_params'] ?? [], $lazy_evals['next_params'] ?? [])],
 					],
 				];
@@ -226,7 +227,7 @@ trait AppSuidSessionIccSupportTrait {
 						[
 							static::ActionBuilder('suidSessionToAssignData')->params(array_keys(is_callable($lazy_evals['target']) ? $lazy_evals['target']() : $lazy_evals['target']))->alias('assign_data'),
 							isset($lazy_evals['save_filter']) && is_callable($lazy_evals['save_filter']) ? static::ActionBuilder($lazy_evals['save_filter'])->params($this->bind('assign_data')) : function () {},
-							static::ActionBuilder('saveSuidTransaction')->params($lazy_evals['save_function'], $this->bind('assign_data'), $lazy_evals['suid_check'] ?? true, $lazy_evals['save_args'] ?? [])->alias('data'),
+							static::ActionBuilder('saveSuidTransaction')->params($lazy_evals['save_function'] ?? null, $this->bind('assign_data'), $lazy_evals['suid_check'] ?? true, $lazy_evals['save_args'] ?? [])->alias('data'),
 						],
 						$lazy_evals['post_action'] ?? []
 					),

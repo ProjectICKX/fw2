@@ -496,6 +496,14 @@ trait ControllerTrait {
 		return $array;
 	}
 
+	public function multiFilter ($parameter_name_list, $filter_set) {
+		$param_list = $this->getFilteredParameters($parameter_name_list);
+		foreach ($filter_set as $method => $list) {
+			$param_list = $this->$method($param_list, $list);
+		}
+		return $param_list;
+	}
+
 	/**
 	 * CLIモード時のコマンドラインパラメータを取得します。
 	 *

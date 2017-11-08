@@ -507,12 +507,11 @@ class OAuth2 {
 	 * @return	bool	現在のURLがコード受け取りURLの場合true、そうでない場合はfalse
 	 */
 	public function isCodeUrl () {
-		$parameters = Request::GetParameters();
 		$code_uri = parse_url(is_callable($this->codeUri) ? $this->codeUri()() : $this->codeUri);
-		return isset($parameters[$this->codeParamName]) && isset($parameters[$this->stateParamName])
-		&& $code_uri['scheme'] === Request::GetCurrnetProtocol()
-		&& $code_uri['host'] === $_SERVER['HTTP_HOST']
-		&& $code_uri['path'] === substr($_SERVER['REQUEST_URI'], 0, -1 + -1 * strlen($_SERVER['QUERY_STRING']));
+		return isset($_GET[$this->codeParamName]) && isset($_GET[$this->stateParamName])
+		 && $code_uri['scheme'] === Request::GetCurrnetProtocol()
+		 && $code_uri['host'] === $_SERVER['HTTP_HOST']
+		 && $code_uri['path'] === substr($_SERVER['REQUEST_URI'], 0, -1 + -1 * strlen($_SERVER['QUERY_STRING']));
 	}
 
 	/**
@@ -522,7 +521,7 @@ class OAuth2 {
 	 * @return	array	Code受け取りページの検証に成功した場合は空配列、失敗した場合はエラーメッセージの配列
 	 */
 	public function validateCode ($state) {
-		$parameters = Request::GetParameters();
+		$parameters = $_GET;
 
 		$code_validator		= [
 			['require',				$this->validateErrorLevel],
@@ -563,7 +562,7 @@ class OAuth2 {
 			return $errors;
 		}
 
-		$parameters = Request::GetParameters();
+		$parameters = $_GET;
 
 		$start_time	= time();
 
