@@ -79,6 +79,7 @@ trait AppOneTimeAccessParamTrait {
 					],
 					'action'	=> array_merge(
 						$lazy_evals['pre_action'] ?? [],
+						$lazy_evals['action'] ?? [],
 						[
 							[function () use ($token) {return $token->destroyToken();}],
 						],

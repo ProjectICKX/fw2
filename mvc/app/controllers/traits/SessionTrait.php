@@ -567,7 +567,7 @@ trait SessionTrait {
 	 *
 	 * @param	string	$alias
 	 */
-	public function setRequestFlashClassSession ($alias = 'default') {
+	public function setRequestFlashClassSession ($alias = 'default', $force_data = null) {
 		$route = $this->route;
 		unset($route['routing_url']);
 
@@ -578,7 +578,7 @@ trait SessionTrait {
 			unset($route['action']);
 		}
 
-		static::WriteClassSession(['tmp_flash', 'request', $alias], [
+		static::WriteClassSession(['tmp_flash', 'request', $alias], $force_data ?? [
 			'controller'	=> $this->rawController,
 			'action'		=> $this->rawAction,
 			'route'			=> $route->getRecursiveArrayCopy(),
@@ -603,6 +603,19 @@ trait SessionTrait {
 			'request'	=> $request,
 			'url'		=> $url === false ? null : $url .= empty($request['parameter']) ? '' : '?'. http_build_query($request['parameter']),
 		];
+	}
+
+	/**
+	 * 前リクエストでのリクエストデータを返します。
+	 *
+	 * @param	string	$alias	エイリアス
+	 * @return	mixed	リクエストデータ
+	 */
+	public function getRawRequestFlashClassSession ($alias = 'default') {
+		if (is_null($request = static::ReadClassSession(['flash', 'request', $alias]))) {
+			return null;
+		}
+		return $request;
 	}
 
 	/**
@@ -650,5 +663,21 @@ trait SessionTrait {
 	 */
 	public function choiceRequestUrlFlashClassSession ($alia_list, $default_url = null) {
 		return $this->choiceRequestFlashClassSession($alia_list, $default_url)['url'];
+	}
+
+	/**
+	 * 今リクエストだけで有効なリクエスト情報の設定と有効なURLの取得を一回で実現します。
+	 *
+	 * @param	string			$current_alias	現在のページでのエイリアス
+	 * @param	string|array	$forward_list	次リクエストへフォワードする対象のリスト
+	 * @param	array			$choice_set		有効なURLの取得設定
+	 * @return	string			有効なURL
+	 */
+	public function requestFlashClassSession ($current_alias = null, $forward_list = null, $choice_set = null) {
+		$url = null;
+		is_null($current_alias) ?: $this->setRequestFlashClassSession($current_alias);
+		is_null($forward_list) ?: $this->forwardRequestFlashClassSession(...(array) $forward_list);
+		is_null($choice_set) ?: $url = $this->choiceRequestUrlFlashClassSession(...$choice_set);
+		return $url;
 	}
 }

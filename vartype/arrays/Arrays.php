@@ -184,9 +184,11 @@ class Arrays {
 		$target_key = array_pop($keys);
 		$tmp =& $array;
 		foreach ($keys as $key) {
-			if (is_object($tmp) && !$tmp instanceof \ArrayAccess) {
+			if (is_object($tmp)) {
 				if (property_exists($tmp, $key)) {
 					$tmp =& $tmp->$key;
+				} else if ($tmp instanceof \ArrayAccess && isset($tmp[$key]) || array_key_exists($key, $tmp)) {
+					$tmp =& $tmp[$key];
 				} else {
 					throw new \ErrorException(sprintf('対象の階層にキーに紐づく値がありません。key:%s', $key));
 				}
@@ -211,9 +213,11 @@ class Arrays {
 	 */
 	public static function GetLowest ($array, $keys) {
 		foreach ((array) $keys as $key) {
-			if (is_object($array) && !$array instanceof \ArrayAccess) {
+			if (is_object($array)) {
 				if (property_exists($array, $key)) {
 					$array = $array->$key;
+				} else if ($array instanceof \ArrayAccess && isset($array[$key]) || array_key_exists($key, $array)) {
+					$array = $array[$key];
 				} else {
 					return null;
 				}
@@ -242,17 +246,25 @@ class Arrays {
 		} else {
 			if (is_array($array)) {
 				$tmp =& $array[array_shift($keys)];
-			} else if ($tmp instanceof \ArrayAccess) {
-				$tmp =& $array->{array_shift($keys)};
+			} else if (is_object($array)) {
+				$key = array_shift($keys);
+				if (!property_exists($array, $key) && $array instanceof \ArrayAccess) {
+					$tmp =& $array[$key];
+				} else {
+					$tmp =& $array->$key;
+				}
 			}
 		}
 
 		foreach ($keys as $key) {
-			if (is_object($tmp) && !$tmp instanceof \ArrayAccess) {
-				if (!property_exists($tmp, $key)) {
+			if (is_object($tmp)) {
+				if (property_exists($tmp, $key)) {
+					$tmp =& $tmp->$key;
+				} else if ($tmp instanceof \ArrayAccess && isset($tmp[$key])) {
+					$tmp =& $tmp[$key];
+				} else {
 					$tmp->$key = null;
 				}
-				$tmp =& $tmp->$key;
 			} else {
 				$tmp = (array) $tmp;
 				if (!isset($tmp[$key])) {
@@ -287,9 +299,11 @@ class Arrays {
 		foreach ($values as $row) {
 			$tmp =& $ret;
 			foreach ($keys as $key) {
-				if (is_object($tmp) && !$tmp instanceof \ArrayAccess) {
+				if (is_object($tmp)) {
 					if (property_exists($tmp, $row[$key])) {
 						$tmp =& $tmp->{$row[$key]};
+					} else if ($tmp instanceof \ArrayAccess && isset($array[$row[$key]]) || array_key_exists($row[$key], $array)) {
+						$tmp =& $tmp[$row[$key]];
 					} else {
 						throw new \ErrorException(sprintf('対象の階層にキーに紐づく値がありません。key:%s', $row[$key]));
 					}
