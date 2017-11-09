@@ -125,18 +125,11 @@ class LazyArrayObject extends \ArrayObject implements \Serializable {
 	 * @param	string	[$iterator_class = "ArrayIterator"]
 	 * @return	LazyArrayObject	変換後の配列
 	 */
-	public static function RecursiveCreate () {
-		$args = func_get_args();
-		switch (func_num_args()) {
-			case 3:
-				return static::_RecursiveCreateRapper($args[0], $args[1], $args[2]);
-			case 2:
-				return static::_RecursiveCreateRapper($args[0], $args[1]);
-			case 1:
-				return static::_RecursiveCreateRapper($args[0]);
-			default:
-				return static::Create();
+	public static function RecursiveCreate (...$args) {
+		if (empty($args)) {
+			return static::Create();
 		}
+		return static::_RecursiveCreateRapper(...$args);
 	}
 
 	/**
@@ -147,34 +140,22 @@ class LazyArrayObject extends \ArrayObject implements \Serializable {
 	 * @param	string	[$iterator_class = "ArrayIterator"]
 	 * @return	LazyArrayObject	変換後の配列
 	 */
-	protected static function _RecursiveCreateRapper () {
-		$args = func_get_args();
-		if (!is_array($args[0])) {
-			return $args[0];
+	protected static function _RecursiveCreateRapper (...$args) {
+		if (!is_array($arrays = $args[0] ?? null)) {
+			return $arrays;
 		}
+		$options = array_slice($args, 1);
 
-		$argc = func_num_args();
-		foreach ($args[0] as $idx => $array) {
+		foreach ($arrays as $idx => $array) {
 			if (is_array($array)) {
-				switch ($argc) {
-					case 3:
-						$args[0][$idx]= static::Create($array, $args[1], $args[2]);
-					case 2:
-						$args[0][$idx]= static::Create($array, $args[1]);
-					case 1:
-						$args[0][$idx]= static::Create($array);
+				foreach ($array as $tmp_idx => $tmp_array) {
+					$array[$tmp_idx] = static::_RecursiveCreateRapper($tmp_array, ...$options);
 				}
+				$arrays[$idx] = static::Create($array, ...$options);;
 			}
 		}
 
-		switch ($argc) {
-			case 3:
-				return static::Create($args[0], $args[1], $args[2]);
-			case 2:
-				return static::Create($args[0], $args[1]);
-			case 1:
-				return static::Create($args[0]);
-		}
+		return static::Create($arrays, ...$options);;
 	}
 
 	/**
@@ -185,24 +166,18 @@ class LazyArrayObject extends \ArrayObject implements \Serializable {
 	 * @param	string	[$iterator_class = "ArrayIterator"]
 	 * @return	LazyArrayObject	変換後の配列
 	 */
-	public static function Create () {
-		$args = func_num_args() === 0 ? [[]] : func_get_args();
-		if ((isset($args[1]) || array_key_exists(1, $args)) && $args[1] === null) {
-			unset($args[1]);
-		} else {
-			$args[1] = \ArrayObject::STD_PROP_LIST | \ArrayObject::ARRAY_AS_PROPS;
+	public static function Create (...$args) {
+		if (!is_array($array = $args[0] ?? null)) {
+			return new static();
 		}
+		$options = array_slice($args, 1);
 
-		switch (count($args)) {
-			case 3:
-				return new static($args[0], $args[1], $args[2]);
-			case 2:
-				return new static($args[0], $args[1]);
-			case 1:
-				return new static($args[0]);
-			default:
-				return new static();
+		if ((isset($options[0]) || array_key_exists(0, $options)) && $options[0] === null) {
+			unset($options[0]);
+		} else {
+			$options[0] = \ArrayObject::STD_PROP_LIST | \ArrayObject::ARRAY_AS_PROPS;
 		}
+		return new static($array, ...$options);
 	}
 
 	/**
