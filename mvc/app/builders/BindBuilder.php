@@ -63,6 +63,11 @@ class BindBuilder {
 		return $this;
 	}
 
+	public function params (...$args) {
+		$this->_options['args'] = $args;
+		return $this;
+	}
+
 	public function __invoke () {
 		$command	= $this->_command;
 		$type		= $this->_options['type'] ?? null;
@@ -73,7 +78,20 @@ class BindBuilder {
 			case static::TYPE_RENDER_VAR:
 				return $this->_controller->render->$command ?? $this->_options['default'] ?? null;
 			case static::TYPE_PROMISE:
-				return $command(...($this->_options['args'] ?? []));
+				if (is_string($command)) {
+					if (method_exists($this->_controller, $command)) {
+						$command = [$this->_controller, $command];
+					}
+				}
+				$args = [];
+				foreach ($this->_options['args'] ?? [] as $idx => $arg) {
+					if (is_callable($arg)) {
+						$args[$idx] = $arg();
+					} else {
+						$args[$idx] = $arg;
+					}
+				}
+				return $command(...$args);
 		}
 
 		if (is_string($command)) {

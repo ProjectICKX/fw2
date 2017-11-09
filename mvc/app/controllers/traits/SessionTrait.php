@@ -638,6 +638,10 @@ trait SessionTrait {
 	 * @param	string			$default_url	見つからなかった場合のURL
 	 */
 	public function choiceRequestFlashClassSession ($alia_list, $default_url = null) {
+		if (is_callable($default_url)) {
+			$default_url = $default_url();
+		}
+
 		if (!static::ExistsClassSession(['flash', 'request'])) {
 			return [
 				'url'	=> $default_url,
