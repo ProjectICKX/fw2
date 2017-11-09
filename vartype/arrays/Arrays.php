@@ -325,13 +325,13 @@ class Arrays {
 				if (is_object($tmp)) {
 					if (property_exists($tmp, $row[$key])) {
 						$tmp =& $tmp->{$row[$key]};
-					} else if ($tmp instanceof \ArrayAccess && (isset($array[$row[$key]]) || array_key_exists($row[$key], $array))) {
+					} else if ($tmp instanceof \ArrayAccess && (isset($row[$key]) || array_key_exists($key, $row))) {
 						$tmp =& $tmp[$row[$key]];
 					} else {
 						throw new \ErrorException(sprintf('対象の階層にキーに紐づく値がありません。key:%s', $row[$key]));
 					}
 				} else {
-					if (isset($array[$row[$key]]) || array_key_exists($row[$key], $array)) {
+					if (isset($row[$key]) || array_key_exists($key, $row)) {
 						$tmp =& $tmp[$row[$key]];
 					} else {
 						throw new \ErrorException(sprintf('対象の階層にキーに紐づく値がありません。key:%s', $row[$key]));
@@ -343,6 +343,8 @@ class Arrays {
 			}
 			$tmp = $row;
 		}
+
+		unset($tmp);
 
 		return $ret;
 	}

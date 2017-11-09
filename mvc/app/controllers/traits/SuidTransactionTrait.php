@@ -92,38 +92,52 @@ trait SuidTransactionTrait {
 	 * @param	$suid_check		bool		suidの検証をするかどうか
 	 */
 	public function saveSuidTransaction ($save_function, $data, $suid_check = true, $args = []) {
-		if (!static::SeesionOnSu()) {
-			return null;
-		}
-
-		if ($suid_check === false && !static::EnableSuidSession()) {
-			return null;
+		if (!static::onSuidSession($suid_check)) {
+			return false;
 		}
 
 		if (is_callable($data)) {
 			$data = $data();
 		}
 
-		try {
-			static::Begin();
-
-			if (is_callable($save_function)) {
-				$save_function = $save_function();
-			} else {
-				//インスタンスメソッドを指定する場合
-				$save_function = [$this, $save_function];
-			}
-			$ret = $save_function(...array_merge([$data], (array) $args));
-		} catch (\Exception $e) {
-			static::DeleteSuidSession();
-			static::Rollback();
-			throw $e;
+		if (is_callable($save_function)) {
+			$save_function = $save_function();
+		} else {
+			//インスタンスメソッドを指定する場合
+			$save_function = [$this, $save_function];
 		}
 
-		static::DeleteSuidSession();
+		try {
+			static::Begin();
+			$ret = $save_function(...array_merge([$data], (array) $args));
+		} catch (\Exception $e) {
+			static::Rollback();
+			throw $e;
+		} finally {
+			static::DeleteSuidSession();
+		}
+
 		static::Commit();
 
 		return $ret;
+	}
+
+	/**
+	 * 現在の処理が有効なsuidセッションに乗っているか判定します。
+	 *
+	 * @param	bool	$suid_check	suidの厳密なチェックを行うかどうか
+	 * @return	boolean	現在の処理が有効なsuidセッションに乗っている場合はtrue、そうでない場合はfalse
+	 */
+	public static function onSuidSession ($suid_check = true) {
+		if (!static::SeesionOnSu()) {
+			return false;
+		}
+
+		if ($suid_check === false && !static::EnableSuidSession()) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
