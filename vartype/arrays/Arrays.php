@@ -187,7 +187,7 @@ class Arrays {
 			if (is_object($tmp)) {
 				if (property_exists($tmp, $key)) {
 					$tmp =& $tmp->$key;
-				} else if ($tmp instanceof \ArrayAccess && isset($tmp[$key]) || array_key_exists($key, $tmp)) {
+				} else if ($tmp instanceof \ArrayAccess && (isset($tmp[$key]) || array_key_exists($key, $tmp))) {
 					$tmp =& $tmp[$key];
 				} else {
 					throw new \ErrorException(sprintf('対象の階層にキーに紐づく値がありません。key:%s', $key));
@@ -216,7 +216,7 @@ class Arrays {
 			if (is_object($array)) {
 				if (property_exists($array, $key)) {
 					$array = $array->$key;
-				} else if ($array instanceof \ArrayAccess && isset($array[$key]) || array_key_exists($key, $array)) {
+				} else if ($array instanceof \ArrayAccess && (isset($array[$key]) || array_key_exists($key, $array))) {
 					$array = $array[$key];
 				} else {
 					return null;
@@ -244,11 +244,11 @@ class Arrays {
 		if (empty($array)) {
 			$tmp =& $array;
 		} else {
+			$key = array_shift($keys);
 			if (is_array($array)) {
-				$tmp =& $array[array_shift($keys)];
+				$tmp =& $array[$key];
 			} else if (is_object($array)) {
-				$key = array_shift($keys);
-				if (!property_exists($array, $key) && $array instanceof \ArrayAccess) {
+				if ($array instanceof \ArrayAccess) {
 					$tmp =& $array[$key];
 				} else {
 					$tmp =& $array->$key;
@@ -256,25 +256,48 @@ class Arrays {
 			}
 		}
 
-		foreach ($keys as $key) {
+		foreach (array_values($keys) as $idx => $key) {
 			if (is_object($tmp)) {
-				if (property_exists($tmp, $key)) {
-					$tmp =& $tmp->$key;
-				} else if ($tmp instanceof \ArrayAccess && isset($tmp[$key])) {
-					$tmp =& $tmp[$key];
+				if ($tmp instanceof \ArrayAccess) {
+					if (!isset($tmp[$key])) {
+						$tmp[$key] = null;
+					}
+					$tmp->offsetSet($key, $tmp[$key]);
+
+					if (is_object($tmp[$key])) {
+						if ($tmp[$key] instanceof \ArrayAccess) {
+							$tmp = $tmp[$key];
+						} else {
+							$tmp =& $tmp->$key;
+						}
+					} else if (is_array($tmp)) {
+						$tmp =& $tmp[$key];
+					}
 				} else {
-					$tmp->$key = null;
+					if (!property_exists($tmp, $key)) {
+						$tmp->$key = null;
+					}
+					$tmp =& $tmp->$key;
 				}
-			} else {
-				$tmp = (array) $tmp;
+			} else if (is_array($tmp)) {
 				if (!isset($tmp[$key])) {
 					$tmp[$key] = null;
 				}
 				$tmp =& $tmp[$key];
+			} else {
+				$tmp[$key] = null;
+				$tmp =& $tmp[$key];
 			}
 		}
-		$tmp = $value;
+
+		if ($tmp instanceof \ArrayAccess) {
+			$tmp->offsetSet($key, $value);
+		} else {
+			$tmp = $value;
+		}
+
 		unset($tmp);
+
 		return $array;
 	}
 
@@ -302,7 +325,7 @@ class Arrays {
 				if (is_object($tmp)) {
 					if (property_exists($tmp, $row[$key])) {
 						$tmp =& $tmp->{$row[$key]};
-					} else if ($tmp instanceof \ArrayAccess && isset($array[$row[$key]]) || array_key_exists($row[$key], $array)) {
+					} else if ($tmp instanceof \ArrayAccess && (isset($array[$row[$key]]) || array_key_exists($row[$key], $array))) {
 						$tmp =& $tmp[$row[$key]];
 					} else {
 						throw new \ErrorException(sprintf('対象の階層にキーに紐づく値がありません。key:%s', $row[$key]));
