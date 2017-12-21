@@ -123,7 +123,7 @@ class Cache {
 	 */
 	public static function getLazyStorageType () {
 		static $enable_apcu;
-		return static::$defaultStorageTypr ?? ($enable_apcu ?? $enable_apcu = function_exists('apc_store')) ? static::STORAGE_TYPE_APCU : static::STORAGE_TYPE_FILES;
+		return static::$defaultStorageTypr ?? ($enable_apcu ?? $enable_apcu = function_exists('apcu_store')) ? static::STORAGE_TYPE_APCU : static::STORAGE_TYPE_FILES;
 	}
 
 	/**
