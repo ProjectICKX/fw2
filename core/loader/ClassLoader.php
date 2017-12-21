@@ -74,112 +74,154 @@ abstract class ClassLoader {
 	/**
 	 * オートローダー
 	 *
-	 * @param	string	$load_class_path	読み込むクラスパス
-	 * @param	string	$class_file_ext		クラスファイル拡張子
+	 * @param	string	$class_name		読み込むクラスパス
+	 * @param	string	$class_file_ext	クラスファイル拡張子
 	 * @throws	\Exception
 	 */
-	public static function AutoLoad ($load_class_path, $class_file_ext = self::CLASS_FILE_EXT) {
-		//クラス名の割り出し
-		$class_path = $load_class_path;
-		$class_name = explode("\\", $class_path);
-		$class_name = array_pop($class_name);
+	public static function AutoLoad ($class_name, $class_file_ext = self::CLASS_FILE_EXT) {
+		$f = $class_name === 'App\common\constants\path\FilePath';
 
-		//クラスパスの確定：パスオーバーライド対象のクラスのみ上書き
-		$alias_class = false;
+		// Connectからの変換
+		if (isset(static::$_ClassPathList[$class_name])) {
+			$load_class_path = static::$_ClassPathList[$class_name];
 
-//@TODO path helper
-//@TODO path array
-		if (isset(static::$_ClassPathList[$class_path])) {
-			$class_path = static::$_ClassPathList[$class_path];
-			$alias_class = true;
-		} else if (isset(static::$_ClassPathList[$class_name])) {
-			$class_path = static::$_ClassPathList[$class_name];
-			$alias_class = true;
-		}
-
-		$real_file_path = null;
-		if (static::$_UseComposerLoader) {
-			$real_file_path = ($real_file_path = static::$_ComposerLoader->findFile($load_class_path)) !== false ? realpath($real_file_path ) : $real_file_path;
-			if (!$real_file_path) {
-				$real_file_path = static::$_ComposerLoader->findFile($class_path);
+			// クラスパスをリアルファイルパスに変換
+			if (static::$_UseComposerLoader) {
+				if (false !== $real_file_path = static::$_ComposerLoader->findFile($load_class_path)) {
+					// 相対パスが含まれているケースを潰す
+					if ($real_file_path !== $real_file_path = realpath($real_file_path)) {
+						static::$_ComposerLoader->addClassMap([$load_class_path => $real_file_path]);
+					}
+				}
 			}
-		}
 
-		//クラスパスをリアルファイルパスに変換
-		//パフォーマンスチューニング Ref) static::ClassPathToRealFilePath($class_path, $class_file_ext)
-		if ($real_file_path === false) {
-			$real_file_path  = static::$_VendorRootDir . str_replace(static::NAMESPACE_SEPARATOR, '/', ltrim($class_path, static::NAMESPACE_SEPARATOR)) . $class_file_ext;
-		}
-
-		//ファイルがロードされていない場合のみ実行
-		if (isset(static::$_LoadedRealFilePathList[$real_file_path])) {
-			//クラスエイリアスを設定する
-			if ($alias_class) {
-				class_alias($class_path, $load_class_path, true);
+			if (false === $real_file_path) {
+				//パフォーマンスチューニング Ref) static::ClassPathToRealFilePath($class_name, $class_file_ext)
+				$real_file_path = static::$_VendorRootDir . str_replace(static::NAMESPACE_SEPARATOR, '/', ltrim($load_class_path, static::NAMESPACE_SEPARATOR)) . $class_file_ext;
+				if (!file_exists($real_file_path)) {
+					$real_file_path = static::$_SrcRootDir . str_replace(static::NAMESPACE_SEPARATOR, '/', ltrim($load_class_path, static::NAMESPACE_SEPARATOR)) . $class_file_ext;
+					if (!file_exists($real_file_path)) {
+						throw new \Exception('FW2 ClassLoader Exception: Class file not found:'. $class_name .' file path:'. $real_file_path);
+					}
+				}
 			}
+
+			// ファイルがロードされていない場合のみincludeする
+			if (!isset(static::$_LoadedRealFilePathList[$real_file_path])) {
+				if (!class_exists($load_class_path, true) && !interface_exists($load_class_path, true) && !trait_exists($load_class_path, true)) {
+					include $real_file_path;
+				}
+
+				//読み込み済みリアルファイルパスにフラグを立てる
+				static::$_LoadedRealFilePathList[$real_file_path] = true;
+			}
+
+			if ($load_class_path !== $class_name) {
+				if (!class_exists($class_name, true) && !interface_exists($class_name, true) && !trait_exists($class_name, true)) {
+					class_alias($load_class_path, $class_name, true);
+				}
+			}
+
+			//クラスが存在している事を確認
+			//パフォーマンスチューニング Ref) !static::ExistsClass($class_path)
+			if (!class_exists($class_name, true) && !interface_exists($class_name, true) && !trait_exists($class_name, true)) {
+				throw new \Exception('FW2 ClassLoader Exception: Class not found:'. $class_name .' file path:'. $real_file_path);
+			}
+
 			return true;
 		}
 
-		//クラスファイルが存在するか確認
-		if (!file_exists($real_file_path)) {
-			return ;
+		// 生パスとして処理
+		$load_class_path = $class_name;
 
-			//ファイルが見つからなかったので候補を探す
-			$target_list	= explode('/', str_replace("\\", '/', $real_file_path));
-			if (isset($target_list[0])) {
-				$target_list[0] = '/';
+		// クラスパスをリアルファイルパスに変換
+		if (static::$_UseComposerLoader) {
+			if (false !== $real_file_path = static::$_ComposerLoader->findFile($load_class_path)) {
+				// 相対パスが含まれているケースを潰す
+				if ($real_file_path !== $real_file_path = realpath($real_file_path)) {
+					static::$_ComposerLoader->addClassMap([$load_class_path => $real_file_path]);
+				}
 			}
+		}
 
-			$perhaps = [$target_list[0]];
+		if (false === $real_file_path) {
+			//パフォーマンスチューニング Ref) static::ClassPathToRealFilePath($class_name, $class_file_ext)
+			$real_file_path = static::$_VendorRootDir . str_replace(static::NAMESPACE_SEPARATOR, '/', ltrim($load_class_path, static::NAMESPACE_SEPARATOR)) . $class_file_ext;
+			if (!file_exists($real_file_path)) {
+				$real_file_path = static::$_SrcRootDir . str_replace(static::NAMESPACE_SEPARATOR, '/', ltrim($load_class_path, static::NAMESPACE_SEPARATOR)) . $class_file_ext;
+			}
+		}
 
-			foreach ($target_list as $target) {
-				$shortest	= -1;
-				$closet		= null;
-
-				foreach (new \DirectoryIterator(implode('/', $perhaps)) as $fileInfo) {
-					$part	= $fileInfo->getFilename();
-					if (0 === $lev = levenshtein($part, $target)) {
-						$closet	= $part;
-						break;
-					}
-
-					if ($lev <= $shortest || $shortest === -1) {
-						$shortest	= $lev;
-						$closet		= $part;
-					}
+		if (file_exists($real_file_path)) {
+			// ファイルがロードされていない場合のみincludeする
+			if (!isset(static::$_LoadedRealFilePathList[$real_file_path])) {
+				if (!class_exists($load_class_path, true) && !interface_exists($load_class_path, true) && !trait_exists($load_class_path, true)) {
+					include $real_file_path;
 				}
 
-				$perhaps[] = $closet;
-			}
+				//読み込み済みリアルファイルパスにフラグを立てる
+				static::$_LoadedRealFilePathList[$real_file_path] = true;
 
-			throw new \Exception(sprintf('class file not found:%s, file path:%s, perhaps:%s', $class_path, $real_file_path, implode('/', $perhaps)));
-		}
-
-		//クラスファイルのロード
-		//チェックは全て完了しているので、もっとも高速なincludeを使用
-		if ($class_path !== __CLASS__ && !class_exists($class_path, false) && !interface_exists($class_path, false) && !trait_exists($class_path, false)) {
-			include $real_file_path;
-		}
-
-		//読み込み済みリアルファイルパスにフラグを立てる
-		static::$_LoadedRealFilePathList[$real_file_path] = true;
-
-		//クラスエイリアスを設定する
-		if ($alias_class && $class_path !== $load_class_path) {
-			if (!class_exists($load_class_path)) {
-				class_alias($class_path, $load_class_path, true);
+				if (class_exists($class_name, true) || interface_exists($class_name, true) || trait_exists($class_name, true)) {
+					return true;
+				}
 			}
 		}
 
-		//クラスが存在している事を確認
-		//パフォーマンスチューニング Ref) !static::ExistsClass($class_path)
-		if (!class_exists($class_path, true) && !interface_exists($class_path, true) && !trait_exists($class_path, true)) {
-			if (!static::AutoLoad($class_path, $class_file_ext)) {
-				throw new \Exception('class not found:'. $class_path .' file path:'. $real_file_path);
+		// 短縮表記検索
+		$class_name_part = mb_substr($class_name, mb_strrpos($class_name, "\\") + 1);
+
+		// Connectからの変換
+		if (isset(static::$_ClassPathList[$class_name_part])) {
+			$load_class_path = static::$_ClassPathList[$class_name_part];
+
+			// クラスパスをリアルファイルパスに変換
+			if (static::$_UseComposerLoader) {
+				if (false !== $real_file_path = static::$_ComposerLoader->findFile($load_class_path)) {
+					// 相対パスが含まれているケースを潰す
+					if ($real_file_path !== $real_file_path = realpath($real_file_path)) {
+						static::$_ComposerLoader->addClassMap([$load_class_path => $real_file_path]);
+					}
+				}
 			}
+
+			if (false === $real_file_path) {
+				//パフォーマンスチューニング Ref) static::ClassPathToRealFilePath($class_name, $class_file_ext)
+				$real_file_path = static::$_VendorRootDir . str_replace(static::NAMESPACE_SEPARATOR, '/', ltrim($load_class_path, static::NAMESPACE_SEPARATOR)) . $class_file_ext;
+				if (!file_exists($real_file_path)) {
+					$real_file_path = static::$_SrcRootDir . str_replace(static::NAMESPACE_SEPARATOR, '/', ltrim($load_class_path, static::NAMESPACE_SEPARATOR)) . $class_file_ext;
+					if (!file_exists($real_file_path)) {
+						throw new \Exception('FW2 ClassLoader Exception: Class file not found:'. $class_name .' file path:'. $real_file_path);
+					}
+				}
+			}
+
+			// ファイルがロードされていない場合のみincludeする
+			if (!isset(static::$_LoadedRealFilePathList[$real_file_path])) {
+				if (!class_exists($load_class_path, true) && !interface_exists($load_class_path, true) && !trait_exists($load_class_path, true)) {
+					include $real_file_path;
+				}
+
+				//読み込み済みリアルファイルパスにフラグを立てる
+				static::$_LoadedRealFilePathList[$real_file_path] = true;
+			}
+
+			if ($load_class_path !== $class_name) {
+				if (!class_exists($class_name, true) && !interface_exists($class_name, true) && !trait_exists($class_name, true)) {
+					class_alias($load_class_path, $class_name, true);
+				}
+			}
+
+			//クラスが存在している事を確認
+			//パフォーマンスチューニング Ref) !static::ExistsClass($class_path)
+			if (!class_exists($class_name, true) && !interface_exists($class_name, true) && !trait_exists($class_name, true)) {
+				throw new \Exception('FW2 ClassLoader Exception: Class not found:'. $class_name .' file path:'. $real_file_path);
+			}
+
+			return true;
 		}
 
-		return true;
+		throw new \Exception('FW2 ClassLoader Exception: Class not found:'. $class_name .' file path:'. $real_file_path);
 	}
 
 	/**
@@ -282,7 +324,7 @@ abstract class ClassLoader {
 	}
 
 	public static function GetSrcRootDir () {
-		return static::$_SrcRootDir = dirname(static::$_VendorRootDir);
+		return static::$_SrcRootDir = dirname(static::$_VendorRootDir) . '/';
 	}
 
 	public static function GetClassPathList () {
