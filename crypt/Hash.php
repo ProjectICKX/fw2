@@ -30,14 +30,23 @@ namespace ickx\fw2\crypt;
  * @varsion		2.0.0
  */
 class Hash {
-	/** @var	string	デフォルトとして使うハッシュアルゴリズム */
-	const DEFAULT_HASH_ALGORITHM = 'sha256';
+	/**
+	 * @var	string	デフォルトとして使うハッシュアルゴリズム
+	 * @static
+	 */
+	public const DEFAULT_HASH_ALGORITHM = 'sha256';
 
 	/**
 	 * @var	int	シークレットキーの長さ
 	 * @static
 	 */
-	const SECRET_KEY_LENGTH	= 5;
+	public const SECRET_KEY_LENGTH	= 5;
+
+	/**
+	 * @var array	HMACで使用出来ないハッシュアルゴリズム
+	 * @static
+	 */
+	public const NOT_USE_HMAC_ALGOS	= ['adler32', 'crc32', 'crc32b', 'fnv132', 'fnv1a32', 'fnv164', 'fnv1a64', 'joaat'];
 
 	/**
 	 * 文字列を元にハッシュ文字列を生成します。
@@ -70,7 +79,7 @@ class Hash {
 	 * @return	string	ハッシュ文字列
 	 */
 	public static function HmacString ($data, $key, $algo = self::DEFAULT_HASH_ALGORITHM) {
-		return hash_hmac($algo, $data, $key, false);
+		return in_array($algo, static::NOT_USE_HMAC_ALGOS, true) ? hash($algo, $data, false) : hash_hmac($algo, $data, $key, false);
 	}
 
 	/**
@@ -82,7 +91,7 @@ class Hash {
 	 * @return	string	ハッシュバイナリ
 	 */
 	public static function HmacBinary ($data, $key, $algo = self::DEFAULT_HASH_ALGORITHM) {
-		return hash_hmac($algo, $data, $key, true);
+		return in_array($algo, static::NOT_USE_HMAC_ALGOS, true) ? hash($algo, $data, true) : hash_hmac($algo, $data, $key, true);
 	}
 
 	/**
@@ -94,7 +103,7 @@ class Hash {
 	 * @return	string	ハッシュ文字列
 	 */
 	public static function HmacStringFromFile ($file_path, $key, $algo = self::DEFAULT_HASH_ALGORITHM) {
-		return hash_hmac_file($algo, $file_path, $key, false);
+		return in_array($algo, static::NOT_USE_HMAC_ALGOS, true) ? hash_file($algo, $data, false) : hash_hmac_file($algo, $data, $key, false);
 	}
 
 	/**
@@ -106,7 +115,7 @@ class Hash {
 	 * @return	string	ハッシュバイナリ
 	 */
 	public static function HmacBinaryFromFile ($file_path, $key, $algo = self::DEFAULT_HASH_ALGORITHM) {
-		return hash_hmac_file($algo, $file_path, $key, true);
+		return in_array($algo, static::NOT_USE_HMAC_ALGOS, true) ? hash_file($algo, $data, true) : hash_hmac_file($algo, $data, $key, true);
 	}
 
 	/**
