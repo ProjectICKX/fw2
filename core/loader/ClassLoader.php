@@ -79,8 +79,6 @@ abstract class ClassLoader {
 	 * @throws	\Exception
 	 */
 	public static function AutoLoad ($class_name, $class_file_ext = self::CLASS_FILE_EXT) {
-		$f = $class_name === 'App\common\constants\path\FilePath';
-
 		// Connectからの変換
 		if (isset(static::$_ClassPathList[$class_name])) {
 			$load_class_path = static::$_ClassPathList[$class_name];
@@ -220,8 +218,6 @@ abstract class ClassLoader {
 
 			return true;
 		}
-
-		throw new \Exception('FW2 ClassLoader Exception: Class not found:'. $class_name .' file path:'. $real_file_path);
 	}
 
 	/**

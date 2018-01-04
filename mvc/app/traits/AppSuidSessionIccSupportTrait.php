@@ -170,7 +170,7 @@ trait AppSuidSessionIccSupportTrait {
 				return [
 					'pre_process'	=> $lazy_evals['pre_process'] ?? [],
 					'post_process'	=> $lazy_evals['post_process'] ?? [],
-					'next'		=> [
+					'next'	=> [
 						[static::MakeUrl($lazy_evals['next_controller'] ?? $this, $lazy_evals['next_action'], $lazy_evals['next_path_params'] ?? [], $lazy_evals['next_params'] ?? [])],
 					],
 				];
