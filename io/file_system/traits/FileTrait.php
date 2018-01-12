@@ -330,8 +330,8 @@ trait FileTrait {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$raise_exception	= isset($options['raise_exception']) ? $options['raise_exception'] : true;
-		$name				= isset($options['name']) ? $options['name'] : '';
+		$raise_exception	= $options['raise_exception'] ?? false;
+		$name				= $options['name'] ?? '';
 
 		//==============================================
 		//ファイル検証
@@ -365,8 +365,8 @@ trait FileTrait {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$raise_exception	= isset($options['raise_exception']) ? $options['raise_exception'] : true;
-		$name				= isset($options['name']) ? $options['name'] : '';
+		$raise_exception	= $options['raise_exception'] ?? false;
+		$name				= $options['name'] ?? '';
 
 		//==============================================
 		//ファイル検証
@@ -403,8 +403,8 @@ trait FileTrait {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$raise_exception	= isset($options['raise_exception']) ? $options['raise_exception'] : true;
-		$name				= isset($options['name']) ? $options['name'] : '';
+		$raise_exception	= $options['raise_exception'] ?? false;
+		$name				= $options['name'] ?? '';
 
 		//==============================================
 		//ファイル検証
@@ -446,9 +446,9 @@ trait FileTrait {
 		//==============================================
 		//オプション展開
 		//==============================================
-		$raise_exception	= isset($options['raise_exception']) ? $options['raise_exception'] : true;
-		$name				= isset($options['name']) ? $options['name'] : '';
-		$is_overwrite		= isset($options['is_overwrite']) ? $options['is_overwrite'] : true;
+		$raise_exception	= $options['raise_exception'] ?? false;
+		$name				= $options['name'] ?? '';
+		$is_overwrite		= $options['is_overwrite'] ?? true;
 
 		//==============================================
 		//ファイル検証

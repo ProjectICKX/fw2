@@ -84,7 +84,7 @@ class ConstUtility {
 	 * @param	int			$target_row	目標とする行
 	 * @return	string		一行分のデータ
 	 */
-	public static function GetTargeRow ($fp, $target_row) {
+	public static function GetTargetRow ($fp, $target_row) {
 		if ($fp) {
 			$i = 1;
 			while ($row = fgets($fp)) {
@@ -174,7 +174,7 @@ class ConstUtility {
 						}
 
 						$handle = fopen($file_path, "r");
-						$value = static::GetTargeRow($handle, $target_row) ?: $default_value;
+						$value = static::GetTargetRow($handle, $target_row) ?: $default_value;
 						fclose($handle);
 						return $value;
 					case 'FW2_DI_STATIC':
