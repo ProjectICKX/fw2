@@ -76,12 +76,16 @@ trait TwigRenderTrait {
 
 		$this->templateExtList = $twig_config['extension_list'] ?? [];
 		foreach ($this->templateExtList as $templateExt) {
-			$twig->addExtension(new $templateExt['name']($templateExt['value']));
+			if (class_exists($templateExt['name'])) {
+				$twig->addExtension(new $templateExt['name']($templateExt['value']));
+			}
 		}
 
 		$this->templateFilterList = $twig_config['filter_list'] ?? [];
 		foreach ($this->templateFilterList as $templateFilter) {
-			$twig->addExtension(new $templateFilter['name']($templateFilter['value']));
+			if (class_exists($templateFilter['name'])) {
+				$twig->addExtension(new $templateFilter['name']($templateFilter['value']));
+			}
 		}
 
 		$this->templateTokenParserList = $twig_config['token_parser_list'] ?? [];

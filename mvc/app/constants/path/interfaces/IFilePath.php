@@ -107,5 +107,6 @@ interface IFilePath {
 
 	const PHP_INI_PATH_RESOURCE_LIMITS			= '{:SYSTEM_ROOT_DIR}/configs/{:VENDOR_NAME}/{:PACKAGE_NAME}/{:CALL_TYPE}/{:APP_NAME}/php_ini/resource_limits.php.ini';
 
-	const DSN_DIR								= '{:SYSTEM_ROOT_DIR}/configs/{:VENDOR_NAME}/{:PACKAGE_NAME}/{:CALL_TYPE}/{:APP_NAME}/dsn/';
+	const DSN_DIR								= '{:SYSTEM_ROOT_DIR}/configs/{:VENDOR_NAME}/{:PACKAGE_NAME}/{:CALL_TYPE}/{:APP_NAME}/dsn';
+	const DSN_SECRET_DIR						= '{:SYSTEM_ROOT_DIR}/secret/{:VENDOR_NAME}/{:PACKAGE_NAME}/{:CALL_TYPE}/{:APP_NAME}/dsn';
 }

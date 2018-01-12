@@ -106,6 +106,7 @@ class Flywheel {
 	public static function Checking () {
 		ClassLoader::Connect('TimeProfiler',	'ickx\fw2\basic\log\TimeProfiler');
 		ClassLoader::Connect('Flywheel',		static::class);
+		ClassLoader::Connect('FilePath',		'ickx\fw2\mvc\app\constants\path\FilePath');
 
 		assert((static::$reportingLevel & static::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 
@@ -198,29 +199,32 @@ class Flywheel {
 //@TODO Free dir layout (target dir adding)
 		$vendor_dir_byte_length = strlen(FilePath::VENDOR_DIR());
 
-		foreach (new \DirectoryIterator(FilePath::CONTROLLER_PATH()) as $app_dir) {
-			if ($app_dir->isFile()) {
-				continue;
-			}
-			if ($app_dir->isDot()) {
-				continue;
-			}
-
-			$controller_name = ucfirst(preg_replace_callback("/(?:^|_)([a-z])/", function ($matches) {return strtoupper($matches[1]);}, $app_dir->getBasename()));
-			$class_base = $app_dir->getPath() .'/'. $app_dir->getBasename() .'/'. $controller_name .'Clutch';
-			$clutch_file_path = $class_base .'.php';
-			$clutch_class_name = str_replace('/', "\\", substr($class_base, $vendor_dir_byte_length));
-
-			clearstatcache(true, $clutch_file_path);
-			if (file_exists($clutch_file_path) && class_exists($clutch_class_name, true)) {
-				if (method_exists($clutch_class_name, 'Checking')) {
-					$clutch_class_name::Checking();
+		$controller_path	= FilePath::CONTROLLER_PATH();
+		if (file_exists($controller_path)) {
+			foreach (new \DirectoryIterator($controller_path) as $app_dir) {
+				if ($app_dir->isFile()) {
+					continue;
 				}
-				if (method_exists($clutch_class_name, 'Startup')) {
-					$clutch_class_name::Startup();
+				if ($app_dir->isDot()) {
+					continue;
 				}
-				if (method_exists($clutch_class_name, 'Connection')) {
-					$clutch_class_name::Connection();
+
+				$controller_name = ucfirst(preg_replace_callback("/(?:^|_)([a-z])/", function ($matches) {return strtoupper($matches[1]);}, $app_dir->getBasename()));
+				$class_base = $app_dir->getPath() .'/'. $app_dir->getBasename() .'/'. $controller_name .'Clutch';
+				$clutch_file_path = $class_base .'.php';
+				$clutch_class_name = str_replace('/', "\\", substr($class_base, $vendor_dir_byte_length));
+
+				clearstatcache(true, $clutch_file_path);
+				if (file_exists($clutch_file_path) && class_exists($clutch_class_name, true)) {
+					if (method_exists($clutch_class_name, 'Checking')) {
+						$clutch_class_name::Checking();
+					}
+					if (method_exists($clutch_class_name, 'Startup')) {
+						$clutch_class_name::Startup();
+					}
+					if (method_exists($clutch_class_name, 'Connection')) {
+						$clutch_class_name::Connection();
+					}
 				}
 			}
 		}
@@ -616,7 +620,7 @@ class Flywheel {
 		if (!Environment::IsCli()) {
 			$session_ini_path = FilePath::SESSION_INI_PATH();
 			if ($session_ini_path === null || $session_ini_path === '' || FileSystem::IsReadableFile($session_ini_path) !== true) {
-				$session_ini_path =FilePath::FW2_DEFAULTS_SESSION_INI_PATH();
+				$session_ini_path = FilePath::FW2_DEFAULTS_SESSION_INI_PATH();
 			}
 			$app_session_ini = IniFile::GetConfig($session_ini_path, $allow_parameter_list, $options);
 			if (!isset($app_session_ini['ini_path'])) {
