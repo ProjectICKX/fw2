@@ -283,6 +283,16 @@ trait ModelTrait {
 	}
 
 	/**
+	 * 現在のデータベース名を取得します。
+	 *
+	 * @return	string	現在のデータベース名
+	 */
+	public static function GetDatabaseName (array $options = []) {
+		$options += $options + static::GetDefaultOptions();
+		return DBI::GetConnection($options)->getDatabaseName();
+	}
+
+	/**
 	 * 現在のテーブル名を取得します。
 	 *
 	 * @return	string	現在のテーブル名

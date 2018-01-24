@@ -173,6 +173,13 @@ class SqliteDriver extends abstracts\RdbmsDriverAbstract {
 	//==============================================
 	//Database Reflection
 	//==============================================
+ 	/**
+ 	 * 現在接続しているデータベース名を更新します。
+ 	 */
+ 	protected function _updateDatabaseName () {
+ 		$this->_dataBase = 'main';
+ 	}
+
 	/**
 	 * データベースに存在するテーブルを全て返します。
 	 *

@@ -22,6 +22,8 @@ namespace ickx\fw2\io\rdbms\accessors\traits;
 
 use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\vartype\strings\Strings;
+use ickx\fw2\io\rdbms\builder\QueryBuilder;
+use ickx\fw2\io\rdbms\builder\ColumnBuilder;
 
 /**
  * Flywheel2 Model Method Accessor
@@ -53,6 +55,14 @@ trait MethodAccessorTrait {
 		];
 	}
 
+	public static function QueryBuilder () {
+		return QueryBuilder::init(static::class);
+	}
+
+	public static function ColumnBuilder ($name = null) {
+		return ColumnBuilder::init(static::class, $name);
+	}
+
 	/**
 	 * 全件を対象に検索を行います。
 	 *
@@ -81,7 +91,7 @@ trait MethodAccessorTrait {
 		} else {
 			$conditions = [];
 		}
-		return static::ExecuteQuery(static::CreateSelectQuery($options), $conditions);
+		return static::ExecuteQuery(static::CreateSelectQuery($options), $conditions, [], $options);
 	}
 
 	public static function CountAll ($options = []) {
@@ -96,7 +106,7 @@ trait MethodAccessorTrait {
 		} else {
 			$conditions = [];
 		}
-		return static::ExecuteQuery(static::CreateSelectQuery($options), $conditions);
+		return static::ExecuteQuery(static::CreateSelectQuery($options), $conditions, [], $options);
 	}
 
 	/**
@@ -267,7 +277,7 @@ trait MethodAccessorTrait {
 		$query = sprintf('SELECT %s FROM %s WHERE %s ', implode(', ', $columns), $table_name, implode(' AND ', $wheres));
 
 		//execute
-		$stmt = static::ExecuteQuery($query, $condition);
+		$stmt = static::ExecuteQuery($query, $condition, []);
 		if (isset($options['post_execution'][0]) && is_callable($options['post_execution'][0])) {
 			$post_execution = $options['post_execution'];
 			$post_execution[1] = isset($post_execution[1]) ? (array) $post_execution[1] : [];

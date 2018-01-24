@@ -221,7 +221,6 @@ class DBI {
 		return static::GetConnection($options)->executeQuery($query, $conditions, $values, $options);
 	}
 
-
 	public static function Execute ($query, array $options = []) {
 		return static::GetConnection($options)->exec($query);
 	}
@@ -391,6 +390,16 @@ class DBI {
 	 */
 	public static function ReflectionDatabase(array $options, $forced_obtain = false) {
 		return static::GetConnection($options)->reflectionDatabase();
+	}
+
+	/**
+	 * 現在接続中のデータベース名を返します。
+	 *
+	 * @param	bool	強制再取得フラグ
+	 * @return	array	テータベースに存在するテーブルのリスト。
+	 */
+	public static function getDatabaseName(array $options, $forced_obtain = false) {
+		return static::GetConnection($options)->getDatabaseName();
 	}
 
 	/**
