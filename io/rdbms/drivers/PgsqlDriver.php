@@ -301,7 +301,14 @@ class PgsqlDriver extends abstracts\RdbmsDriverAbstract {
 	//==============================================
 	//Database Reflection
 	//==============================================
-	/***
+	/**
+	 * 現在接続しているデータベース名を更新します。
+	 */
+	protected function _updateDatabaseName () {
+		$this->_dataBase = null;
+	}
+
+	/**
 	 * データベースに存在するテーブルを全て返します。
 	 *
 	 * @param	bool	強制再取得フラグ

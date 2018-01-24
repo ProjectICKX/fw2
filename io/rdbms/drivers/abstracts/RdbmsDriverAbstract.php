@@ -37,6 +37,9 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	//==============================================
 	//Property
 	//==============================================
+	/** @ar		array	現在接続中のデータベース */
+	protected $_dataBase				= null;
+
 	/** @var	array	テーブルのリスト */
 	protected $_tables					= null;
 
@@ -76,7 +79,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 * データベース固有のデフォルトオプションを返します。
 	 *
 	 * @return	array	デフォルトオプション
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getTables()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getTables()
 	 */
 	public static function GetDefaultOptions () {
 		return [];
@@ -164,9 +167,10 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 *
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	データベースの情報
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::reflectionDatabase()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::reflectionDatabase()
 	 */
 	public function reflectionDatabase ($forced_obtain = false) {
+		$this->getDatabaseName($forced_obtain);
 		foreach ($this->getTables($forced_obtain) as $table_name) {
 			$this->getTableStatus($table_name, $forced_obtain);
 			$this->getColumns($table_name, $forced_obtain);
@@ -175,6 +179,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 			$this->getPkeys($table_name, $forced_obtain);
 		}
 		return [
+			'database'		=> $this->_dataBase,
 			'tables'		=> $this->_tables,
 			'table_status'	=> $this->_tableStatus,
 			'columns'		=> $this->_columns,
@@ -724,6 +729,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	//==============================================
 	//Database Reflection
 	//==============================================
+	abstract protected function _updateDatabaseName ();
 	abstract protected function _updateTables ();
 	abstract protected function _updateTableStatus ($table_name);
 	abstract protected function _updateColumns ($table_name);
@@ -734,6 +740,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	abstract protected function _updateAutoIncrementColumns ($table_name);
 
 	public function updateTableInfo ($target_table_list = []) {
+		$this->_updateDatabaseName();
 		$target_table_list = (array) $target_table_list ?: $this->getTables(true);
 		foreach ($target_table_list as $table_name) {
 			$this->_updateTableStatus ($table_name);
@@ -747,11 +754,25 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	}
 
 	/**
+	 * 現在接続中のデータベース名を返します。
+	 *
+	 * @param	bool	強制再取得フラグ
+	 * @return	string	現在接続中のデータベース
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getDatabaseName()
+	 */
+	public function getDatabaseName ($forced_obtain = false) {
+		if ($forced_obtain || $this->_dataBase === null) {
+			$this->_updateDatabaseName();
+		}
+		return $this->_dataBase;
+	}
+
+	/**
 	 * データベースに存在するテーブルを全て返します。
 	 *
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テータベースに存在するテーブルのリスト。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getTables()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getTables()
 	 */
 	public function getTables ($forced_obtain = false) {
 		if ($forced_obtain || $this->_tables === null) {
@@ -766,7 +787,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのステータス。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getTableStatus()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getTableStatus()
 	 */
 	public function getTableStatus ($table_name, $forced_obtain = false) {
 		if (!isset(array_flip($this->getTables($forced_obtain))[$table_name])) {
@@ -784,7 +805,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのカラム情報。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	public function getColumns ($table_name, $forced_obtain = false) {
 		if (!isset(array_flip($this->getTables($forced_obtain))[$table_name])) {
@@ -820,7 +841,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのインデックス。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	public function getIndexes ($table_name, $forced_obtain = false) {
 		if (!isset(array_flip($this->getTables($forced_obtain))[$table_name])) {
@@ -838,7 +859,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのインデックス。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	public function getUniqueIndexNames ($table_name, $forced_obtain = false) {
 		if (!isset(array_flip($this->getTables($forced_obtain))[$table_name])) {
@@ -856,7 +877,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのプライマリキー。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	public function getPkeys ($table_name, $forced_obtain = false) {
 		if (!isset(array_flip($this->getTables($forced_obtain))[$table_name])) {
@@ -874,7 +895,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのプライマリキー。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	public function getColumnDefaultValues ($table_name, $forced_obtain = false) {
 		if ($forced_obtain || !Arrays::KeyExists($this->_columnDefaultValues, $table_name)) {
@@ -889,7 +910,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのプライマリキー。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	public function getNotNullColumns ($table_name, $forced_obtain = false) {
 		if ($forced_obtain || !Arrays::KeyExists($this->_notNullColumns, $table_name)) {
@@ -904,7 +925,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのプライマリキー。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	public function getAutoIncrementColumns ($table_name, $forced_obtain = false) {
 		if ($forced_obtain || !Arrays::KeyExists($this->_autoIncrementColumns, $table_name)) {
@@ -919,7 +940,7 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのインデックス。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	protected function _updateUniqueIndexNames ($table_name, $forced_obtain = false) {
 		if (!isset(array_flip($this->getTables($forced_obtain))[$table_name])) {

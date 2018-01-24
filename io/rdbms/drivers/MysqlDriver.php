@@ -167,7 +167,7 @@ class MysqlDriver extends abstracts\RdbmsDriverAbstract {
 	 * データベース固有のデフォルトオプションを返します。
 	 *
 	 * @return	array	デフォルトオプション
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getTables()*
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getTables()
 	 */
 	public static function GetDefaultOptions () {
 		$options = [
@@ -305,11 +305,17 @@ class MysqlDriver extends abstracts\RdbmsDriverAbstract {
 	//Database Reflection
 	//==============================================
 	/**
+	 * 現在接続しているデータベース名を更新します。
+	 */
+	protected function _updateDatabaseName () {
+		$this->_dataBase = $this->query('SELECT database();')->fetchAll(\PDO::FETCH_COLUMN)[0] ?? null;
+	}
+
+	/**
 	 * データベースに存在するテーブルを全て返します。
 	 *
-	 * @param	bool	強制再取得フラグ
 	 * @return	array	テータベースに存在するテーブルのリスト。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getTables()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getTables()
 	 */
 	protected function _updateTables () {
 		$this->_tables = $this->query('SHOW TABLES;')->fetchAll(\PDO::FETCH_COLUMN);
@@ -319,9 +325,8 @@ class MysqlDriver extends abstracts\RdbmsDriverAbstract {
 	 * テーブルのステータスを返します。
 	 *
 	 * @param	string	テーブル名
-	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのステータス。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getTableStatus()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getTableStatus()
 	 */
 	protected function _updateTableStatus ($table_name) {
 		$this->_tableStatus = [];
@@ -336,7 +341,7 @@ class MysqlDriver extends abstracts\RdbmsDriverAbstract {
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのカラム情報。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	protected function _updateColumns ($table_name) {
 		$primary_column_name = $this->query(sprintf('SHOW INDEX FROM %s WHERE Key_name = \'PRIMARY\'', $table_name))->fetch(\PDO::FETCH_ASSOC);
@@ -366,7 +371,7 @@ class MysqlDriver extends abstracts\RdbmsDriverAbstract {
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのインデックス。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	protected function _updateIndexes ($table_name) {
 		$this->_indexes[$table_name] = [];
@@ -397,7 +402,7 @@ class MysqlDriver extends abstracts\RdbmsDriverAbstract {
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのプライマリキー。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	protected function _updatePkeys ($table_name) {
 		if (isset($this->getIndexes($table_name)['PRIMARY'])) {
@@ -418,7 +423,7 @@ class MysqlDriver extends abstracts\RdbmsDriverAbstract {
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのプライマリキー。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	protected function _updateColumnDefaultValues ($table_name) {
 		$this->_columnDefaultValues[$table_name] = [];
@@ -435,7 +440,7 @@ class MysqlDriver extends abstracts\RdbmsDriverAbstract {
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのプライマリキー。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	protected function _updateNotNullColumns ($table_name, $forced_obtain = false) {
 		$this->_notNullColumns[$table_name] = [];
@@ -452,7 +457,7 @@ class MysqlDriver extends abstracts\RdbmsDriverAbstract {
 	 * @param	string	テーブル名
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのプライマリキー。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	protected function _updateAutoIncrementColumns ($table_name, $forced_obtain = false) {
 		$this->_autoIncrementColumns[$table_name] = [];
@@ -470,7 +475,7 @@ class MysqlDriver extends abstracts\RdbmsDriverAbstract {
 	 * @param	array	上書き用配列
 	 * @param	bool	強制再取得フラグ
 	 * @return	array	テーブルのプライマリキー。
-	 * @see ickx\fw2\io\rdbms\drivers\interfaces.IRdbmsDriver::getColumns()
+	 * @see ickx\fw2\io\rdbms\drivers\interfaces\IRdbmsDriver::getColumns()
 	 */
 	public function makeInsertRow ($table_name, array $merge_row = [], $forced_obtain = false) {
 		$merge_row += $merge_row + $this->getColumnDefaultValues($table_name, $forced_obtain);
