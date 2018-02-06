@@ -50,7 +50,7 @@ trait RuleTrait {
 					$url = substr($trigger, 8);
 					list($regex_url, $parameter_list) = Router::PursePathRegex($url);
 					$match_pattern = sprintf('@^%s$@u', str_replace('@', '\@', $regex_url));
-					if (array_filter(array_keys($post_data->getArrayCopy()), function ($value) use ($match_pattern) {return preg_match($match_pattern, $value) === 1;})) {
+					if (array_filter(array_keys($this->route->getArrayCopy()), function ($value) use ($match_pattern) {return preg_match($match_pattern, $value) === 1;})) {
 						return $trigger;
 					}
 					continue;
@@ -80,7 +80,7 @@ trait RuleTrait {
 					$url = substr($trigger, 8);
 					list($regex_url, $parameter_list) = Router::PursePathRegex($url);
 					$match_pattern = sprintf('@^%s$@u', str_replace('@', '\@', $regex_url));
-					if (array_filter(array_keys($parameters->getArrayCopy()), function ($value) use ($match_pattern) {return preg_match($match_pattern, $value) === 1;})) {
+					if (array_filter(array_keys($this->route->getArrayCopy()), function ($value) use ($match_pattern) {return preg_match($match_pattern, $value) === 1;})) {
 						return $trigger;
 					}
 					continue;

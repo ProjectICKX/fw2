@@ -99,6 +99,9 @@ trait StaticLogTrait {
 			error_log($strings . static::GetClassVar($name .'_log_file_lf_code'));
 		} else {
 			clearstatcache(true, $log_file_path);
+			if (!file_exists($log_file_path)) {
+				touch($log_file_path);
+			}
 			if (!is_file($log_file_path)) {
 				throw new \ErrorException(sprintf('指定されたパスがファイルではありません。path:%s', $log_file_path));
 			}
