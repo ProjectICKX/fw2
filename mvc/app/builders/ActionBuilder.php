@@ -35,6 +35,8 @@ class ActionBuilder {
 	protected $_params		= null;
 	protected $_alias		= null;
 	protected $_postFilter	= null;
+	protected $_chains		= [];
+	protected $_pinchs		= [];
 
 	public function __construct() {
 	}
@@ -42,6 +44,15 @@ class ActionBuilder {
 	public function executer ($executer, $is_var = false) {
 		$this->_executer	= $executer;
 		$this->_isVar		= $is_var;
+		return $this;
+	}
+
+	public function bindTo ($instance) {
+		if (is_array($this->_executer)) {
+			$this->_executer	= [$instance, $this->_executer[1]];
+		} else {
+			$this->_executer	= [$instance, $this->_executer];
+		}
 		return $this;
 	}
 
@@ -55,6 +66,11 @@ class ActionBuilder {
 		return $this;
 	}
 
+	public function pinch (...$pinchs) {
+		$this->_pinchs = $pinchs;
+		return $this;
+	}
+
 	public function alias ($alias) {
 		$this->_alias = $alias;
 		return $this;
@@ -65,6 +81,11 @@ class ActionBuilder {
 		return $this;
 	}
 
+	public function chains (...$chains) {
+		$this->_chains	= array_merge($this->_chains, $chains);
+		return $this;
+	}
+
 	public function toArray () {
 		return [
 			0	=> $this->_executer,
@@ -72,6 +93,7 @@ class ActionBuilder {
 			2	=> $this->_alias,
 			3	=> $this->_postFilter,
 			4	=> $this->_isVar,
+			5	=> $this->_chains,
 		];
 	}
 
@@ -84,10 +106,42 @@ class ActionBuilder {
 					$params[$idx] = $param();
 				}
 			}
-			$result = $this->_executer(...$params);
+
+			$executer	= $this->_executer;
+			$result		= $executer(...$params);
 		}
 
 		$result = !is_null($this->_postFilter) ? $this->_postFilter($result) : $result;
+
+		foreach ($this->_chains ?? [] as $chain) {
+			switch (true) {
+				case $chain instanceof \Closure:
+					$result	= $chain($result);
+					break;
+				case $chain instanceof ActionBuilder:
+					$chain	= $chain->bindTo($result);
+					$result	= $chain();
+					break;
+				default:
+					if (is_object($result)) {
+						$result	= $result->$chain();
+					} else if (class_exists($result)) {
+						$result	= $result::$chain();
+					} else {
+						$result	= $chain($result);
+					}
+					break;
+			}
+		}
+
+		foreach ($this->_pinchs as $pinch) {
+			if (is_array($result)) {
+				$result = $result[$pinch];
+			} else if (is_object($result)) {
+				$result = $result->{$pinch};
+			}
+		}
+
 		if ($this->_alias) {
 			if (is_array($this->_alias)) {
 				$tmp = [];
@@ -106,6 +160,7 @@ class ActionBuilder {
 				$result = [$this->_alias => $result];
 			}
 		}
+
 		return $result;
 	}
 }

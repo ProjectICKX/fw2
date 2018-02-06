@@ -23,6 +23,7 @@ namespace ickx\fw2\io\rdbms\drivers\abstracts;
 use ickx\fw2\core\log\StaticLog;
 use ickx\fw2\vartype\arrays\Arrays;
 use ickx\fw2\core\exception\CoreException;
+use ickx\fw2\io\rdbms\builder\WhereConditionBuilder;
 
 /**
  * Flywheel2 RDBMSDriver Abstract Class
@@ -207,9 +208,11 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 		//==============================================
 		$in_list = [];
 		foreach ($conditions as $condition) {
-			$column_value = current((array) $condition);
-			if (is_array($column_value)) {
-				$in_list[] = implode(', ', array_fill(0, count($column_value), '?'));
+			if (!($condition instanceof WhereConditionBuilder)) {
+				$column_value = current((array) $condition);
+				if (is_array($column_value)) {
+					$in_list[] = implode(', ', array_fill(0, count($column_value), '?'));
+				}
 			}
 		}
 
@@ -282,16 +285,27 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 
 		//WHERE句以降のバインディング
 		foreach ($conditions as $idx => $condition) {
-			$condition = (array) $condition;
-			$column_name = key($condition);
-			$column_value = current($condition);
-
-			if (is_array($column_value)) {
-				foreach ($column_value as $value) {
-					$stmt->bindValue($i++, $value);
+			if ($condition instanceof WhereConditionBuilder) {
+				$column_value	= $condition->getValue();
+				if (is_array($column_value)) {
+					foreach ($column_value as $value) {
+						$stmt->bindValue($i++, $value);
+					}
+				} else {
+					$stmt->bindValue($i++, $column_value);
 				}
 			} else {
-				$stmt->bindValue($i++, $column_value);
+				$condition = (array) $condition;
+				$column_name = key($condition);
+				$column_value = current($condition);
+
+				if (is_array($column_value)) {
+					foreach ($column_value as $value) {
+						$stmt->bindValue($i++, $value);
+					}
+				} else {
+					$stmt->bindValue($i++, $column_value);
+				}
 			}
 		}
 
@@ -323,7 +337,6 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 
 				$message = sprintf('[%s.%-4d] execute_time:%s query_string:%s dump:%s', date('Y-m-d H:i:s', $parsed_execute_time[0]), $parsed_execute_time[1], $execute_end_time - $execute_time, $query_string, $debug_dump_params);
 //				StaticLog::WriteLog('sql_log', $message);
-				print $message;
 			}
 		} catch (\PDOException $pdo_e) {
 			$execute_end_time = microtime(true);

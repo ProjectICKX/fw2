@@ -24,6 +24,7 @@ use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\vartype\strings\Strings;
 use ickx\fw2\io\rdbms\builder\QueryBuilder;
 use ickx\fw2\io\rdbms\builder\ColumnBuilder;
+use ickx\fw2\io\rdbms\builder\WhereConditionBuilder;
 
 /**
  * Flywheel2 Model Method Accessor
@@ -55,12 +56,68 @@ trait MethodAccessorTrait {
 		];
 	}
 
+	public static function ColumnBuilder ($name = null) {
+		return ColumnBuilder::init(static::class, $name);
+	}
+
 	public static function QueryBuilder () {
 		return QueryBuilder::init(static::class);
 	}
 
-	public static function ColumnBuilder ($name = null) {
+	public static function Select () {
+		return QueryBuilder::init(static::class, QueryBuilder::FORCE_MODE_SELECT);
+	}
+
+	public static function Column ($name = null) {
 		return ColumnBuilder::init(static::class, $name);
+	}
+
+	public static function From () {
+	}
+
+	public static function Where () {
+	}
+
+	/**
+	 * グループ条件を設定したクエリビルダを返します。
+	 *
+	 * @param	string|array	$column	ソート対象カラム名または複数のソート対象カラム
+	 * @param	string			$order	ソート方向
+	 * @return	\ickx\fw2\io\rdbms\builder\QueryBuilder	クエリビルダ
+	 */
+	public static function GroupBy ($column, $order) {
+		return QueryBuilder::init(static::class)->groupBy($column, $order);
+	}
+
+	public static function Having () {
+	}
+
+	/**
+	 * ソート条件を設定したクエリビルダを返します。
+	 *
+	 * @param	string|array	$column	ソート対象カラム名または複数のソート対象カラム
+	 * @param	string			$order	ソート方向
+	 * @return	\ickx\fw2\io\rdbms\builder\QueryBuilder	クエリビルダ
+	 */
+	public static function OrderBy ($column, $order = self::ORDER_ASC) {
+		return QueryBuilder::init(static::class)->orderBy($column, $order);
+	}
+
+	/**
+	 * ソート条件を設定したクエリビルダを返します。
+	 *
+	 * @param	string|array	$column	ソート対象カラム名または複数のソート対象カラム
+	 * @param	string			$order	ソート方向
+	 * @return	\ickx\fw2\io\rdbms\builder\QueryBuilder	クエリビルダ
+	 */
+	public static function Sort ($column, $order = self::ORDER_ASC) {
+		return QueryBuilder::init(static::class)->orderBy($column, $order);
+	}
+
+	public static function Limit () {
+	}
+
+	public static function Offset () {
 	}
 
 	/**
@@ -86,7 +143,7 @@ trait MethodAccessorTrait {
 		} else if (isset($options['where'])) {
 			$conditions = [];
 			foreach ($options['where'] as $where) {
-				$conditions[] = $where[1];
+				$conditions[] = $where instanceof WhereConditionBuilder ? $where : $where[1];
 			}
 		} else {
 			$conditions = [];
@@ -152,16 +209,20 @@ trait MethodAccessorTrait {
 			$wheres = ['WHERE'];
 			$is_not_first = false;
 			foreach ($options['where'] as $where) {
-				$value_length = count($where[1]);
-				$placeholder = $value_length > 1 ? '('. implode(', ', array_fill(0, $value_length, '?')) .')' : '?';
-				$operator = isset($where[2]) ? $where[2] : ($value_length > 1 ? 'in' : '=');
-
 				if ($is_not_first) {
 					$wheres[] = 'AND';
 				}
 				$is_not_first = true;
 
-				$wheres[] = sprintf('%s %s %s', $where[0], $operator, $placeholder);
+				if ($where instanceof WhereConditionBuilder) {
+					$wheres[] = $where();
+				} else {
+					$value_length = count($where[1]);
+					$placeholder = $value_length > 1 ? '('. implode(', ', array_fill(0, $value_length, '?')) .')' : '?';
+					$operator = isset($where[2]) ? $where[2] : ($value_length > 1 ? 'in' : '=');
+
+					$wheres[] = sprintf('%s %s %s', $where[0], $operator, $placeholder);
+				}
 			}
 			$query[] = implode(' ', $wheres);
 		}

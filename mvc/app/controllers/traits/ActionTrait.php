@@ -241,6 +241,27 @@ trait ActionTrait {
 				}
 			}
 
+			foreach ($action[5] ?? [] as $chain) {
+				switch (true) {
+					case $chain instanceof \Closure:
+						$result_part_list	= $chain($result_part_list);
+						break;
+					case $chain instanceof ActionBuilder:
+						$chain				= $chain->bindTo($result_part_list);
+						$result_part_list	= $chain();
+						break;
+					default:
+						if (is_object($result_part_list)) {
+							$result_part_list	= $result_part_list->$chain();
+						} else if (class_exists($result_part_list)) {
+							$result_part_list	= $result_part_list::$chain();
+						} else {
+							$result_part_list	= $chain($result_part_list);
+						}
+						break;
+				}
+			}
+
 			if (!is_null($result_alias)) {
 				if (is_array($result_alias)) {
 					$tmp = [];
@@ -288,6 +309,7 @@ trait ActionTrait {
 				prev($action_set);
 				$this->setNextAction(null);
 			}
+
 			assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('actionEnd'));
 		}
 		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('isActionLoopExecuted'));
@@ -329,7 +351,13 @@ trait ActionTrait {
 				$action = $action->toArray();
 			}
 
-			$is_var = is_array($action) ? $action[4] ?? false : false;
+			if (is_array($action)) {
+				$is_var	= $action[4] ?? false;
+				$chain	= $action[5] ?? null;
+			} else {
+				$is_var	= false;
+				$chain	= null;
+			}
 
 			if ($is_var) {
 				$result_alias = $action[2] ?? null;
@@ -378,9 +406,8 @@ trait ActionTrait {
 				//action実行後に結果に対して実行するフィルタ
 				$post_action_filter = isset($action[3]) ? (array) $action[3] : null;
 
-				$is_var = $action[4] ?? false;
 				if ($is_var) {
-					$action_set[$key] = [$action[0], null, $result_alias, null, $is_var];
+					$action_set[$key] = [$action[0], null, $result_alias, null, $is_var, $chain];
 					continue;
 				}
 
@@ -391,25 +418,25 @@ trait ActionTrait {
 
 				//アクションセットの設定
 				if (is_callable($action[0])) {
-					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter];
+					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter, $is_var, $chain];
 					continue;
 				}
 
 				//'action' => [$callback, $parameter],として設定した場合
 				if (is_callable($action[0][0]) && !is_string($action[0][1])) {
-					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter];
+					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter, $is_var, $chain];
 					continue;
 				}
 
 				//'action' => [$instance, 'methodName'],として設定した場合、$instanceは任意のオブジェクトの指定が可能
 				if (method_exists($action[0][0], $action[0][1])) {
-					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter];
+					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter, $is_var, $chain];
 					continue;
 				}
 
 				//'action' => ['function_name'],として設定した場合
 				if ($action[0][0] === $instance && is_callable($action[0][1])) {
-					$action_set[$key] = [$action[0][1], $action[1] ?? $parameters, $result_alias, $post_action_filter];
+					$action_set[$key] = [$action[0][1], $action[1] ?? $parameters, $result_alias, $post_action_filter, $is_var, $chain];
 					continue;
 				}
 			}

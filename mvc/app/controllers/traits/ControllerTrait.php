@@ -208,9 +208,7 @@ trait ControllerTrait {
 		assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log());
 
 		if (method_exists($instance, 'clearFlashClassSession')) {
-			if (Session::IsSessionActive()) {
-				$instance->clearFlashClassSession();
-			}
+			$instance->clearFlashClassSession();
 		}
 		return $instance;
 	}

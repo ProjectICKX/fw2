@@ -33,6 +33,7 @@ class BindBuilder {
 	protected $_controller	= null;
 	protected $_command		= null;
 	protected $_options		= null;
+	protected $_pinchs		= [];
 
 	protected const TYPE_RENDER_VAR	= 'type_render_var';
 	protected const TYPE_VAR		= 'type_var';
@@ -68,15 +69,35 @@ class BindBuilder {
 		return $this;
 	}
 
+	public function pinch ($pinchs) {
+		$this->_pinchs	= array_merge($this->_pinchs, (array) $pinchs);
+		return $this;
+	}
+
 	public function __invoke () {
 		$command	= $this->_command;
 		$type		= $this->_options['type'] ?? null;
 
 		switch ($type) {
 			case static::TYPE_VAR:
+				foreach ($this->_pinchs as $pinch) {
+					if (is_array($command)) {
+						$command = $command[$pinch];
+					} else if (is_object($command)) {
+						$command = $command->{$pinch};
+					}
+				}
 				return $command;
 			case static::TYPE_RENDER_VAR:
-				return $this->_controller->render->$command ?? $this->_options['default'] ?? null;
+				$command	= $this->_controller->render->$command ?? $this->_options['default'] ?? null;
+				foreach ($this->_pinchs as $pinch) {
+					if (is_array($command)) {
+						$command = $command[$pinch];
+					} else if (is_object($command)) {
+						$command = $command->{$pinch};
+					}
+				}
+				return $command;
 			case static::TYPE_PROMISE:
 				if (is_string($command)) {
 					if (method_exists($this->_controller, $command)) {
@@ -91,17 +112,48 @@ class BindBuilder {
 						$args[$idx] = $arg;
 					}
 				}
-				return $command(...$args);
+				$command	= $command(...$args);
+				foreach ($this->_pinchs as $pinch) {
+					if (is_array($command)) {
+						$command = $command[$pinch];
+					} else if (is_object($command)) {
+						$command = $command->{$pinch};
+					}
+				}
+				return $command;
 		}
 
 		if (is_string($command)) {
-			return $this->_controller->render->$command ?? $this->_options['default'] ?? $command;
+			$command	= $this->_controller->render->$command ?? $this->_options['default'] ?? $command;
+			foreach ($this->_pinchs as $pinch) {
+				if (is_array($command)) {
+					$command = $command[$pinch];
+				} else if (is_object($command)) {
+					$command = $command->{$pinch};
+				}
+			}
+			return $command;
 		}
 
 		if (is_callable($command)) {
-			return $command(...($this->_options['args'] ?? []));
+			$command	= $command(...($this->_options['args'] ?? []));
+			foreach ($this->_pinchs as $pinch) {
+				if (is_array($command)) {
+					$command = $command[$pinch];
+				} else if (is_object($command)) {
+					$command = $command->{$pinch};
+				}
+			}
+			return $command;
 		}
 
+		foreach ($this->_pinchs as $pinch) {
+			if (is_array($command)) {
+				$command = $command[$pinch];
+			} else if (is_object($command)) {
+				$command = $command->{$pinch};
+			}
+		}
 		return $command;
 	}
 }

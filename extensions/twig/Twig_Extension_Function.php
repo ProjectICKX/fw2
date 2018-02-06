@@ -158,8 +158,12 @@ class Twig_Extension_Function extends \Twig_Extension {
 	 * @param	string	$path_part	指定するパス。
 	 * @return	string	doc_rootからのパスが追加されたパス
 	 */
-	public function asset ($path_part) {
-		return Flywheel::AssetUrl($path_part);
+	public function asset ($path_part, $mtime = true) {
+		$asset_path	= Flywheel::AssetUrl($path_part);
+		if ($mtime) {
+			return sprintf('%s?%s', $asset_path, filemtime(sprintf('%s/%s', $_SERVER['DOCUMENT_ROOT'], $asset_path)));
+		}
+		return $asset_path;
 	}
 
 	/**
@@ -168,8 +172,12 @@ class Twig_Extension_Function extends \Twig_Extension {
 	 * @param	string	$path_part	指定するパス
 	 * @return	string	共通ファイル用のdoc_rootからのパスが追加されたパス
 	 */
-	public function assetCommon ($path_part) {
-		return Flywheel::AssetUrl('/com' . $path_part);
+	public function assetCommon ($path_part, $mtime = true) {
+		$asset_path	= Flywheel::AssetUrl('/com' . $path_part);
+		if ($mtime) {
+			return sprintf('%s?%s', $asset_path, filemtime(sprintf('%s/%s', $_SERVER['DOCUMENT_ROOT'], $asset_path)));
+		}
+		return $asset_path;
 	}
 
 	/**
@@ -213,7 +221,7 @@ class Twig_Extension_Function extends \Twig_Extension {
 		}
 
 		$query = !empty($query) ? '?'. http_build_query($query) : '';
-		return $this->asset(Router::GetUrl($controller_name, $action_name ?: '', $parameters ?: [], $var_parameters ?: [])) . $query;
+		return $this->asset(Router::GetUrl($controller_name, $action_name ?: '', $parameters ?: [], $var_parameters ?: []), false) . $query;
 	}
 
 	/**
@@ -255,7 +263,7 @@ class Twig_Extension_Function extends \Twig_Extension {
 
 		$query = !empty($query) ? '?'. http_build_query($query) : '';
 
-		return sprintf('%s%s%s', $schema, $_SERVER['HTTP_HOST'], $this->asset($url)) . $query;
+		return sprintf('%s%s%s', $schema, $_SERVER['HTTP_HOST'], $this->asset($url, false)) . $query;
 	}
 
 	/**
@@ -283,7 +291,7 @@ class Twig_Extension_Function extends \Twig_Extension {
 
 		$query = !empty($query) ? '?'. http_build_query($query) : '';
 
-		return sprintf('%s%s%s%s', $schema, $host_name, $this->asset($url), $query);
+		return sprintf('%s%s%s%s', $schema, $host_name, $this->asset($url, false), $query);
 	}
 
 	/**
