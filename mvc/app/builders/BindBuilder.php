@@ -13,7 +13,7 @@
  * @category	Flywheel2
  * @package		mvc
  * @author		wakaba <wakabadou@gmail.com>
- * @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (http://www.ickx.jp/)
+ * @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (https://ickx.jp/)
  * @license		http://opensource.org/licenses/MIT The MIT License MIT
  * @varsion		2.0.0
  */
@@ -38,6 +38,10 @@ class BindBuilder {
 	protected const TYPE_RENDER_VAR	= 'type_render_var';
 	protected const TYPE_VAR		= 'type_var';
 	protected const TYPE_PROMISE	= 'type_promise';
+
+	public static function instance () {
+		return new static;
+	}
 
 	public function __construct() {
 	}

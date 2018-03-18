@@ -13,7 +13,7 @@
  * @category	Flywheel2
  * @package		other
  * @author		wakaba <wakabadou@gmail.com>
- * @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (http://www.ickx.jp/)
+ * @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (https://ickx.jp/)
  * @license		http://opensource.org/licenses/MIT The MIT License MIT
  * @varsion		2.0.0
  */
@@ -89,6 +89,12 @@ class Curl {
 	protected $parameters	= null;
 	protected $bodies		= null;
 
+	/**
+	 * イニシャライザ
+	 *
+	 * @param	string	$url	URL
+	 * @return	\ickx\fw2\other\curl\Curl
+	 */
 	public static function init ($url = null) {
 		return new static($url);
 	}
@@ -143,7 +149,7 @@ class Curl {
 		}
 
 		$curl_options[\CURLOPT_SSL_VERIFYPEER]	= $this->sslVerify;
-		$curl_options[\CURLOPT_SSL_VERIFYHOST]	= $this->sslVerify;
+		$curl_options[\CURLOPT_SSL_VERIFYHOST]	= $this->sslVerify ? 2 : 0;
 
 		$this->appendCurlOptions($curl_options);
 

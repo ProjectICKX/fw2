@@ -13,7 +13,7 @@
  * @category	Flywheel2
  * @package		traits
  * @author		wakaba <wakabadou@gmail.com>
- * @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (http://www.ickx.jp/)
+ * @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (https://ickx.jp/)
  * @license		http://opensource.org/licenses/MIT The MIT License MIT
  * @varsion		2.0.0
  */
@@ -72,6 +72,14 @@ trait Multiton {
 		$instance = static::$multitonInstances[static::class][$name] = new static(...$args);
 		$instance->multitonName = $name;
 		return $instance;
+	}
+
+	public static function count () {
+		return count(static::$multitonInstances[static::class] ?? []);
+	}
+
+	public static function isset ($name) {
+		return isset(static::$multitonInstances[static::class][$name]);
 	}
 
 	/**
