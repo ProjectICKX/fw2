@@ -84,8 +84,8 @@ trait ConsoleTrait {
 		} else if ($header !== true && !empty($header)) {
 			$keys = $header;
 		} else {
-		$keys = current($values);
-		$keys = array_keys($keys);
+			$keys = current($values);
+			$keys = array_keys($keys);
 		}
 		foreach ($keys as $idx) {
 			$mb_width = mb_strwidth($idx, $encoding);

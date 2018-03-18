@@ -39,6 +39,10 @@ class BindBuilder {
 	protected const TYPE_VAR		= 'type_var';
 	protected const TYPE_PROMISE	= 'type_promise';
 
+	public static function instance () {
+		return new static;
+	}
+
 	public function __construct() {
 	}
 

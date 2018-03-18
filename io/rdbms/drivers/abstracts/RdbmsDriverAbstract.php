@@ -24,6 +24,7 @@ use ickx\fw2\core\log\StaticLog;
 use ickx\fw2\vartype\arrays\Arrays;
 use ickx\fw2\core\exception\CoreException;
 use ickx\fw2\io\rdbms\builder\WhereConditionBuilder;
+use ickx\fw2\mvc\app\builders\BindBuilder;
 
 /**
  * Flywheel2 RDBMSDriver Abstract Class
@@ -286,13 +287,13 @@ abstract class RdbmsDriverAbstract extends \PDO implements \ickx\fw2\io\rdbms\dr
 		//WHERE句以降のバインディング
 		foreach ($conditions as $idx => $condition) {
 			if ($condition instanceof WhereConditionBuilder) {
-				$column_value	= $condition->getValue();
+				$column_value	= $condition->evalValue();
 				if (is_array($column_value)) {
 					foreach ($column_value as $value) {
 						$stmt->bindValue($i++, $value);
 					}
 				} else {
-					$stmt->bindValue($i++, $column_value);
+					$stmt->bindValue($i++, $column_value instanceof BindBuilder ? $column_value() : $column_value);
 				}
 			} else {
 				$condition = (array) $condition;

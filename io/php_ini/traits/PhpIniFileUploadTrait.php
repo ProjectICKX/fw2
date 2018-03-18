@@ -39,7 +39,7 @@ trait PhpIniFileUploadTrait {
 	 * @return	array	ファイルアップロードにかかる全ての設定。
 	 */
 	public static function GetFileUploadIniAll ($details = true) {
-		return Arrays::GetElementsByKeys(ini_get_all(null, $details), static::GetFileUploadIniNameList());
+		return Arrays::findByKeyList(ini_get_all(null, $details), static::GetFileUploadIniNameList());
 	}
 
 	/**

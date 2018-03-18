@@ -74,6 +74,14 @@ trait Multiton {
 		return $instance;
 	}
 
+	public static function count () {
+		return count(static::$multitonInstances[static::class] ?? []);
+	}
+
+	public static function isset ($name) {
+		return isset(static::$multitonInstances[static::class][$name]);
+	}
+
 	/**
 	 * マルチトンとして管理されているオブジェクトインスタンスを返します。
 	 *

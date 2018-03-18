@@ -48,7 +48,7 @@ trait ActionTrait {
 	public $nextAction			= null;
 
 	public static function ActionBuilder ($executer, $is_var = false) {
-		return (new ActionBuilder())->executer($executer, $is_var);
+		return ActionBuilder::instance()->executer($executer, $is_var);
 	}
 
 	public static function ValidationBuilder ($executer, $is_var) {
@@ -56,15 +56,15 @@ trait ActionTrait {
 	}
 
 	public function bind ($command, $options = []) {
-		return (new BindBuilder())->executer($this, $command, $options)->typeRenderVar();
+		return BindBuilder::instance()->executer($this, $command, $options)->typeRenderVar();
 	}
 
 	public function literal ($command, $options = []) {
-		return (new BindBuilder())->executer($this, $command, $options)->typeVar();
+		return BindBuilder::instance()->executer($this, $command, $options)->typeVar();
 	}
 
 	public function promise ($command, $options = []) {
-		return (new BindBuilder())->executer($this, $command, $options)->typePromise();
+		return BindBuilder::instance()->executer($this, $command, $options)->typePromise();
 	}
 
 	/**
@@ -180,6 +180,8 @@ trait ActionTrait {
 
 				assert((Flywheel::$reportingLevel & Flywheel::REPORTING_LEVEL_PROFILE) === 0 ?: TimeProfiler::debug()->log('is_var'));
 			} else {
+				$action[0]	= ActionBuilder::explodeExecuter($action[0]);
+
 				if (!is_callable($action[0])) {
 					if ($action[0] === null) {
 						if ($this->isError()) {
@@ -436,6 +438,24 @@ trait ActionTrait {
 
 				//'action' => ['function_name'],として設定した場合
 				if ($action[0][0] === $instance && is_callable($action[0][1])) {
+					$action_set[$key] = [$action[0][1], $action[1] ?? $parameters, $result_alias, $post_action_filter, $is_var, $chain];
+					continue;
+				}
+
+				//'action' => [$this->bind('class_path'), $this->('method')],として設定した場合
+				if ($action[0][0] instanceof BindBuilder && $action[0][1] instanceof BindBuilder) {
+					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter, $is_var, $chain];
+					continue;
+				}
+
+				//'action' => [$this->bind('class_path'), 'method'],として設定した場合
+				if ($action[0][0] instanceof BindBuilder) {
+					$action_set[$key] = [$action[0], $action[1] ?? $parameters, $result_alias, $post_action_filter, $is_var, $chain];
+					continue;
+				}
+
+				//'action' => [$this->bind('function_name')],として設定した場合
+				if ($action[0][0] === $instance && $action[0][1] instanceof BindBuilder) {
 					$action_set[$key] = [$action[0][1], $action[1] ?? $parameters, $result_alias, $post_action_filter, $is_var, $chain];
 					continue;
 				}

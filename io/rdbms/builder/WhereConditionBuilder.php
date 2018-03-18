@@ -20,6 +20,8 @@
 
 namespace ickx\fw2\io\rdbms\builder;
 
+use ickx\fw2\mvc\app\builders\BindBuilder;
+
 /**
  * Flywheel2 RDBMS WhereConditionBuilder
  *
@@ -59,6 +61,10 @@ class WhereConditionBuilder {
 		return $this->value;
 	}
 
+	public function evalValue () {
+		return $this->value instanceof BindBuilder ? ($this->value)() : $this->value;
+	}
+
 	public function operator ($operator) {
 		$this->operator	= $operator;
 		return $this;
@@ -67,11 +73,13 @@ class WhereConditionBuilder {
 	public function __invoke () {
 		//@TODO `をDBDriverから取得するようにする。$this->enclosure など
 
-		$column	= sprintf('`%s`', implode('`.`', array_filter([$this->modelClass::GetDatabaseName(), $this->modelClass::GetName(), $this->column])));
+		$value	= $this->evalValue();
 
-		if (is_array($this->value)) {
+		$column	= sprintf('`%s`', implode('`.`', array_filter([$this->modelClass::GetDatabaseName(), $this->modelClass::GetName(), $this->column instanceof BindBuilder ? ($this->column)() : $this->column])));
+
+		if (is_array($value)) {
 			$operator		= $this->operator === '=' ? 'IN' : $this->operator;
-			$place_folder	= implode(', ', array_fill(0 , count($this->value), '?'));
+			$place_folder	= sprintf('(%s)', implode(', ', array_fill(0 , count($value), '?')));
 		} else {
 			$operator		= $this->operator;
 			$place_folder	= '?';

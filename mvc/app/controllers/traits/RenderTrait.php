@@ -33,49 +33,49 @@ use ickx\fw2\core\net\http\Response;
  */
 trait RenderTrait {
 	/** @var	string	描画に使うテンプレートパス：null時は描画機能が無効になる */
-	public $renderTemplate = null;
+	public $renderTemplate			 = null;
 
 	/** @var	\ickx\fw2\vartype\arrays\LazyArrayObject	描画用データ配列 */
-	public $render				= null;
+	public $render					= null;
 
 	/** @var	string	設定ファイルパス */
-	public $iniPath				= '';
+	public $iniPath					= '';
 
 	/** @var	string	テンプレートキャッシュディレクトリ */
-	public $templateCacheDir	= '';
+	public $templateCacheDir		= '';
 
 	/** @var	string	テンプレートタイプ */
-	public $templateType		= 'default';
+	public $templateType			= 'default';
 
 	/** @var	string	テンプレートファイル名 */
-	public $templateFile		= null;
+	public $templateFile			= null;
 
 	/** @var	string	！！未実装！！出力時MIME TYPE */
-	public $mimeType			= 'html';
+	public $mimeType				= 'html';
 
 	/** @var	string	テンプレートディレクトリパス */
-	public $templateDirList		= [];
+	public $templateDirList			= [];
 
 	/** @var	array	テンプレートディレクトリ拡張リスト */
-	public $templateExtDirList	= [];
+	public $templateExtDirList		= [];
 
 	/** @var	string	レイアウト名 */
-	public $layout				= null;
+	public $layout					= null;
 
 	/** @var	string	テンプレート名 */
-	public $template			= null;
+	public $template				= null;
 
 	/** @var	array	テンプレート用拡張リスト */
-	public $templateExtList		= [];
+	public $templateExtensionList	= [];
 
 	/** @var	array	テンプレート用フィルタリスト */
-	public $templateFilterList	= [];
+	public $templateFilterList		= [];
 
 	/** @var	array	テンプレート用トークンパーサリスト */
-	public $templateTokenParser	= [];
+	public $templateTokenParser		= [];
 
 	/** @var	bool	レンダー処理をスキップします */
-	public $skipRender			= false;
+	public $skipRender				= false;
 
 	/**
 	 * レイアウトを設定します。

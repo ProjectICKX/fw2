@@ -95,7 +95,7 @@ class Caller {
 	 * @return	string	呼び出し元のファイル名と行番号のセット
 	 */
 	public static function GetFileLine () {
-		return Arrays::SelectImplode('', static::_GetInfo(), ['file', 'line']);
+		return Arrays::selectImplode(static::_GetInfo(), '', ['file', 'line']);
 	}
 
 	/**
@@ -104,7 +104,7 @@ class Caller {
 	 * @return	string	呼び出し元のクラス名とメソッド名のセット
 	 */
 	public static function GetClassMethod () {
-		return Arrays::SelectImplode('', static::_GetInfo(), ['class', 'type', 'function']);
+		return Arrays::selectImplode(static::_GetInfo(), '', ['class', 'type', 'function']);
 	}
 
 	/**
@@ -118,7 +118,7 @@ class Caller {
 			'%s(%d) %s',
 			$caller_info['file'],
 			$caller_info['line'],
-			Arrays::SelectImplode('', $caller_info, ['class', 'type', 'function'])
+			Arrays::selectImplode($caller_info, '', ['class', 'type', 'function'])
 		);
 	}
 

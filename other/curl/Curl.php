@@ -89,6 +89,12 @@ class Curl {
 	protected $parameters	= null;
 	protected $bodies		= null;
 
+	/**
+	 * イニシャライザ
+	 *
+	 * @param	string	$url	URL
+	 * @return	\ickx\fw2\other\curl\Curl
+	 */
 	public static function init ($url = null) {
 		return new static($url);
 	}
@@ -143,7 +149,7 @@ class Curl {
 		}
 
 		$curl_options[\CURLOPT_SSL_VERIFYPEER]	= $this->sslVerify;
-		$curl_options[\CURLOPT_SSL_VERIFYHOST]	= $this->sslVerify;
+		$curl_options[\CURLOPT_SSL_VERIFYHOST]	= $this->sslVerify ? 2 : 0;
 
 		$this->appendCurlOptions($curl_options);
 
