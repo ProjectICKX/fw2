@@ -13,7 +13,7 @@
  * @category	Flywheel2
  * @package		commons
  * @author		wakaba
- * @copyright	Copyright 2012, Project ICKX. (http://www.ickx.jp/)
+ * @copyright	Copyright 2012, Project ICKX. (https://ickx.jp/)
  * @license		require consultation
  * @varsion		0.0.1
  */

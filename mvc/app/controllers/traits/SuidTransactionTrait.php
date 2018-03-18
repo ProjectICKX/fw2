@@ -13,7 +13,7 @@
  * @category	Flywheel2
  * @package		mvc
  * @author		wakaba <wakabadou@gmail.com>
- * @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (http://www.ickx.jp/)
+ * @copyright	2011- Wakabadou honpo (http://www.wakabadou.net/) / Project ICKX (https://ickx.jp/)
  * @license		http://opensource.org/licenses/MIT The MIT License MIT
  * @varsion		2.0.0
  */
